@@ -2,7 +2,7 @@ import pytesseract  # на будущее для распознавания те
 import cv2
 import random
 import json
-import numpy
+import numpy as np
 
 
 class PassportData:
@@ -21,9 +21,9 @@ class PassportData:
     Дата рождения ДД.ММ.ГГГГ
     """
 
-    face_descriptor: str
+    face_descriptor: np.ndarray
     """
-    Дескриптор лица, преобразованный в JSON строку
+    Дескриптор лица
     """
 
     def __str__(self):
@@ -57,5 +57,5 @@ def get_passport_data(image: cv2.Mat) -> PassportData:
     data.passport_number = "6019767612"
     data.full_name = "ИВАНОВ ИВАН ИВАНОВИЧ"
     data.date_of_birth = "01.02.2000"
-    data.face_descriptor = json.dumps(list(numpy.random.random_sample((128, ), )))
+    data.face_descriptor = np.random.random_sample((128, ), )
     return data
