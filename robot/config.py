@@ -1,10 +1,12 @@
 from bestconfig import Config
 from typing import Protocol
 
+
 class ConfigProtocol(Protocol):
     logging: dict
 
 instance: ConfigProtocol
+
 
 # реализация property для модулей
 # проверяет, загружен ли конфиг перед тем, как его отдать
@@ -15,6 +17,7 @@ def __getattr__(name):
             load()
         return instance
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 def load():
     global instance
