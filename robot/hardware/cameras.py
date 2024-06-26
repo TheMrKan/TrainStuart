@@ -3,6 +3,11 @@ import threading
 import numpy
 import logging
 import time
+import robot.config as config
+
+
+logger = logging.getLogger(__name__)
+
 
 class CameraHandler:
     index: int
@@ -38,16 +43,15 @@ class CameraHandler:
         self.__logger = logging.getLogger(__name__ + ".CameraHandler")
         self.__is_running = False
 
-        # заглушки до получения первого кадра с камеры, чтобы код не падал при обращении к этим переменным
-        # разрешение задается в обратном порядке, т. к. это размеры массива
-        # третий параметр разрешения - это 3 компонента цвета (BGR)
+        self.__capture = CameraHandler.__get_capture(self.index)
+
         self.image_bgr = cv2.Mat(numpy.ndarray((600, 1024, 3)))
         self.image_hsv = cv2.Mat(numpy.ndarray((600, 1024, 3)))
 
-        self.__capture = CameraHandler.__get_capture(self.index)
-
         self.__reader_thread = threading.Thread(target=self.__reader_thread)
         self.__reader_thread.daemon = True
+
+        self.start()
 
     def start(self):
         self.__is_running = True
@@ -58,28 +62,64 @@ class CameraHandler:
 
     @staticmethod
     def __get_capture(index: int) -> cv2.VideoCapture:
-        capture = cv2.VideoCapture(index)
+        capture = cv2.VideoCapture(cv2.CAP_DSHOW)
         if not capture.isOpened():
             raise ConnectionError(f"Camera {index} is unavailable")
         return capture
+
+    def __grab_image(self) -> bool:
+        """
+        Считывает изображение с камеры и записывает его в двух форматах в self.image_bgr и self.image_hsv
+        :return: True, если удалось считать изображение; иначе False
+        """
+        ret, bgr = self.__capture.read()
+        if not ret:
+            return False
+
+        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+        self.image_bgr = bgr
+        self.image_hsv = hsv
+        return True
 
     def __reader_thread(self):
         self.__logger.debug(f"Camera {self.index} has started capturing")
         while self.__is_running:
             try:
                 # к сведению: на слабом ноуте timeit показал, что на выполнение read() уходит в среднем 33 мс
-                ret, bgr = self.__capture.read()
-                if not ret:
+                success = self.__grab_image()
+                if not success:
                     self.__logger.warning(f"Failed to get image from camera {self.index}")
                     time.sleep(0.3)
                     continue
-                
-                hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-
-                self.image_bgr = bgr
-                self.image_hsv = hsv
 
             except Exception as e:
                 self.__logger.error(f"An error occured in reader thread of camera {self.index}", exc_info=e)
                 time.sleep(0.5)
         self.__logger.debug(f"Camera {self.index} has stopped capturing")
+
+
+class CameraAccessor:
+    main_camera: CameraHandler = None
+    documents_camera: CameraHandler = None
+
+    @classmethod
+    def initialize(cls):
+
+        main_camera_index = config.instance.hardware.main_camera
+        documents_camera_index = config.instance.hardware.documents_camera
+
+        cls.main_camera = CameraHandler(main_camera_index)
+        try:
+            cls.documents_camera = CameraHandler(documents_camera_index)
+        except ConnectionError:
+            logger.warning(f"Failed to connect to the documents camera ({documents_camera_index}). Using the main camera")
+            cls.documents_camera = cls.main_camera
+
+        logger.info("Cameras initialization completed")
+
+    @classmethod
+    def shutdown(cls):
+        cls.main_camera.stop()
+        cls.documents_camera.stop()
+        logger.info("Cameras are shutted down")
+

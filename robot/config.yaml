@@ -16,3 +16,12 @@ logging:
     level: DEBUG
     propagate: False
 
+hardware:
+  main_camera: 0
+  documents_camera: 1
+
+passport_check:
+  show_dev_tools: False
+
+
+

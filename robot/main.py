@@ -1,10 +1,11 @@
 import logging.config
-import multiprocessing
-from gui import passport_check
-import config
 import logging
 
+import robot.config as config
+
+
 logger: logging.Logger
+
 
 def main():
     global logger
@@ -14,7 +15,11 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info("Logger is configured")
 
-    passport_check.start()
+    # импорт после настроек логгера, чтобы logging.getLogger в модулях работал корректно
+    from robot.runtime import Runtime
+
+    runtime = Runtime()
+    runtime.start()
 
 
 if __name__ == "__main__":
