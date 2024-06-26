@@ -38,12 +38,16 @@ class CameraHandler:
     __logger: logging.Logger
     __is_running: bool    # используется для остановки reader_thread
 
-    def __init__(self, index: int):
+    def __init__(self, index: int, width: int = 0, height: int = 0):
         self.index = index
         self.__logger = logging.getLogger(__name__ + ".CameraHandler")
         self.__is_running = False
 
         self.__capture = CameraHandler.__get_capture(self.index)
+        if width > 0:
+            self.__capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        if height > 0:
+            self.__capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
         self.image_bgr = cv2.Mat(numpy.ndarray((600, 1024, 3)))
         self.image_hsv = cv2.Mat(numpy.ndarray((600, 1024, 3)))
@@ -62,7 +66,7 @@ class CameraHandler:
 
     @staticmethod
     def __get_capture(index: int) -> cv2.VideoCapture:
-        capture = cv2.VideoCapture(cv2.CAP_DSHOW)
+        capture = cv2.VideoCapture(index=index)
         if not capture.isOpened():
             raise ConnectionError(f"Camera {index} is unavailable")
         return capture
@@ -108,14 +112,25 @@ class CameraAccessor:
         main_camera_index = config.instance.hardware.main_camera
         documents_camera_index = config.instance.hardware.documents_camera
 
-        cls.main_camera = CameraHandler(main_camera_index)
+        main_resolution = config.instance.get("hardware.main_camera_resolution", "0x0")
+        main_resol_valid, main_width, main_height = config.try_parse_resolution(main_resolution)
+        if not main_resol_valid:
+            logger.warning(f"Invalid resolution for the main camera: {main_resolution}. Using default.")
+
+        documents_resolution = config.instance.get("hardware.documents_camera_resolution", "0x0")
+        documents_resol_valid, documents_width, documents_height = config.try_parse_resolution(documents_resolution)
+        if not documents_resol_valid:
+            logger.warning(f"Invalid resolution for the documents camera: {main_resolution}. Using default.")
+
+        cls.main_camera = CameraHandler(main_camera_index, main_width, main_height)
         try:
-            cls.documents_camera = CameraHandler(documents_camera_index)
+            cls.documents_camera = CameraHandler(documents_camera_index, documents_width, documents_height)
         except ConnectionError:
             logger.warning(f"Failed to connect to the documents camera ({documents_camera_index}). Using the main camera")
             cls.documents_camera = cls.main_camera
 
         logger.info("Cameras initialization completed")
+
 
     @classmethod
     def shutdown(cls):
