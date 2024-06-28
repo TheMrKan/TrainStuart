@@ -33,9 +33,13 @@ class CameraHandler:
     т. к. при обработке ссылка может измениться на новый кадр.
     """
 
+    width: int
+    height: int
+
     __reader_thread: threading.Thread
     __capture: cv2.VideoCapture
     __logger: logging.Logger
+    __image_grabbed: threading.Event
     __is_running: bool    # используется для остановки reader_thread
 
     def __init__(self, index: int, width: int = 0, height: int = 0):
@@ -43,31 +47,40 @@ class CameraHandler:
         self.__logger = logging.getLogger(__name__ + ".CameraHandler")
         self.__is_running = False
 
+        self.width = width
+        self.height = height
+
         self.__capture = CameraHandler.__get_capture(self.index)
         if width > 0:
             self.__capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         if height > 0:
             self.__capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-        self.image_bgr = cv2.Mat(numpy.ndarray((600, 1024, 3)))
-        self.image_hsv = cv2.Mat(numpy.ndarray((600, 1024, 3)))
+        self.image_bgr = cv2.Mat(numpy.zeros((width, height, 3), dtype=numpy.uint8))
+        self.image_hsv = cv2.Mat(numpy.zeros((width, height, 3), dtype=numpy.uint8))
+
+        self.__image_grabbed = threading.Event()
 
         self.__reader_thread = threading.Thread(target=self.__reader_thread)
         self.__reader_thread.daemon = True
 
-        self.start()
-
     def start(self):
         self.__is_running = True
+        self.__image_grabbed.clear()
         self.__reader_thread.start()
 
+    def await_first_frame(self, timeout: float | None = None):
+        self.__image_grabbed.wait(timeout)
+
     def stop(self):
+        self.__image_grabbed.clear()
         self.__is_running = False
 
     @staticmethod
     def __get_capture(index: int) -> cv2.VideoCapture:
         capture = cv2.VideoCapture(index=index)
         if not capture.isOpened():
+            capture.release()
             raise ConnectionError(f"Camera {index} is unavailable")
         return capture
 
@@ -83,6 +96,8 @@ class CameraHandler:
         hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
         self.image_bgr = bgr
         self.image_hsv = hsv
+
+        self.__image_grabbed.set()
         return True
 
     def __reader_thread(self):
@@ -99,7 +114,15 @@ class CameraHandler:
             except Exception as e:
                 self.__logger.error(f"An error occured in reader thread of camera {self.index}", exc_info=e)
                 time.sleep(0.5)
+        self.__capture.release()
         self.__logger.debug(f"Camera {self.index} has stopped capturing")
+
+    def __enter__(self):
+        self.start()
+        self.await_first_frame()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
 
 
 class CameraAccessor:
@@ -108,6 +131,8 @@ class CameraAccessor:
 
     @classmethod
     def initialize(cls):
+
+        logger.info("Initializing cameras...")
 
         main_camera_index = config.instance.hardware.main_camera
         documents_camera_index = config.instance.hardware.documents_camera
@@ -130,7 +155,6 @@ class CameraAccessor:
             cls.documents_camera = cls.main_camera
 
         logger.info("Cameras initialization completed")
-
 
     @classmethod
     def shutdown(cls):

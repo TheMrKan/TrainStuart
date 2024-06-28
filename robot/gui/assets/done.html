@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>Готово</title>
+</head>
+<body>
+    <header class="header">
+<!--        <h2 class="title-header">Проверка документов</h2>-->
+        <div class="content">
+            <div class="main-text">
+                <h3 class="name">Робот-стюард</h3>
+                <div class="vert-line"></div>
+                <h3 class="number-wagon">Вагон: 1</h3>
+            </div>
+<!--            <h2 class="title-header">Проверка документов</h2>-->
+            <button class="call-person" type="button" onclick="window.dialog.showModal();">
+                Связь с человеком
+            </button>
+        </div>
+        <hr class="horiz-line">
+        <h2 class="title-header">Проверка документов</h2>
+        <hr class="horiz-line">
+    </header>
+    <section class="section">
+        <h1 class="done-text">Готово!</h1>
+<!--        <svg class="svg-done" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 48 48" width="48px" height="48px">-->
+<!--            <linearGradient id="HoiJCu43QtshzIrYCxOfCa" x1="21.241" x2="3.541" y1="39.241" y2="21.541" gradientUnits="userSpaceOnUse">-->
+<!--                <stop offset=".108" stop-color="#0d7044"/>-->
+<!--                <stop offset=".433" stop-color="#11945a"/>-->
+<!--            </linearGradient>-->
+<!--            <path fill="url(#HoiJCu43QtshzIrYCxOfCa)" d="M16.599,41.42L1.58,26.401c-0.774-0.774-0.774-2.028,0-2.802l4.019-4.019	c0.774-0.774,2.028-0.774,2.802,0L23.42,34.599c0.774,0.774,0.774,2.028,0,2.802l-4.019,4.019	C18.627,42.193,17.373,42.193,16.599,41.42z"/>-->
+<!--            <linearGradient id="HoiJCu43QtshzIrYCxOfCb" x1="-15.77" x2="26.403" y1="43.228" y2="43.228" gradientTransform="rotate(134.999 21.287 38.873)" gradientUnits="userSpaceOnUse">-->
+<!--                <stop offset="0" stop-color="#2ac782"/>-->
+<!--                <stop offset="1" stop-color="#21b876"/>-->
+<!--            </linearGradient>-->
+<!--            <path fill="url(#HoiJCu43QtshzIrYCxOfCb)" d="M12.58,34.599L39.599,7.58c0.774-0.774,2.028-0.774,2.802,0l4.019,4.019	c0.774,0.774,0.774,2.028,0,2.802L19.401,41.42c-0.774,0.774-2.028,0.774-2.802,0l-4.019-4.019	C11.807,36.627,11.807,35.373,12.58,34.599z"/>-->
+<!--        </svg>-->
+        <svg class="svg-done" fill="#FA5252" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 50 50" width="50px" height="50px">
+            <path d="M18.04 24.97c.23-.24.46-.47.7-.71.23-.24.47-.48.7-.72l-7.18-7.28c-.52-.53-1.22-.83-1.96-.83s-1.44.3-1.96.83l-6.53 6.63c-1.08 1.08-1.08 2.85 0 3.94l7.77 7.88c.06-.38.17-.74.32-1.09.14-.31.31-.61.53-.89.12-.18.27-.35.43-.52 1.51-1.54 3.02-3.06 4.54-4.58C16.28 26.74 17.16 25.86 18.04 24.97zM48.21 14.53L41.59 7.8c-1.02-1.03-2.81-1.03-3.84 0L21.3 24.51c-.15.15-.29.3-.45.45v.01c-.23.24-.47.48-.7.71h-.01l-.7.71-1.26 1.28-1.37 1.37c-1.51 1.52-3.02 3.04-4.52 4.57-.17.17-.31.36-.43.57-.19.33-.31.7-.35 1.07-.02.23-.01.46.03.68.02.13.05.26.09.39.02.08.05.17.09.25.03.08.07.16.11.24.06.13.14.26.24.38.05.07.11.13.17.2l.17.19 6.47 6.57.05.05c.06.06.13.12.2.18.13.1.26.19.4.27.4.23.85.35 1.32.35.57 0 1.11-.18 1.56-.51.07-.05.13-.1.19-.15.06-.04.11-.09.16-.14l.04-.05 6.54-6.63 18.87-19.15C49.26 17.31 49.26 15.59 48.21 14.53z"/>
+        </svg>
+        <h1 class="done-text">Ваше место: 1</h1>
+        <h1 class="done-text">Хорошей дороги!</h1>
+    </section>
+
+    <dialog id="dialog">
+        <h2>Связь с человеком</h2>
+
+        <button onclick="window.dialog.close();" aria-label="close" class="x">❌</button>
+    </dialog>
+
+</body>
+</html>

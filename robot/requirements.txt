@@ -1,4 +1,5 @@
 pytesseract~=0.3.10
-opencv-contrib-python
+opencv-contrib-python==4.5.5.62
 numpy
 bestconfig
+pywebview

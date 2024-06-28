@@ -1,5 +1,5 @@
 from robot.hardware.cameras import CameraAccessor
-from robot.gui import passport_check
+from robot.gui.documents_check import DocumentsCheckApp
 
 
 class Runtime:
@@ -13,7 +13,7 @@ class Runtime:
     def __main(self):
         CameraAccessor.initialize()
 
-        passport_check.start()
+        DocumentsCheckApp().run()
 
     def shutdown(self):
         CameraAccessor.shutdown()

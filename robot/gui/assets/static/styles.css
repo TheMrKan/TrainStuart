@@ -1,0 +1,276 @@
+:root {
+    /*--color-red: #e21a1a;*/
+    --color-red: #FA5252;
+    --color-black: #000000;
+    --color-white: #ffffff;
+    --color-gray: #394a58;
+    --color-green: #a3a86b;
+    --color-blue: #0066a1;
+}
+
+@font-face {
+    font-family: 'RussianRail';
+    src: url("/static/fonts/RussianRailGPro-Reg.woff2") format('woff2');
+    font-weight: 300;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'RussianRail';
+    src: url("/static/fonts/RussianRailGPro-Medium.woff2") format('woff2');
+    font-weight: 500;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'RussianRail';
+    src: url("/static/fonts/RussianRailGPro-Bold.woff2") format('woff2');
+    font-weight: 600;
+    font-style: normal;
+}
+
+html {
+    font-family: 'RussianRail', sans-serif;
+}
+
+
+/*body {*/
+/*    width: 600px;*/
+/*    height: 1024px;*/
+/*    background-color: var(--color-white);*/
+/*}*/
+
+.header {
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 230px;
+
+    display: flex;
+    flex-direction: column;
+    row-gap: 5px;
+
+    background-color: var(--color-white);
+}
+.content {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.title-header {
+    font-weight: 300;
+    font-style: normal;
+    text-align: center;
+    align-content: center;
+}
+
+.horiz-line {
+    padding: 0;
+    margin-top: 25px;
+    width: 85%;
+    height: 0;
+    border-top: 1px solid var(--color-red);
+}
+
+
+.call-person {
+    background-color: var(--color-red);
+    color: var(--color-white);
+    font-family: 'RussianRail', sans-serif;
+    font-size: 20px;
+    font-weight: 300;
+
+    border: none;
+    width: 250px;
+
+    border-bottom-left-radius: 20px;
+    border: 0;
+    box-shadow: 0 5px 30px 0 rgb(0 0 0 / 10%);
+}
+
+
+.main-text {
+    display: flex;
+    flex-direction: row;
+    column-gap: 12px;
+
+    align-items: center;
+    margin-left: 10px;
+}
+.name {
+    font-size: 20px;
+    font-weight: 300;
+}
+.number-wagon {
+    font-size: 20px;
+    font-weight: 300;
+}
+.vert-line {
+    height: 40px;
+    border-left: 1px solid var(--color-gray);
+}
+
+
+.section {
+    position: absolute;
+    /*background-color: rgba(57, 74, 88, 40%);*/
+    background-color: #d9d9d9;
+    top: 230px;
+    left: 0;
+    bottom: 0;
+
+    width: 100vw;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.camera-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}
+.done-text {
+    font-size: 40px;
+    font-weight: 300;
+}
+
+
+.svg-done {
+    width: 400px;
+    height: 400px;
+}
+.svg-cancel {
+    width: 300px;
+    height: 300px;
+}
+.svg-loading {
+    width: 300px;
+    height: 300px;
+}
+
+.text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background-color: var(--color-white);
+    padding: 25px 40px;
+    width: 470px;
+
+    position: relative;
+    top: 20px;
+
+    border-radius: 20px;
+    border: 0;
+    box-shadow: 0 5px 30px 0 rgb(0 0 0 / 10%);
+}
+.step-text {
+    font-size: 36px;
+    font-weight: 300;
+}
+.step-text2 {
+    font-size: 26px;
+    font-weight: 300;
+}
+.over-image {
+    position: fixed;
+    top: 250px;
+    z-index: 100;
+}
+
+.btn-continue {
+    background-color: var(--color-gray);
+    border: none;
+    color: var(--color-white);
+    font-family: 'RussianRail', sans-serif;
+    font-size: 30px;
+
+    width: 300px;
+    height: 100px;
+
+    position: fixed;
+    bottom: 50px;
+
+    border-radius: 20px;
+    border: 0;
+    box-shadow: 0 5px 30px 0 rgb(0 0 0 / 10%);
+}
+.btn-repeat {
+    background-color: var(--color-gray);
+    border: none;
+    color: var(--color-white);
+    font-family: 'RussianRail', sans-serif;
+    font-size: 30px;
+
+    width: 300px;
+    height: 100px;
+
+    position: fixed;
+    bottom: 50px;
+
+    border-radius: 20px;
+    border: 0;
+    box-shadow: 0 5px 30px 0 rgb(0 0 0 / 10%);
+}
+
+.step1-reading {
+    /*display: none;*/
+    /*row-gap: 50px;*/
+}
+.step1-imgReading {
+    width: 550px;
+}
+.step1-processing {
+    /*display: none;*/
+    /*row-gap: 50px;*/
+}
+.step1-wrong {
+    /*display: none;*/
+    /*row-gap: 40px;*/
+}
+
+
+
+dialog {
+    padding: 2rem 3rem;
+    background: white;
+    max-width: 400px;
+    border-radius: 20px;
+    border: 0;
+    box-shadow: 0 5px 30px 0 rgb(0 0 0 / 10%);
+    animation: fadeIn 1s ease both;
+}
+dialog::backdrop {
+    animation: fadeIn 1s ease both;
+    background: rgb(255 255 255 / 40%);
+    z-index: 2;
+    backdrop-filter: blur(20px);
+}
+
+.x {
+    filter: grayscale(1);
+    border: none;
+    background: none;
+    position: absolute;
+    top: 15px;
+    right: 10px;
+    transition: ease filter, transform 0.3s;
+    cursor: pointer;
+    transform-origin: center;
+}
+.x:hover {
+    filter: grayscale(0);
+    transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

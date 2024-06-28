@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>Считывание биометрии</title>
+</head>
+<body>
+<header class="header">
+    <!--        <h2 class="title-header">Проверка документов</h2>-->
+    <div class="content">
+        <div class="main-text">
+            <h3 class="name">Робот-стюард</h3>
+            <div class="vert-line"></div>
+            <h3 class="number-wagon">Вагон: 1</h3>
+        </div>
+        <!--            <h2 class="title-header">Проверка документов</h2>-->
+        <button class="call-person" type="button" onclick="window.dialog.showModal();">
+            Связь с человеком
+        </button>
+    </div>
+    <hr class="horiz-line">
+    <h2 class="title-header">Проверка документов</h2>
+    <hr class="horiz-line">
+</header>
+<section class="section camera-image">
+    <h1 class="text step-text over-image">Шаг 2: Посмотрите в камеру</h1>
+    <img class="camera-image" src="" alt="camera" id="cameraImage">
+</section>
+
+<dialog id="dialog">
+    <h2>Связь с человеком</h2>
+
+    <button onclick="window.dialog.close();" aria-label="close" class="x">❌</button>
+</dialog>
+</body>
+</html>
