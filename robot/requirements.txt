@@ -3,3 +3,4 @@ opencv-contrib-python==4.5.5.62
 numpy
 bestconfig
 pywebview
+numpy==1.23.0

@@ -1,3 +1,5 @@
+import threading
+
 import webview
 from webview.dom.dom import Element
 import time
@@ -8,6 +10,7 @@ import random
 from robot.hardware.cameras import CameraAccessor
 import robot.config as config
 from robot.gui.apps import BasePipelineApp, PipelineLogicError
+from utils.faces import Recognizer
 
 
 class PassportNotFoundError(PipelineLogicError):
@@ -33,7 +36,7 @@ class DocumentsCheckApp(BasePipelineApp):
         self.logger.debug("Reading passport...")
         # проверка паспорта
         time.sleep(random.randint(2, 5))
-        passport_found = int(random.randint(0, 1))
+        passport_found = int(random.randint(1, 1))
 
         if not passport_found:
             self.logger.debug("Passport not found.")
@@ -46,12 +49,45 @@ class DocumentsCheckApp(BasePipelineApp):
 
         image_element = self.window.dom.get_element("#cameraImage")
 
+        recognizer = Recognizer()
+        is_rect_displayed = False
+        face_center_history_x = []
+        face_center_history_y = []
         with CameraAccessor.main_camera:
             while True:
                 if not self.check_is_running():
                     return
 
-                self.send_camera_image(image_element, CameraAccessor.main_camera.image_bgr.copy())
+                image = self.crop_image(CameraAccessor.main_camera.image_bgr.copy())
+
+                face_location = recognizer.find_face(image)
+                if face_location is None:
+                    if is_rect_displayed:
+                        self.hide_face_rect()
+                        is_rect_displayed = False
+                        face_center_history_x.clear()
+                        face_center_history_y.clear()
+                else:
+                    center = int(face_location[0] + (face_location[2] / 2)), int(face_location[1] + (face_location[3] / 2))
+                    if not is_rect_displayed:
+                        self.show_face_rect()
+                        is_rect_displayed = True
+
+                    # фильтр, чтобы квадрат не дергался
+                    face_center_history_x.append(center[0])
+                    face_center_history_y.append(center[1])
+
+                    if len(face_center_history_x) > 10:
+                        del face_center_history_x[0]
+                        del face_center_history_y[0]
+
+                    average_center_x = sum(face_center_history_x) / len(face_center_history_x)
+                    average_center_y = sum(face_center_history_y) / len(face_center_history_y)
+
+                    # вычитаем из 1, т. к. изображение выводится зеркально
+                    self.set_face_rect_pos(1 - average_center_x / image.shape[1], average_center_y / image.shape[0])
+
+                self.send_camera_image(image_element, image)
 
     def show_step1_error(self):
         self.window.evaluate_js("""
@@ -59,21 +95,35 @@ class DocumentsCheckApp(BasePipelineApp):
             $("#wrong").toggle();
             """)
 
+    def hide_face_rect(self):
+        self.window.evaluate_js("disableRect();")
+
+    def show_face_rect(self):
+        self.window.evaluate_js("enableRect();")
+
+    def set_face_rect_pos(self, x_rel: float, y_rel: float):
+        '''
+        x и y задаются в процентах от 0 до 1.
+        '''
+        self.window.evaluate_js(f"setRectPos({x_rel}, {y_rel});")
+
     @staticmethod
     def send_camera_image(element: Element, image: cv2.Mat):
+        cv2.flip(image, 1, image)
+        _, png = cv2.imencode(".png", image)
+        image_b64 = base64.b64encode(png).decode("utf-8")
+        element.attributes["src"] = f"data:image/png;base64, {image_b64}"
+
+    @staticmethod
+    def crop_image(image: cv2.UMat) -> cv2.UMat:
         # временные преобразования для корректного отображения на мониторе ПК
         # позже будут перенесены в другое место
         # обрезает входное изображение под 9:16 и отражает его по горизонатали (чтобы выглядело как зеркало)
         # TODO: вынести преобразование изображения с камеры в другое место и привязать к конфигу
         h, w, _ = image.shape
-        target_ratio = 0.5625    # 9:16
+        target_ratio = 0.5625  # 9:16
         target_width = h * target_ratio
-        image = image[:, int(w / 2 - target_width / 2):int(w / 2 + target_width / 2)]
-        cv2.flip(image, 1, image)
-
-        _, png = cv2.imencode(".png", image)
-        image_b64 = base64.b64encode(png).decode("utf-8")
-        element.attributes["src"] = f"data:image/png;base64, {image_b64}"
+        return image[:, int(w / 2 - target_width / 2):int(w / 2 + target_width / 2)]
 
     @staticmethod
     def get_window_params() -> dict:

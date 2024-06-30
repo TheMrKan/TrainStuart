@@ -5,7 +5,9 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <link rel="stylesheet" type="text/css" href="./static/styles.css">
     <title>Считывание биометрии</title>
 </head>
 <body>
@@ -29,6 +31,10 @@
 <section class="section camera-image">
     <h1 class="text step-text over-image">Шаг 2: Посмотрите в камеру</h1>
     <img class="camera-image" src="" alt="camera" id="cameraImage">
+
+    <div id="rectDiv">
+
+    </div>
 </section>
 
 <dialog id="dialog">
@@ -36,5 +42,111 @@
 
     <button onclick="window.dialog.close();" aria-label="close" class="x">❌</button>
 </dialog>
+
+<script>
+
+    var SVG = `
+    <svg id="rect" width="400" height="400" style="position: relative;">
+    <path
+        d="M 0 0 L 400 0"
+
+        fill="none"
+        stroke="white"
+        stroke-width="10"
+        stroke-dasharray="50 0"
+        stroke-dashoffset="25">
+      <animate
+        attributeName="stroke-dasharray"
+        values="10 40;50 0"
+        dur="1s"
+        calcMode="linear"
+        repeatCount="1" />
+    <animate
+        attributeName="stroke-dashoffset"
+        values="5; 25"
+        dur="1s"
+        calcMode="linear"
+        repeatCount="1" />
+    </path>
+    <path
+        d="M 400 0 L 400 400"
+
+        fill="none"
+        stroke="white"
+        stroke-width="10"
+        stroke-dasharray="50 0"
+        stroke-dashoffset="25">
+      <animate
+        attributeName="stroke-dasharray"
+        values="10 40;50 0"
+        dur="1s"
+        calcMode="linear"
+        repeatCount="1" />
+    <animate
+        attributeName="stroke-dashoffset"
+        values="5; 25"
+        dur="1s"
+        calcMode="linear"
+        repeatCount="1" />
+    </path>
+    <path
+    d="M 400 400 L 0 400"
+
+    fill="none"
+        stroke="white"
+        stroke-width="10"
+        stroke-dasharray="50 0"
+        stroke-dashoffset="25">
+      <animate
+        attributeName="stroke-dasharray"
+        values="10 40;50 0"
+        dur="1s"
+        calcMode="linear"
+        repeatCount="1" />
+    <animate
+        attributeName="stroke-dashoffset"
+        values="5; 25"
+        dur="1s"
+        calcMode="linear"
+        repeatCount="1" />
+    </path>
+    <path
+    d="M 0 400 L 0 0"
+
+    fill="none"
+        stroke="white"
+        stroke-width="10"
+        stroke-dasharray="50 0"
+        stroke-dashoffset="25">
+      <animate
+        attributeName="stroke-dasharray"
+        values="10 40;50 0"
+        dur="1s"
+        calcMode="linear"
+        repeatCount="1" />
+    <animate
+        attributeName="stroke-dashoffset"
+        values="5; 25"
+        dur="1s"
+        calcMode="linear"
+        repeatCount="1" />
+    </path>
+    </svg>
+    `;
+
+    function enableRect() {
+        $("#rectDiv").html(SVG);
+    };
+
+    function disableRect() {
+        $("#rectDiv").html("");
+    };
+
+    function setRectPos(x_rel, y_rel) {
+        $("#rect").css("top", 1024 * y_rel - 200);
+        $("#rect").css("left", 640 * x_rel - 320);
+    };
+
+</script>
 </body>
 </html>
