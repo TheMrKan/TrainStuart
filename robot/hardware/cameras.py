@@ -66,8 +66,6 @@ class CameraHandler:
     def start(self):
         self.__is_running = True
         self.__image_grabbed.clear()
-        if not self.__reader_thread:    # reader_thread устанавливается в None из reader_thread_worker при остановке
-            self.__reader_thread = self.__produce_reader_thread()    # поток можно запустить только единожды, поэтому после вызова stop() его нужно создавать заново
         self.__reader_thread.start()
 
     def await_first_frame(self, timeout: float | None = None):
@@ -127,13 +125,6 @@ class CameraHandler:
         self.__logger.debug(f"Camera {self.index} has stopped capturing")
         self.__reader_thread = None
 
-    def __enter__(self):
-        self.start()
-        self.await_first_frame()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stop()
-
 
 class CameraAccessor:
     main_camera: CameraHandler = None
@@ -158,10 +149,15 @@ class CameraAccessor:
             logger.warning(f"Invalid resolution for the documents camera: {main_resolution}. Using default.")
 
         cls.main_camera = CameraHandler(main_camera_index, main_width, main_height)
-        try:
-            cls.documents_camera = CameraHandler(documents_camera_index, documents_width, documents_height)
-        except ConnectionError:
-            logger.warning(f"Failed to connect to the documents camera ({documents_camera_index}). Using the main camera")
+        cls.main_camera.start()
+        if documents_camera_index != main_camera_index:
+            try:
+                cls.documents_camera = CameraHandler(documents_camera_index, documents_width, documents_height)
+                cls.documents_camera.start()
+            except ConnectionError:
+                logger.warning(f"Failed to connect to the documents camera ({documents_camera_index}). Using the main camera")
+                cls.documents_camera = cls.main_camera
+        else:
             cls.documents_camera = cls.main_camera
 
         logger.info("Cameras initialization completed")

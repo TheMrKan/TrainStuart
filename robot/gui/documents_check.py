@@ -13,6 +13,7 @@ import robot.config as config
 from robot.gui.apps import BasePipelineApp, PipelineLogicError
 from utils.faces import Recognizer
 from robot.core.async_biometry_processor import AsyncBiometryProcessor
+from utils.cancelations import sleep, CancellationToken
 
 
 class PassportNotFoundError(PipelineLogicError):
@@ -28,6 +29,7 @@ class DocumentsCheckApp(BasePipelineApp):
         "default": "loading.html",
         "put_passport": "passport.html",
         "face": "face.html",
+        "done": "done.html"
     }
 
     def pipeline(self):
@@ -37,7 +39,7 @@ class DocumentsCheckApp(BasePipelineApp):
 
         self.logger.debug("Reading passport...")
         # проверка паспорта
-        time.sleep(random.randint(2, 5))
+        sleep(random.randint(2, 5), self.cancellation)
         passport_found = int(random.randint(1, 1))
 
         if not passport_found:
@@ -54,63 +56,55 @@ class DocumentsCheckApp(BasePipelineApp):
         is_rect_displayed = False
         face_center_history_x = []
         face_center_history_y = []
-        face_not_found_confirmations = 25   # кол-во кадров, на котором лицо не найдено, после которого квадрат пропадет. Чтобы квадрат не моргал
+        face_not_found_confirmations = 25   # кол-во кадров, на которых лицо не найдено, после которого квадрат пропадет. Чтобы квадрат не моргал
 
         recognizer = Recognizer()
         face_processing_result = None
         face_processing_started = False
         time_start = time.time()
         time_start_tracking = 0
-        with CameraAccessor.main_camera:
-            while True:
-                if not self.check_is_running():
-                    return
-                current_time = time.time()
+        while True:
+            if not self.check_is_running():
+                return
+            current_time = time.time()
 
-                image = self.crop_image(CameraAccessor.main_camera.image_bgr.copy())
+            image = self.crop_image(CameraAccessor.main_camera.image_bgr.copy())
 
-                face_location = recognizer.find_face(image)
-                if face_location is None:
-                    if face_not_found_confirmations > 0:
-                        face_not_found_confirmations -= 1
-                    elif is_rect_displayed:
-                        self.hide_face_rect()
-                        is_rect_displayed = False
-                        time_start_tracking = 0
-                        face_center_history_x.clear()
-                        face_center_history_y.clear()
-                        face_processing_started = False
-                        face_processing_result = None
-                else:
-                    if current_time - time_start >= 2:    # задержка после включения камеры, чтобы лицо не находило мгновенно
+            face_location = recognizer.find_face(image)
+            if face_location is None:
+                if face_not_found_confirmations > 0:
+                    face_not_found_confirmations -= 1
+                elif is_rect_displayed:
+                    self.hide_face_rect()
+                    is_rect_displayed = False
+                    time_start_tracking = 0
+                    face_center_history_x.clear()
+                    face_center_history_y.clear()
+                    face_processing_started = False
+                    face_processing_result = None
+            else:
+                if current_time - time_start >= 2:    # задержка после включения камеры, чтобы лицо не находило мгновенно
 
-                        face_not_found_confirmations = 25    # сброс кол-ва кадров для скрытия квадрата
+                    face_not_found_confirmations = 25    # сброс кол-ва кадров для скрытия квадрата
 
-                        if time_start_tracking == 0:
-                            time_start_tracking = current_time
-                        elif current_time - time_start_tracking > 0.5:
-                            if not face_processing_started:
-                                bounds = (face_location[1], face_location[0] + face_location[2], face_location[1] + face_location[3], face_location[0])   # top, right, bottom, left
+                    if time_start_tracking == 0:
+                        time_start_tracking = current_time
+                    elif current_time - time_start_tracking > 0.5:
+                        if not face_processing_started:
+                            bounds = (face_location[1], face_location[0] + face_location[2], face_location[1] + face_location[3], face_location[0])   # top, right, bottom, left
 
-                                t = time.time()
-                                def set_result(descriptor: np.ndarray):
-                                    nonlocal face_processing_result
-                                    face_processing_result = bool(random.randint(0, 1))
+                            def set_result(descriptor: np.ndarray):
+                                nonlocal face_processing_result
+                                face_processing_result = bool(random.randint(0, 1))
 
-                                self.logger.debug("Face decriptor processing started")
+                            self.logger.debug("Face decriptor processing started")
+                            AsyncBiometryProcessor.get_face_descriptor_async(image, set_result, face_location=bounds)
+                            face_processing_started = True
 
-                                AsyncBiometryProcessor.get_face_descriptor_async(image, set_result, face_location=bounds)
-                                self.logger.debug(f"Time: {time.time() - t}")
-                                face_processing_started = True
-                            elif face_processing_result is not None:
-                                self.logger.debug(f"Recognition result: {face_processing_result}")
-                                self.hide_face_rect()
-                                is_rect_displayed = False
-                                time_start = current_time
-                                time_start_tracking = 0
-                                face_processing_started = False
-                                face_processing_result = None
-                                face_not_found_confirmations = 0
+                        elif face_processing_result is not None and current_time - time_start_tracking > 1.5:
+                            self.logger.debug(f"Recognition result: {face_processing_result}")
+                            self.hide_face_rect()
+                            break
 
                     center = int(face_location[0] + (face_location[2] / 2)), int(face_location[1] + (face_location[3] / 2))
                     if not is_rect_displayed:
@@ -131,7 +125,11 @@ class DocumentsCheckApp(BasePipelineApp):
                     # вычитаем из 1, т. к. изображение выводится зеркально
                     self.set_face_rect_pos(1 - average_center_x / image.shape[1], average_center_y / image.shape[0])
 
-                self.send_camera_image(image_element, image)
+            self.send_camera_image(image_element, image)
+
+        self.send_page("done")
+
+        sleep(5, self.cancellation)
 
     def show_step1_error(self):
         self.window.evaluate_js("""

@@ -39,6 +39,8 @@ class AsyncBiometryWorker:
 
     def run(self):
         while self.__parameters.is_running:
+            if not self.__parameters.connection.poll(timeout=0.1):
+                continue
             request = self.__parameters.connection.recv()
 
             match request:

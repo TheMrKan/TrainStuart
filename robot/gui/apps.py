@@ -1,12 +1,13 @@
 import logging
 import threading
-
+import time
 import webview
 import os.path
-from typing import Generic
+from typing import Generic, Optional
 from abc import abstractmethod
 
 import robot.gui.utils as utils
+from utils.cancelations import sleep, await_event, CancellationToken
 
 
 class PipelineLogicError(Exception):
@@ -19,8 +20,10 @@ class PipelineLogicError(Exception):
 class BasePipelineAPI:
 
     continue_event: threading.Event
+    cancellation_token: CancellationToken
 
-    def __init__(self):
+    def __init__(self, cancellation_token: Optional[CancellationToken] = None):
+        self.cancellation_token = cancellation_token or CancellationToken()
         self.continue_event = threading.Event()
 
     def send_continue(self):
@@ -37,7 +40,7 @@ class BasePipelineAPI:
         """
         self.continue_event.clear()    # на случай, если send_continue был вызван не во время ожидания
 
-        self.continue_event.wait(timeout=timeout)
+        await_event(self.continue_event, timeout, self.cancellation_token)
 
         if self.continue_event.is_set():
             self.continue_event.clear()
@@ -74,6 +77,7 @@ class BasePipelineApp:
     # если window != None а is_running = False, значит приложение выключается через shutdown. Если window = None, значит приложение завершается закрытием окна
     window: webview.Window | None    # когда становится None, значит окно приложения закрылось
     is_running: bool    # устанавливается в True в run; в False - в shutdown. Служит сигналом для завершения циклов в __main
+    cancellation: CancellationToken
     api: BasePipelineAPI    # JS API
     app_thread: threading.Thread | None    # поток, в котором выполняется функция __main. Устанавливается сразу при запуске __main
 
@@ -82,6 +86,7 @@ class BasePipelineApp:
 
         self.app_thread = None
         self.is_running = False
+        self.cancellation = CancellationToken()
 
         self.api = self.produce_api()
 
@@ -110,9 +115,12 @@ class BasePipelineApp:
         """
         self.logger.debug("App is shutting down...")
         self.is_running = False
+        self.cancellation.cancel()
+        self.api.cancellation_token.cancel()
 
         if self.app_thread:
             self.app_thread.join()
+        self.logger.debug("App was terminated")
 
     def main(self):
         self.app_thread = threading.current_thread()
@@ -122,6 +130,8 @@ class BasePipelineApp:
                 self.logger.debug("App pipeline started")
                 self.pipeline()
                 self.logger.debug("App pipeline finished")
+            except InterruptedError:
+                self.logger.debug("Restarting pipeline because of interruption")
             except PipelineLogicError as ex:
                 self.logger.debug(f"Restarting pipeline because of {type(ex).__name__}")
             except Exception as ex:
@@ -169,9 +179,8 @@ class BasePipelineApp:
         """
         return self.get_file_url(self.PAGES[page_name])
 
-    @staticmethod
-    def produce_api() -> BasePipelineAPI:
-        return BasePipelineAPI()
+    def produce_api(self) -> BasePipelineAPI:
+        return BasePipelineAPI(cancellation_token=self.cancellation)
 
     @staticmethod
     def get_window_params() -> dict:
