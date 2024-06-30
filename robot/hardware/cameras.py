@@ -36,7 +36,7 @@ class CameraHandler:
     width: int
     height: int
 
-    __reader_thread: threading.Thread
+    __reader_thread: threading.Thread | None
     __capture: cv2.VideoCapture
     __logger: logging.Logger
     __image_grabbed: threading.Event
@@ -61,12 +61,13 @@ class CameraHandler:
 
         self.__image_grabbed = threading.Event()
 
-        self.__reader_thread = threading.Thread(target=self.__reader_thread)
-        self.__reader_thread.daemon = True
+        self.__reader_thread = self.__produce_reader_thread()
 
     def start(self):
         self.__is_running = True
         self.__image_grabbed.clear()
+        if not self.__reader_thread:    # reader_thread устанавливается в None из reader_thread_worker при остановке
+            self.__reader_thread = self.__produce_reader_thread()    # поток можно запустить только единожды, поэтому после вызова stop() его нужно создавать заново
         self.__reader_thread.start()
 
     def await_first_frame(self, timeout: float | None = None):
@@ -75,6 +76,8 @@ class CameraHandler:
     def stop(self):
         self.__image_grabbed.clear()
         self.__is_running = False
+        if self.__reader_thread:
+            self.__reader_thread.join()
 
     @staticmethod
     def __get_capture(index: int) -> cv2.VideoCapture:
@@ -83,6 +86,12 @@ class CameraHandler:
             capture.release()
             raise ConnectionError(f"Camera {index} is unavailable")
         return capture
+
+    def __produce_reader_thread(self):
+        thread = threading.Thread(target=self.__reader_thread_worker)
+        thread.daemon = True
+        return thread
+
 
     def __grab_image(self) -> bool:
         """
@@ -100,7 +109,7 @@ class CameraHandler:
         self.__image_grabbed.set()
         return True
 
-    def __reader_thread(self):
+    def __reader_thread_worker(self):
         self.__logger.debug(f"Camera {self.index} has started capturing")
         while self.__is_running:
             try:
@@ -116,6 +125,7 @@ class CameraHandler:
                 time.sleep(0.5)
         self.__capture.release()
         self.__logger.debug(f"Camera {self.index} has stopped capturing")
+        self.__reader_thread = None
 
     def __enter__(self):
         self.start()
