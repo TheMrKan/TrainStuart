@@ -1,5 +1,4 @@
 import time
-
 import cv2
 import math
 import numpy
@@ -14,7 +13,8 @@ class Recognizer:
     def get_face_encoding(self, image: numpy.ndarray, bounds: list = None):
         encodings = recog.face_encodings(image, known_face_locations=bounds, num_jitters=5, model="large")
 
-        if not any(encodings):
+        # any(encodings) выдает ошибку. encodings.any() не всегда работает, т. к. иногда возвращается tuple
+        if len(encodings) == 0:
             return None
         return encodings[0]
 
