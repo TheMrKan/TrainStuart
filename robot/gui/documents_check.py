@@ -53,6 +53,7 @@ class DocumentsCheckApp(BasePipelineApp):
         is_rect_displayed = False
         face_center_history_x = []
         face_center_history_y = []
+        face_not_found_confirmations = 25   # кол-во кадров, на котором лицо не найдено, после которого квадрат пропадет. Чтобы квадрат не моргал
         with CameraAccessor.main_camera:
             while True:
                 if not self.check_is_running():
@@ -62,12 +63,16 @@ class DocumentsCheckApp(BasePipelineApp):
 
                 face_location = recognizer.find_face(image)
                 if face_location is None:
-                    if is_rect_displayed:
+                    if face_not_found_confirmations > 0:
+                        face_not_found_confirmations -= 1
+                    elif is_rect_displayed:
                         self.hide_face_rect()
                         is_rect_displayed = False
                         face_center_history_x.clear()
                         face_center_history_y.clear()
                 else:
+                    face_not_found_confirmations = 25    # сброс кол-ва кадров для скрытия квадрата
+
                     center = int(face_location[0] + (face_location[2] / 2)), int(face_location[1] + (face_location[3] / 2))
                     if not is_rect_displayed:
                         self.show_face_rect()
