@@ -67,6 +67,7 @@ class CameraHandler:
         self.__is_running = True
         self.__image_grabbed.clear()
         self.__reader_thread.start()
+        self.await_first_frame()
 
     def await_first_frame(self, timeout: float | None = None):
         self.__image_grabbed.wait(timeout)
