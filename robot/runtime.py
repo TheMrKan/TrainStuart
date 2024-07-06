@@ -1,6 +1,7 @@
 from robot.hardware.cameras import CameraAccessor
 from robot.gui.documents_check import DocumentsCheckApp
-from robot.core.async_biometry_processor import AsyncBiometryProcessor
+from robot.core.async_processor import AsyncProcessor
+from robot.core.tickets import TicketsRepository
 
 
 class Runtime:
@@ -13,10 +14,11 @@ class Runtime:
 
     def __main(self):
         CameraAccessor.initialize()
-        AsyncBiometryProcessor.initialize()
+        AsyncProcessor.initialize()
+        TicketsRepository.load()
 
         DocumentsCheckApp().run()
 
     def shutdown(self):
-        AsyncBiometryProcessor.shutdown()
+        AsyncProcessor.shutdown()
         CameraAccessor.shutdown()

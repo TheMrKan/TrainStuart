@@ -22,6 +22,10 @@ def sleep(secs: float, cancellation: Optional[CancellationToken] = None):
 
 
 def await_event(event: Event, timeout: Optional[float] = None, cancellation: Optional[CancellationToken] = None, step: float = 0.1):
+    if cancellation is None:
+        event.wait(timeout)
+        return
+    
     start = time.time()
     if timeout is not None:
         while True:

@@ -1,4 +1,3 @@
-import pytesseract  # на будущее для распознавания текста
 import cv2
 import random
 import json
@@ -28,6 +27,9 @@ class PassportData:
 
     def __str__(self):
         return f"{self.full_name} ({self.date_of_birth}) [{self.passport_number}]"
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 class PassportNotFoundError(BaseException):
@@ -44,6 +46,9 @@ class DataRecognitionError(BaseException):
     pass
 
 
+__tesseract = None
+
+
 def get_passport_data(image: cv2.Mat) -> PassportData:
     """
     Находит паспорт на изображении и считывает с него ФИО, дату рождения, номер паспорта и дескриптор лица
@@ -52,6 +57,11 @@ def get_passport_data(image: cv2.Mat) -> PassportData:
     :exception DataRecognitionError:
     :return:
     """
+    '''global __tesseract
+    if __tesseract is None:
+        import pytesseract as tes
+        __tesseract = tes'''
+
     # TODO: реализовать чтение данных с изображения
     data = PassportData()
     data.passport_number = "6019767612"

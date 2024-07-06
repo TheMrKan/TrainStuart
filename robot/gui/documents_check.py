@@ -12,8 +12,9 @@ from robot.hardware.cameras import CameraAccessor
 import robot.config as config
 from robot.gui.apps import BasePipelineApp, PipelineLogicError
 from utils.faces import Recognizer
-from robot.core.async_biometry_processor import AsyncBiometryProcessor
-from utils.cancelations import sleep, CancellationToken
+from robot.core.async_processor import AsyncProcessor
+from utils.cancelations import sleep, await_event, CancellationToken
+from utils.scanner import PassportData
 
 
 class PassportNotFoundError(PipelineLogicError):
@@ -38,9 +39,19 @@ class DocumentsCheckApp(BasePipelineApp):
         self.api.await_continue()
 
         self.logger.debug("Reading passport...")
-        # проверка паспорта
-        sleep(random.randint(2, 5), self.cancellation)
-        passport_found = int(random.randint(1, 1))
+        passport_image = CameraAccessor.documents_camera.image_bgr.copy()
+        passport_read_event = threading.Event()
+        passport_data = PassportData | None
+
+        def set_passport_read_result(data: PassportData):
+            nonlocal passport_data
+            passport_data = data
+            passport_read_event.set()
+
+        AsyncProcessor.read_passport_async(passport_image, set_passport_read_result)
+        await_event(passport_read_event, None, self.cancellation)
+
+        passport_found = True or passport_data is not None
 
         if not passport_found:
             self.logger.debug("Passport not found.")
@@ -48,7 +59,7 @@ class DocumentsCheckApp(BasePipelineApp):
             self.api.await_continue()
             raise PassportNotFoundError()
 
-        self.logger.debug("Passport found. Going to step 2...")
+        self.logger.debug(f"Passport found: {passport_data}. Going to step 2...")
         self.send_page("face")
 
         image_element = self.window.dom.get_element("#cameraImage")
@@ -98,7 +109,7 @@ class DocumentsCheckApp(BasePipelineApp):
                                 face_processing_result = bool(random.randint(0, 1))
 
                             self.logger.debug("Face decriptor processing started")
-                            AsyncBiometryProcessor.get_face_descriptor_async(image, set_result, face_location=bounds)
+                            AsyncProcessor.get_face_descriptor_async(image, set_result, face_location=bounds)
                             face_processing_started = True
 
                         elif face_processing_result is not None and current_time - time_start_tracking > 1.5:
