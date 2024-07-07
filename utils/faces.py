@@ -3,6 +3,10 @@ import cv2
 import math
 import numpy
 import face_recognition as recog
+from typing import TypeAlias
+
+
+FaceDescriptor: TypeAlias = numpy.ndarray
 
 
 class Recognizer:
@@ -10,7 +14,7 @@ class Recognizer:
     def __init__(self):
         self.face_cascade = cv2.CascadeClassifier("../utils/haarcascade_frontalface_alt.xml")
 
-    def get_face_encoding(self, image: numpy.ndarray, bounds: list = None):
+    def get_face_encoding(self, image: numpy.ndarray, bounds: list = None) -> FaceDescriptor:
         encodings = recog.face_encodings(image, known_face_locations=bounds, num_jitters=5, model="large")
 
         # any(encodings) выдает ошибку. encodings.any() не всегда работает, т. к. иногда возвращается tuple
@@ -37,7 +41,7 @@ class Recognizer:
 
         return faces[0]
 
-    def get_matching_encoding_index(self, target_encoding: list, encodings: list):
+    def get_matching_encoding_index(self, target_encoding: FaceDescriptor, encodings: list):
         if not any(encodings):
             return -1
 
@@ -49,6 +53,10 @@ class Recognizer:
             return compared.index(m)
         except ValueError as ex:
             return -1
+        
+    def compare_faces(self, face_a: FaceDescriptor, face_b: FaceDescriptor) -> float:
+       return recog.face_distance([face_b], face_a)[0]
+    
 
 
 

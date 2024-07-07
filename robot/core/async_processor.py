@@ -8,17 +8,20 @@ from threading import Thread
 import traceback
 from utils.scanner import PassportData
 import random
+from utils.cancelations import sleep
+from utils.faces import FaceDescriptor
+from utils.cv import Image
 
 
 @dataclass
 class GetFaceDescriptorRequest:
-    image: numpy.ndarray
+    image: Image
     face_location: Optional[tuple[int, int, int, int]]
 
 
 @dataclass
 class GetFaceDescriptorResponse:
-    face_descriptor: Optional[numpy.ndarray]
+    face_descriptor: Optional[FaceDescriptor]
 
     def get_callback_args(self):
         return (self.face_descriptor, )
@@ -26,7 +29,7 @@ class GetFaceDescriptorResponse:
 
 @dataclass
 class ReadPassportRequest:
-    image: numpy.ndarray
+    image: Image
 
 
 @dataclass
@@ -35,7 +38,7 @@ class ReadPassportResponse:
 
     def get_callback_args(self):
         return (self.passport_data, )
-
+    
 
 class AsyncWorker:
 
@@ -73,18 +76,23 @@ class AsyncWorker:
             except Exception:
                 traceback.print_exc()
 
-    def __process_get_face_descriptor(self, request: GetFaceDescriptorRequest):
-        descriptors = self.__recognition.face_encodings(request.image,
-                                                        [request.face_location] if request.face_location is not None else None,
+    def __get_face_descriptor(self, image: Image, face_location: Optional[tuple[int, int, int, int]] = None) -> FaceDescriptor:
+        descriptors = self.__recognition.face_encodings(image,
+                                                        [face_location] if face_location is not None else None,
                                                         num_jitters=3,
                                                         model="large")
         descriptor = descriptors[0] if len(descriptors) > 0 else None
+        return descriptor
+
+
+    def __process_get_face_descriptor(self, request: GetFaceDescriptorRequest):
+        descriptor = self.__get_face_descriptor(request.image, request.face_location)
         response = GetFaceDescriptorResponse(descriptor)
         self.__parameters.connection.send(response)
 
     def __process_read_passport(self, request: ReadPassportRequest):
         data = self.__scanner.get_passport_data(request.image)
-        time.sleep(random.randint(2, 5))
+        sleep(1)
         response = ReadPassportResponse(data)
         self.__parameters.connection.send(response)
 
@@ -127,8 +135,8 @@ class AsyncProcessor:
         cls.__manager.shutdown()
 
     @classmethod
-    def get_face_descriptor_async(cls, image: numpy.ndarray,
-                                  callback: Callable[[numpy.ndarray | None], None],
+    def get_face_descriptor_async(cls, image: Image,
+                                  callback: Callable[[FaceDescriptor | None], None],
                                   face_location: Optional[tuple[int, int, int, int]] = None):
         if cls.__response_awaiter:
             raise WorkerBusyError
@@ -138,7 +146,7 @@ class AsyncProcessor:
         cls.__await_response(callback, 2)
 
     @classmethod
-    def read_passport_async(cls, image: numpy.ndarray,
+    def read_passport_async(cls, image: Image,
                             callback: Callable[[PassportData | None], None]):
         if cls.__response_awaiter:
             raise WorkerBusyError

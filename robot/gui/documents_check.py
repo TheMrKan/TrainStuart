@@ -13,11 +13,16 @@ import robot.config as config
 from robot.gui.apps import BasePipelineApp, PipelineLogicError
 from utils.faces import Recognizer
 from robot.core.async_processor import AsyncProcessor
+from robot.core.tickets import TicketsRepository, TicketInfo
 from utils.cancelations import sleep, await_event, CancellationToken
 from utils.scanner import PassportData
 
 
 class PassportNotFoundError(PipelineLogicError):
+    pass
+
+
+class TicketNotFoundError(PipelineLogicError):
     pass
 
 
@@ -55,11 +60,20 @@ class DocumentsCheckApp(BasePipelineApp):
 
         if not passport_found:
             self.logger.debug("Passport not found.")
-            self.show_step1_error()
-            self.api.await_continue()
+            self.show_passport_not_found()
+            self.api.await_continue(5)
             raise PassportNotFoundError()
 
-        self.logger.debug(f"Passport found: {passport_data}. Going to step 2...")
+        self.logger.debug(f"Passport found: {passport_data}. Looking for a ticket...")
+
+        ticket = TicketsRepository.get_by_passport(passport_data.passport_number)
+        if not ticket:
+            self.logger.debug("Ticket not found.")
+            self.show_ticket_not_found()
+            self.api.await_continue(5)
+            raise TicketNotFoundError()
+
+        self.logger.debug(f"Ticket found: {ticket}. Going to step 2...")
         self.send_page("face")
 
         image_element = self.window.dom.get_element("#cameraImage")
@@ -142,10 +156,16 @@ class DocumentsCheckApp(BasePipelineApp):
 
         sleep(5, self.cancellation)
 
-    def show_step1_error(self):
+    def show_passport_not_found(self):
         self.window.evaluate_js("""
             $("#process").toggle();
-            $("#wrong").toggle();
+            $("#no_passport").toggle();
+            """)
+        
+    def show_ticket_not_found(self):
+        self.window.evaluate_js("""
+            $("#process").toggle();
+            $("#no_ticket").toggle();
             """)
 
     def hide_face_rect(self):
