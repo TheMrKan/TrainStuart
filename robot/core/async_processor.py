@@ -1,100 +1,13 @@
-import time
-import numpy
-from dataclasses import dataclass
-from typing import Callable, Protocol, Optional, Type
+
+from typing import Callable, Optional
 from multiprocessing import Pipe, Process, Manager
 from multiprocessing.connection import Connection
 from threading import Thread
-import traceback
 from utils.scanner import PassportData
-import random
-from utils.cancelations import sleep
 from utils.faces import FaceDescriptor
 from utils.cv import Image
-
-
-@dataclass
-class GetFaceDescriptorRequest:
-    image: Image
-    face_location: Optional[tuple[int, int, int, int]]
-
-
-@dataclass
-class GetFaceDescriptorResponse:
-    face_descriptor: Optional[FaceDescriptor]
-
-    def get_callback_args(self):
-        return (self.face_descriptor, )
-    
-
-@dataclass
-class ReadPassportRequest:
-    image: Image
-
-
-@dataclass
-class ReadPassportResponse:
-    passport_data: Optional[PassportData]
-
-    def get_callback_args(self):
-        return (self.passport_data, )
-    
-
-class AsyncWorker:
-
-    class ParametersProtocol(Protocol):
-        connection: Connection
-        is_running: bool
-
-    __parameters: ParametersProtocol
-
-    def __init__(self, parameters: ParametersProtocol):
-        self.__parameters = parameters
-
-        import face_recognition as recog
-        self.__recognition = recog
-
-        import utils.scanner as scanner
-        self.__scanner = scanner
-
-        self.run()
-
-    def run(self):
-        while self.__parameters.is_running:
-            try:
-                if not self.__parameters.connection.poll(timeout=0.1):
-                    continue
-                request = self.__parameters.connection.recv()
-
-                match request:
-                    case GetFaceDescriptorRequest():
-                        self.__process_get_face_descriptor(request)
-                    case ReadPassportRequest():
-                        self.__process_read_passport(request)
-                    case _:
-                        pass
-            except Exception:
-                traceback.print_exc()
-
-    def __get_face_descriptor(self, image: Image, face_location: Optional[tuple[int, int, int, int]] = None) -> FaceDescriptor:
-        descriptors = self.__recognition.face_encodings(image,
-                                                        [face_location] if face_location is not None else None,
-                                                        num_jitters=3,
-                                                        model="large")
-        descriptor = descriptors[0] if len(descriptors) > 0 else None
-        return descriptor
-
-
-    def __process_get_face_descriptor(self, request: GetFaceDescriptorRequest):
-        descriptor = self.__get_face_descriptor(request.image, request.face_location)
-        response = GetFaceDescriptorResponse(descriptor)
-        self.__parameters.connection.send(response)
-
-    def __process_read_passport(self, request: ReadPassportRequest):
-        data = self.__scanner.get_passport_data(request.image)
-        sleep(1)
-        response = ReadPassportResponse(data)
-        self.__parameters.connection.send(response)
+from robot.core.async_worker import *
+import robot.config as config
 
 
 class WorkerBusyError(Exception):
@@ -123,6 +36,7 @@ class AsyncProcessor:
         cls.__connection, worker_connection = Pipe()
         cls.__worker_parameters.connection = worker_connection
         cls.__worker_parameters.is_running = True
+        cls.__worker_parameters.resources_dir = config.instance.resources_dir
 
         cls.__worker_process = Process(target=AsyncWorker, args=(cls.__worker_parameters, ))
         cls.__worker_process.daemon = True
@@ -143,7 +57,7 @@ class AsyncProcessor:
 
         request = GetFaceDescriptorRequest(image, face_location)
         cls.__connection.send(request)
-        cls.__await_response(callback, 2)
+        cls.__await_response(callback, 4)
 
     @classmethod
     def read_passport_async(cls, image: Image,
@@ -153,7 +67,7 @@ class AsyncProcessor:
         
         request = ReadPassportRequest(image)
         cls.__connection.send(request)
-        cls.__await_response(callback, 2)
+        cls.__await_response(callback, 4)
 
     @classmethod
     def __await_response(cls, callback: Callable, timeout: Optional[float] = None):

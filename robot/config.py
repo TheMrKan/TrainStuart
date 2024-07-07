@@ -18,6 +18,7 @@ class ConfigProtocol(Protocol):
     logging: dict
     hardware: HardwareConfigProtocol
     passport_check: PassportCheckAppConfig
+    resources_dir: str
 
 
 # чтобы показывались методы из ConfigProvider

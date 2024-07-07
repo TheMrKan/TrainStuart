@@ -2,63 +2,51 @@ import time
 import cv2
 import math
 import numpy
-import face_recognition as recog
-from typing import TypeAlias
+from typing import TypeAlias, Optional
+import os.path
+from utils.cv import Image
 
 
 FaceDescriptor: TypeAlias = numpy.ndarray
 
 
-class Recognizer:
+__recognition = None
+__face_cascade = None
 
-    def __init__(self):
-        self.face_cascade = cv2.CascadeClassifier("../utils/haarcascade_frontalface_alt.xml")
 
-    def get_face_encoding(self, image: numpy.ndarray, bounds: list = None) -> FaceDescriptor:
-        encodings = recog.face_encodings(image, known_face_locations=bounds, num_jitters=5, model="large")
+def load_dependencies(resources_dir: str):
+    global __recognition
+    global __face_cascade
 
-        # any(encodings) выдает ошибку. encodings.any() не всегда работает, т. к. иногда возвращается tuple
-        if len(encodings) == 0:
-            return None
-        return encodings[0]
+    import face_recognition as recog
+    __recognition = recog
 
-    def get_face_encoding_from_file(self, file_path: str):
-        image = cv2.imread(file_path)
-        return self.get_face_encoding(image)
+    __face_cascade = cv2.CascadeClassifier(os.path.join(resources_dir, "haarcascade_frontalface_alt.xml"))
 
-    def find_face(self, image: numpy.ndarray) -> tuple[int, int, int, int] | None:
 
-        faces = self.face_cascade.detectMultiScale(
+def get_face_descriptor(image: Image, face_location: Optional[tuple[int, int, int, int]] = None) -> FaceDescriptor | None:
+    if not __recognition:
+        raise ImportError("'face_recognition' is not imported. Call 'load_dependencies()' first")
+    
+    descriptors = __recognition.face_encodings(image,
+                                             [face_location] if face_location is not None else None,
+                                             num_jitters=3,
+                                             model="large")
+    return descriptors[0] if len(descriptors) > 0 else None
+
+
+def find_face(image: Image) -> tuple[int, int, int, int] | None:
+    if not __face_cascade:
+        raise ImportError("'haarcascade_frontalface_alt.xml' is not loaded. Call 'load_dependencies()' first")
+    
+    faces = __face_cascade.detectMultiScale(
                 image,
                 scaleFactor=1.4,
                 minNeighbors=3,
                 minSize=(300, 300)
         )
-
-        # any(faces) выдает ошибку. faces.any() не всегда работает, т. к. иногда возвращается tuple
-        if len(faces) == 0:
-            return None
-
-        return faces[0]
-
-    def get_matching_encoding_index(self, target_encoding: FaceDescriptor, encodings: list):
-        if not any(encodings):
-            return -1
-
-        compared = list(recog.face_distance(encodings, target_encoding))
-        m = min(compared)
-        if m > 0.5:
-            return -1
-        try:
-            return compared.index(m)
-        except ValueError as ex:
-            return -1
-        
-    def compare_faces(self, face_a: FaceDescriptor, face_b: FaceDescriptor) -> float:
-       return recog.face_distance([face_b], face_a)[0]
-    
+    return faces[0] if len(faces) > 0 else None
 
 
-
-
-
+def compare_faces(face_a: FaceDescriptor, face_b: FaceDescriptor) -> float:
+    return round(1 - numpy.linalg.norm(face_b - face_a), 3)

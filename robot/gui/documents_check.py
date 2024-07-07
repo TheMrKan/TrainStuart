@@ -11,7 +11,7 @@ from typing import Callable
 from robot.hardware.cameras import CameraAccessor
 import robot.config as config
 from robot.gui.apps import BasePipelineApp, PipelineLogicError
-from utils.faces import Recognizer
+import utils.faces as face_util
 from robot.core.async_processor import AsyncProcessor
 from robot.core.tickets import TicketsRepository, TicketInfo
 from utils.cancelations import sleep, await_event, CancellationToken
@@ -83,8 +83,7 @@ class DocumentsCheckApp(BasePipelineApp):
         face_center_history_y = []
         face_not_found_confirmations = 25   # кол-во кадров, на которых лицо не найдено, после которого квадрат пропадет. Чтобы квадрат не моргал
 
-        recognizer = Recognizer()
-        face_processing_result = None
+        face_processing_result: face_util.FaceDescriptor | None  = None
         face_processing_started = False
         time_start = time.time()
         time_start_tracking = 0
@@ -95,7 +94,7 @@ class DocumentsCheckApp(BasePipelineApp):
 
             image = self.crop_image(CameraAccessor.main_camera.image_bgr.copy())
 
-            face_location = recognizer.find_face(image)
+            face_location = face_util.find_face(image)
             if face_location is None:
                 if face_not_found_confirmations > 0:
                     face_not_found_confirmations -= 1
@@ -118,16 +117,16 @@ class DocumentsCheckApp(BasePipelineApp):
                         if not face_processing_started:
                             bounds = (face_location[1], face_location[0] + face_location[2], face_location[1] + face_location[3], face_location[0])   # top, right, bottom, left
 
-                            def set_result(descriptor: np.ndarray):
+                            def set_result(descriptor: face_util.FaceDescriptor):
                                 nonlocal face_processing_result
-                                face_processing_result = bool(random.randint(0, 1))
+                                face_processing_result = descriptor
 
                             self.logger.debug("Face decriptor processing started")
                             AsyncProcessor.get_face_descriptor_async(image, set_result, face_location=bounds)
                             face_processing_started = True
 
                         elif face_processing_result is not None and current_time - time_start_tracking > 1.5:
-                            self.logger.debug(f"Recognition result: {face_processing_result}")
+                            self.logger.debug(f"Recognition completed")
                             self.hide_face_rect()
                             break
 
@@ -153,6 +152,9 @@ class DocumentsCheckApp(BasePipelineApp):
             self.send_camera_image(image_element, image)
 
         self.send_page("done")
+
+        similarity = face_util.compare_faces(passport_data.face_descriptor, face_processing_result)
+        self.logger.debug(f"Similarity: {similarity}")
 
         sleep(5, self.cancellation)
 

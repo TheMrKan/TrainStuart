@@ -16,8 +16,11 @@ logging:
     level: DEBUG
     propagate: False
 
+resources_dir: "../resources"
+
 hardware:
   main_camera: 0
+  main_camera_resolution: 640x480
   documents_camera: 1
 
 passport_check:
