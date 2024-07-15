@@ -41,7 +41,7 @@ class BasketPositionUpdate(BaseModel):
 
 
 class BasketPositionRemove(BaseModel):
-    position_index: int
+    product_id: str
 
 
 @dataclass

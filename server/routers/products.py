@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from server.routers.models import ProductSummary, ProductDetails
-import server.core.products.repository as products_repo
-import server.core.products.manager as products_manager
+import server.core.products as products
 
 
 router = APIRouter(prefix="/products")
@@ -9,7 +8,7 @@ router = APIRouter(prefix="/products")
 
 @router.get("/list")
 def get_list() -> list[ProductSummary]:
-    products = products_repo.all()
+    products = products.all()
 
     summaries = []
     for prod in products:
@@ -18,7 +17,7 @@ def get_list() -> list[ProductSummary]:
             prod.name,
             prod.icon_url,
             prod.price,
-            products_manager.is_available(prod)
+            products.is_available(prod)
         )
         summaries.append(summary)
 
@@ -27,7 +26,7 @@ def get_list() -> list[ProductSummary]:
 
 @router.get("/{product_id}")
 def get_details(product_id: str) -> ProductDetails:
-    product = products_repo.by_id(product_id)
+    product = products.by_id(product_id)
     if not product:
         raise HTTPException(404)
     
@@ -37,7 +36,7 @@ def get_details(product_id: str) -> ProductDetails:
         product.image_url,
         product.description,
         product.price,
-        products_manager.is_available(product)
+        products.is_available(product)
     )
     
     return details
