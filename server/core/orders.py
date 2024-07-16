@@ -1,32 +1,49 @@
 from datetime import datetime
 from dataclasses import dataclass
 import uuid
+from copy import deepcopy
+from server.core.misc import CoreError
 
 from server.core.products import Product
 import server.core.products as products
 from server.core.baskets import Position
 import server.core.baskets as baskets
-from copy import deepcopy
-
+import server.core.delivery as delivery
+import server.core.passengers as passengers
+from server.core.passengers import Passenger
 
 
 @dataclass
 class Order:
     id: str
-    passenger_id: str
+    passenger: Passenger
     positions: list[Position]
     created: datetime
     payed: datetime | None
     total_price: float
 
 
+class OrderCompletionError(CoreError):
+    order: Order
+    reason: CoreError | None
+
+    def __init__(self, order: Order, reason: CoreError | None, *args: object) -> None:
+        self.order = order
+        self.reason = reason
+        super().__init__(*args)
+
+
 orders = {}
 
 
-def create(passenger_id: str, positions: list[Position]) -> Order:
+def by_id(order_id: str) -> Order | None:
+    return orders.get(order_id, None)
+
+
+def create(passenger: Passenger, positions: list[Position]) -> Order:
     order = Order(
         str(uuid.uuid1()), 
-        passenger_id, 
+        passenger, 
         deepcopy(positions), 
         datetime.now(), 
         None, 
@@ -38,6 +55,12 @@ def create(passenger_id: str, positions: list[Position]) -> Order:
     return order
 
 
-def get(order_id: str) -> Order | None:
-    return orders.get(order_id, None)
-    
+def mark_payed(order: Order):
+    order.payed = datetime.now()
+
+    baskets.clear_basket(order.passenger.id)
+
+    try:
+        delivery.request_positions(order.positions, order.passenger.seat)
+    except delivery.UndeliverablePositionError as e:
+        raise OrderCompletionError(order, e)

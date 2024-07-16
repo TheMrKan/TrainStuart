@@ -5,6 +5,7 @@ from server.core.misc import CoreError
 @dataclass
 class Product:
     id: str
+    item_id: str
     name: str
     description: str
     icon_url: str
@@ -28,6 +29,7 @@ class OutOfStockError(CoreError):
 FAKE_PRODUCTS_DB = {
     "water_still_0,5": Product(
         "water_still_0,5",
+        "water_still_0,5",
         "Минеральная вода 0,5 л",
         "Пол литра минеральной воды без газа в пластиковой бутылке",
         "http://127.0.0.1:8000/static/water_still_0,5_icon.png",
@@ -36,6 +38,7 @@ FAKE_PRODUCTS_DB = {
         5
     ),
     "cola": Product(
+        "cola",
         "cola",
         "CocaCola 0,33 л",
         "0,33 литра CocaCola в оригинальной жестяной банке",

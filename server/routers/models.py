@@ -62,7 +62,7 @@ class OrderDetails():
 
 
 @dataclass
-class DeliveryRequest():
+class RequestedDelivery():
     id: str
     item_id: str
     seat: int

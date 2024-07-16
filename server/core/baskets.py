@@ -69,4 +69,3 @@ def clear_basket(passenger_id: str):
      if basket:
         basket.positions.clear()
         basket.total_price = 0
-        del baskets[passenger_id]
