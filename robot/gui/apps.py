@@ -118,8 +118,12 @@ class BasePipelineApp:
         self.cancellation.cancel()
         self.api.cancellation_token.cancel()
 
-        if self.app_thread:
+        if self.app_thread and threading.current_thread() != self.app_thread:
             self.app_thread.join()
+
+        if self.window:
+            self.window.destroy()
+
         self.logger.debug("App was terminated")
 
     def main(self):
@@ -138,6 +142,9 @@ class BasePipelineApp:
                 self.logger.error("An error occured in the app pipeline. Restarting...", exc_info=ex)
             finally:
                 continue
+
+        if self.is_running:
+            self.shutdown()
 
     def check_is_running(self) -> bool:
         """
@@ -165,7 +172,8 @@ class BasePipelineApp:
     def on_window_closed(self):
         self.logger.debug("App window was closed")
         self.window = None
-        self.shutdown()
+        if self.is_running:
+            self.shutdown()
 
     def get_file_url(self, filename: str) -> str:
         """

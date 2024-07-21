@@ -7,6 +7,7 @@ import base64
 import cv2
 import random
 from typing import Callable
+from datetime import datetime
 
 from robot.hardware.cameras import CameraAccessor
 import robot.config as config
@@ -16,6 +17,7 @@ from robot.core.async_processor import AsyncProcessor
 from robot.core.tickets import TicketsRepository, TicketInfo
 from utils.cancelations import sleep, await_event, CancellationToken
 from utils.scanner import PassportData
+import robot.core.route as route
 
 
 class PassportNotFoundError(PipelineLogicError):
@@ -38,15 +40,33 @@ class DocumentsCheckApp(BasePipelineApp):
         "done": "done.html"
     }
 
+    is_serving: bool
+
+    def __init__(self):
+        super().__init__()
+
+        self.is_serving = False
+
+
+    def check_is_running(self) -> bool:
+        return super().check_is_running() and (not route.is_boarding_finished() or self.is_serving)
+
+
     def pipeline(self):
+        self.is_serving = False
         self.send_page("put_passport")
 
-        self.api.await_continue()
+        # если ожидание завершено из-за таймаута, значит настало время отправления. Приложение должно закрыться
+        # после завершения пайплайна check_is_running вернет False и выполнение завершится
+        if not self.api.await_continue((route.departure_time - datetime.now()).total_seconds()):
+            return
+        
+        self.is_serving = True
 
         self.logger.debug("Reading passport...")
         passport_image = CameraAccessor.documents_camera.image_bgr.copy()
         passport_read_event = threading.Event()
-        passport_data = PassportData | None
+        passport_data: PassportData | None = None
 
         def set_passport_read_result(data: PassportData):
             nonlocal passport_data

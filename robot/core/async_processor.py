@@ -57,7 +57,7 @@ class AsyncProcessor:
 
         request = GetFaceDescriptorRequest(image, face_location)
         cls.__connection.send(request)
-        cls.__await_response(callback, 4)
+        cls.__await_response(callback, 10)
 
     @classmethod
     def read_passport_async(cls, image: Image,
@@ -67,7 +67,7 @@ class AsyncProcessor:
         
         request = ReadPassportRequest(image)
         cls.__connection.send(request)
-        cls.__await_response(callback, 4)
+        cls.__await_response(callback, 10)
 
     @classmethod
     def __await_response(cls, callback: Callable, timeout: Optional[float] = None):

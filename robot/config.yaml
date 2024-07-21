@@ -26,5 +26,8 @@ hardware:
 passport_check:
   show_dev_tools: False
 
+route:
+  boarding_duration: 15
+
 
 

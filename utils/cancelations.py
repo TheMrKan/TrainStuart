@@ -28,6 +28,8 @@ def await_event(event: Event, timeout: Optional[float] = None, cancellation: Opt
     
     start = time.time()
     if timeout is not None:
+        if timeout <= 0:
+            return
         while True:
             if cancellation.cancellation_event.is_set():
                 raise InterruptedError

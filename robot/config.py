@@ -3,7 +3,7 @@ from bestconfig.config_provider import ConfigProvider
 from typing import Protocol
 
 
-class HardwareConfigProtocol(Protocol):
+class HardwareConfig(Protocol):
     main_camera: int
     documents_camera: int
     main_camera_resolution: str
@@ -14,10 +14,15 @@ class PassportCheckAppConfig(Protocol):
     show_dev_tools: bool
 
 
+class RouteConfig(Protocol):
+    boarding_duration: int
+
+
 class ConfigProtocol(Protocol):
     logging: dict
-    hardware: HardwareConfigProtocol
+    hardware: HardwareConfig
     passport_check: PassportCheckAppConfig
+    route: RouteConfig
     resources_dir: str
 
 
