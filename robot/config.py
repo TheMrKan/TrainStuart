@@ -23,6 +23,11 @@ class RouteConfig(Protocol):
     service_duration: int
 
 
+class ServerConfig(Protocol):
+    host: str
+    polling_interval: float
+
+
 class ConfigProtocol(Protocol):
     logging: dict
     hardware: HardwareConfig
@@ -30,6 +35,7 @@ class ConfigProtocol(Protocol):
     idle: IdleAppConfig
     route: RouteConfig
     resources_dir: str
+    server: ServerConfig
 
 
 # чтобы показывались методы из ConfigProvider

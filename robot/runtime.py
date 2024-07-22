@@ -4,6 +4,8 @@ from robot.gui.idle import IdleApp
 from robot.core.async_processor import AsyncProcessor
 from robot.core.tickets import TicketsRepository
 import robot.core.route as route
+import robot.core.server as server
+import robot.core.calls as calls
 
 
 class Runtime:
@@ -22,6 +24,9 @@ class Runtime:
 
         DocumentsCheckApp().run()
 
+        server.start_polling()
+        calls.initialize()
+
         while not route.is_service_finished():
             idle_app = IdleApp()
             idle_app.run()
@@ -30,5 +35,7 @@ class Runtime:
                 break
 
     def shutdown(self):
+        server.stop_polling()
         AsyncProcessor.shutdown()
         CameraAccessor.shutdown()
+        

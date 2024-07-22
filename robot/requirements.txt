@@ -5,3 +5,5 @@ numpy
 bestconfig
 pywebview
 numpy==1.23.0
+pymitter==0.5.1
+requests
