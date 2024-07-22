@@ -2,10 +2,15 @@ from dataclasses import dataclass
 from utils.cv import Image
 from utils.faces import FaceDescriptor
 from utils.scanner import PassportData
-from typing import Optional, Protocol
+from typing import Optional, Protocol, Any, Callable
 from multiprocessing.connection import Connection
 import traceback
 import time
+
+
+@dataclass
+class ExceptionResponse:
+    exception: Exception
 
 
 @dataclass
@@ -33,13 +38,19 @@ class ReadPassportResponse:
 
     def get_callback_args(self):
         return (self.passport_data, )
-    
+
 
 class AsyncWorker:
 
     class ParametersProtocol(Protocol):
         connection: Connection
         is_running: bool
+        operation_timeout: bool
+        """
+        Устанавливается в True из AsyncProcessor.__awaiter при наступлении таймаута. 
+        Устанавливается обратно в False после завершения выполнения операции в AsyncWoker. 
+        Если значение True, значит уже был вызван error_callback с TimeoutError, но AsyncWoker всё еще заблокирован предыдущей операцией.
+        """
         resources_dir: str
 
     __parameters: ParametersProtocol
@@ -58,29 +69,52 @@ class AsyncWorker:
 
     def run(self):
         while self.__parameters.is_running:
-            try:
+            
                 if not self.__parameters.connection.poll(timeout=0.1):
                     continue
                 request = self.__parameters.connection.recv()
 
                 match request:
                     case GetFaceDescriptorRequest():
-                        self.__process_get_face_descriptor(request)
+                        handler = self.__process_get_face_descriptor
                     case ReadPassportRequest():
-                        self.__process_read_passport(request)
+                        handler = self.__process_read_passport
                     case _:
-                        pass
-            except Exception:
-                traceback.print_exc()
+                        handler = None
+
+                self.__process(request, handler)
 
 
-    def __process_get_face_descriptor(self, request: GetFaceDescriptorRequest):
+    def __send_exception(self, exception: Exception):
+        response = ExceptionResponse(exception)
+        self.__parameters.connection.send(response)
+
+
+    def __process(self,
+                  request: Any,
+                  request_handler: Optional[Callable]):
+        try:
+            if not request_handler:
+                raise TypeError(f"Unknown request: {request}")
+
+            response = request_handler(request)
+
+            if not self.__parameters.operation_timeout:
+                self.__parameters.connection.send(response)
+        except Exception as e:
+            traceback.print_exc()
+            self.__send_exception(e)
+        finally:
+            self.__parameters.operation_timeout = False
+
+
+    def __process_get_face_descriptor(self, request: GetFaceDescriptorRequest) -> GetFaceDescriptorResponse:
         descriptor = self.__face_util.get_face_descriptor(request.image, request.face_location)
-        response = GetFaceDescriptorResponse(descriptor)
-        self.__parameters.connection.send(response)
+        return GetFaceDescriptorResponse(descriptor)
 
-    def __process_read_passport(self, request: ReadPassportRequest):
+
+    def __process_read_passport(self, request: ReadPassportRequest) -> ReadPassportResponse:
         data = self.__scanner.get_passport_data(request.image)
+        # TODO: Убрать задержку после реализации get_passport_data
         time.sleep(1)
-        response = ReadPassportResponse(data)
-        self.__parameters.connection.send(response)
+        return ReadPassportResponse(data)
