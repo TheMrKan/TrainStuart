@@ -14,14 +14,20 @@ class PassportCheckAppConfig(Protocol):
     show_dev_tools: bool
 
 
+class IdleAppConfig(Protocol):
+    show_dev_tools: bool
+
+
 class RouteConfig(Protocol):
     boarding_duration: int
+    service_duration: int
 
 
 class ConfigProtocol(Protocol):
     logging: dict
     hardware: HardwareConfig
     passport_check: PassportCheckAppConfig
+    idle: IdleAppConfig
     route: RouteConfig
     resources_dir: str
 

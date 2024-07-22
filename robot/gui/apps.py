@@ -198,3 +198,45 @@ class BasePipelineApp:
     def get_webview_start_params() -> dict:
         return {}
 
+
+class BaseLoopApp(BasePipelineApp):
+
+    def main(self):
+        self.app_thread = threading.current_thread()
+
+        try:
+            self.loop_start()
+        except Exception as e:
+            self.logger.exception("An error occured in 'loop_start'")
+
+        self.logger.debug("App loop started")
+        while self.check_is_running():
+            try:
+                self.loop()
+            except InterruptedError:
+                self.logger.debug("Stopping loop because of interruption")
+                break
+            except Exception as ex:
+                self.logger.error("An error occured in the app loop.", exc_info=ex)
+        self.logger.debug("App loop stopped")
+
+        try:
+            self.loop_stop()
+        except Exception as e:
+            self.logger.exception("An error occured in 'loop_stop'")
+
+        if self.is_running:
+            self.shutdown()
+
+
+    def loop_start(self):
+        pass
+
+
+    def loop(self):
+        pass
+
+
+    def loop_stop(self):
+        pass
+

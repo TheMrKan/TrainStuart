@@ -26,8 +26,12 @@ hardware:
 passport_check:
   show_dev_tools: False
 
+idle:
+  show_dev_tools: False
+
 route:
   boarding_duration: 15
+  service_duration: 15
 
 
 
