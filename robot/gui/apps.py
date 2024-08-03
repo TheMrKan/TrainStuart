@@ -100,7 +100,7 @@ class BasePipelineApp:
         Запускает приложение и блокирует дальнейшее выполнение до завершения выполнения приложения
         :return:
         """
-        self.window.events.closed += self.on_window_closed
+        self.window.closed += self.on_window_closed
 
         self.is_running = True
         webview.start(func=self.main,

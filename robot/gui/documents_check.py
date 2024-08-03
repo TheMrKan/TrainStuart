@@ -1,7 +1,6 @@
 import threading
 import numpy as np
 import webview
-from webview.dom.dom import Element
 import time
 import base64
 import cv2
@@ -93,8 +92,6 @@ class DocumentsCheckApp(BasePipelineApp):
         return ticket
 
     def read_face(self) -> face_util.FaceDescriptor:
-        image_element = self.window.dom.get_element("#cameraImage")
-
         is_rect_displayed = False
         face_center_history_x = []
         face_center_history_y = []
@@ -188,7 +185,7 @@ class DocumentsCheckApp(BasePipelineApp):
                     # вычитаем из 1, т. к. изображение выводится зеркально
                     self.set_face_rect_pos(1 - average_center_x / image.shape[1], average_center_y / image.shape[0])
 
-            self.send_camera_image(image_element, image)
+            self.send_camera_image(image)
 
     def pipeline(self):
         self.is_serving = False
@@ -243,12 +240,11 @@ class DocumentsCheckApp(BasePipelineApp):
         '''
         self.window.evaluate_js(f"setRectPos({x_rel}, {y_rel});")
 
-    @staticmethod
-    def send_camera_image(element: Element, image: cv2.Mat):
+    def send_camera_image(self, image: cv2.Mat):
         cv2.flip(image, 1, image)
         _, png = cv2.imencode(".png", image)
         image_b64 = base64.b64encode(png).decode("utf-8")
-        element.attributes["src"] = f"data:image/png;base64, {image_b64}"
+        self.window.evaluate_js(f"setCameraImage('data:image/png;base64, {image_b64}');")
 
     @staticmethod
     def crop_image(image: cv2.UMat) -> cv2.UMat:

@@ -3,7 +3,7 @@ pytesseract~=0.3.10
 opencv-contrib-python==4.5.5.62
 numpy
 bestconfig
-pywebview
+pywebview==3.4.0
 numpy==1.23.0
 pymitter==0.5.1
 requests

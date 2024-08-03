@@ -32,7 +32,7 @@ idle:
 
 route:
   boarding_duration: 15
-  service_duration: 15
+  service_duration: 300
 
 server:
   host: "http://127.0.0.1:8000/"
