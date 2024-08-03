@@ -22,6 +22,7 @@ hardware:
   main_camera: 0
   main_camera_resolution: 640x480
   documents_camera: 1
+  serial: CO
 
 passport_check:
   show_dev_tools: False

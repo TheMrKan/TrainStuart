@@ -6,6 +6,7 @@ from robot.core.tickets import TicketsRepository
 import robot.core.route as route
 import robot.core.server as server
 import robot.core.calls as calls
+import robot.hardware.serial_interface as iserial
 
 
 class Runtime:
@@ -21,6 +22,7 @@ class Runtime:
         AsyncProcessor.initialize()
         TicketsRepository.load()
         route.initialize()
+        iserial.setup()
 
         DocumentsCheckApp().run()
 

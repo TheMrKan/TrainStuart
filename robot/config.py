@@ -8,6 +8,7 @@ class HardwareConfig(Protocol):
     documents_camera: int
     main_camera_resolution: str
     documents_camera_resolution: str
+    serial: str
 
 
 class PassportCheckAppConfig(Protocol):
