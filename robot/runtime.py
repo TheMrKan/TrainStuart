@@ -22,7 +22,7 @@ class Runtime:
         AsyncProcessor.initialize()
         TicketsRepository.load()
         route.initialize()
-        iserial.setup()
+        #iserial.setup()
 
         DocumentsCheckApp().run()
 

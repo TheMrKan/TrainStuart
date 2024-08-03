@@ -1,6 +1,7 @@
 import time
 from utils.collections import first_or_default
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -32,13 +33,13 @@ class TicketsRepository:
         cls.__tickets.append(ticket)
     
     @classmethod
-    def get_by_number(cls, ticket_number: str) -> TicketInfo | None:
+    def get_by_number(cls, ticket_number: str) -> Optional[TicketInfo]:
         return first_or_default(cls.__tickets, lambda t: t.number == ticket_number)
 
     @classmethod
-    def get_by_name(cls, full_name: str) -> TicketInfo | None:
+    def get_by_name(cls, full_name: str) -> Optional[TicketInfo]:
         return first_or_default(cls.__tickets, lambda t: t.owner_name == full_name)
 
     @classmethod
-    def get_by_passport(cls, passport_number: str) -> TicketInfo | None:
+    def get_by_passport(cls, passport_number: str) -> Optional[TicketInfo]:
         return first_or_default(cls.__tickets, lambda t: t.owner_passport == passport_number)

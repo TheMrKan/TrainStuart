@@ -4,6 +4,7 @@ import numpy
 import logging
 import time
 import robot.config as config
+from typing import Optional
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class CameraHandler:
     width: int
     height: int
 
-    __reader_thread: threading.Thread | None
+    __reader_thread: Optional[threading.Thread]
     __capture: cv2.VideoCapture
     __logger: logging.Logger
     __image_grabbed: threading.Event
@@ -69,7 +70,7 @@ class CameraHandler:
         self.__reader_thread.start()
         self.await_first_frame()
 
-    def await_first_frame(self, timeout: float | None = None):
+    def await_first_frame(self, timeout: Optional[float] = None):
         self.__image_grabbed.wait(timeout)
 
     def stop(self):

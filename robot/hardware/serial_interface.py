@@ -1,5 +1,6 @@
 import serial
 from multiprocessing import Process, Manager, Event
+from typing import Optional
 from utils.cancelations import CancellationToken, await_event
 from robot.config import instance as config
 from robot.hardware.serial_process import SharedProtocol, begin
@@ -59,17 +60,17 @@ def setup():
         raise InterfaceUnavailableError()
 
 
-def send_command(command_key: str, *args: list[int], await_confirmation: bool = True, await_completion: bool = False):
+def send_command(command_key: str, *args: list, await_confirmation: bool = True, await_completion: bool = False):
     raise NotImplementedError
 
 
-def request(request_key: str, *args: list[int]) -> list[int]:
+def request(request_key: str, *args: list) -> list:
     raise NotImplementedError
 
 
-def await_confirmation(timeout: float | None = None, cancellation: CancellationToken | None = None):
+def await_confirmation(timeout: Optional[float] = None, cancellation: Optional[CancellationToken] = None):
     raise NotImplementedError
 
 
-def await_response(code: str, timeout: float | None = None, cancellation: CancellationToken | None = None) -> list[int]:
+def await_response(code: str, timeout: Optional[float] = None, cancellation: Optional[CancellationToken] = None) -> list:
     raise NotImplementedError

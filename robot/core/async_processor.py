@@ -1,5 +1,5 @@
 
-from typing import Callable, Optional, Any, TypeAlias
+from typing import Callable, Optional, Any
 from multiprocessing import Pipe, Process, Manager
 from multiprocessing.connection import Connection
 from threading import Thread
@@ -61,9 +61,9 @@ class AsyncProcessor:
 
     @classmethod
     def get_face_descriptor_async(cls, image: Image,
-                                  success_callback: Callable[[FaceDescriptor | None], None],
+                                  success_callback: Callable[[Optional[FaceDescriptor]], None],
                                   error_callback: Callable[[Exception], None],
-                                  face_location: Optional[tuple[int, int, int, int]] = None):
+                                  face_location: Optional[tuple] = None):
         if cls.is_worker_busy():
             raise WorkerBusyError
 
@@ -73,7 +73,7 @@ class AsyncProcessor:
 
     @classmethod
     def read_passport_async(cls, image: Image,
-                            success_callback: Callable[[PassportData | None], None],
+                            success_callback: Callable[[Optional[PassportData]], None],
                             error_callback: Callable[[Exception], None],):
         if cls.is_worker_busy():
             raise WorkerBusyError

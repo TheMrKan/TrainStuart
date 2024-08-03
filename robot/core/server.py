@@ -19,7 +19,7 @@ __poller_thread: Thread
 @dataclass
 class ServerPollResponse:
     timestamp: datetime
-    updated: dict[str, dict]
+    updated: dict
 
 
 server_poll_response: Optional[ServerPollResponse] = None
@@ -61,7 +61,6 @@ def __poller(url: str):
             __notify_updated()
         except Exception as e:
             __logger.exception("An error occured in robot.core.server.__poller.", exc_info=e)
-        
 
     __poller_thread = None
 
@@ -84,7 +83,7 @@ def __notify_updated():
     for updated_name, updated_info in server_poll_response.updated.items():
         try:
             Thread(target=events.emit,
-                   args=(f"updated_{updated_name}"),
+                   args=(f"updated_{updated_name}", ),
                    kwargs=updated_info,
                    name=f"Event 'updated_{updated_name}' from 'robot.core.server.__notify_updated'").start()
         except Exception as e:

@@ -1,4 +1,6 @@
 from fastapi import APIRouter
+from typing import List
+
 from server.routers.models import RequestedDelivery
 import server.core.delivery as delivery
 
@@ -7,7 +9,7 @@ router = APIRouter(prefix="/delivery")
 
 
 @router.get("/list/")
-def list_deliveries() -> list[RequestedDelivery]:
+def list_deliveries() -> List[RequestedDelivery]:
     requested = delivery.requested()
     result = [RequestedDelivery(
         d.id,
@@ -19,7 +21,7 @@ def list_deliveries() -> list[RequestedDelivery]:
 
 
 @router.post("/take/")
-def take_delivery(deliveries: list[str]):
+def take_delivery(deliveries: List[str]):
     pass
 
 

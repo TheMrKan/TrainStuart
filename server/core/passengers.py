@@ -1,6 +1,7 @@
 from uuid import uuid1
 from dataclasses import dataclass
 from utils.collections import first_or_default
+from typing import Optional
 
 
 @dataclass
@@ -10,7 +11,7 @@ class Passenger:
     seat: int
 
 
-passengers: dict[str, Passenger] = {
+passengers: dict = {
     (uuid := str(uuid1())):
     Passenger(
         uuid,
@@ -26,9 +27,9 @@ passengers: dict[str, Passenger] = {
 }
 
 
-def by_id(passenger_id: str) -> Passenger | None:
+def by_id(passenger_id: str) -> Optional[Passenger]:
     return passengers.get(passenger_id, None)
 
 
-def by_seat(seat: int) -> Passenger | None:
+def by_seat(seat: int) -> Optional[Passenger]:
     return first_or_default(passengers.values(), lambda p: p.seat == seat)

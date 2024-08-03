@@ -1,6 +1,6 @@
 import serial
 from multiprocessing import Event
-from typing import Protocol
+from typing import Protocol, Optional
 import traceback
 
 
@@ -8,9 +8,9 @@ class SharedProtocol(Protocol):
     serial_name: str
     is_running: bool
     is_connected: bool
-    exception: Exception | None
-    response_code: str | None
-    response_args: list[int] | None
+    exception: Optional[Exception]
+    response_code: Optional[str]
+    response_args: Optional[list]
 
 
 shared: SharedProtocol

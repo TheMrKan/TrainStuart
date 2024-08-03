@@ -1,6 +1,6 @@
 from bestconfig import Config
 from bestconfig.config_provider import ConfigProvider
-from typing import Protocol
+from typing import Protocol, Optional, Tuple
 
 
 class HardwareConfig(Protocol):
@@ -44,7 +44,7 @@ class ConfigProtocolInherited(ConfigProtocol, ConfigProvider):
     pass
 
 
-instance: ConfigProtocolInherited | None = None
+instance: Optional[ConfigProtocolInherited] = None
 
 
 # реализация property для модулей
@@ -64,7 +64,7 @@ def load():
     instance = Config()
 
 
-def try_parse_resolution(resolution_str: str) -> tuple[bool, int, int]:
+def try_parse_resolution(resolution_str: str) -> Tuple[bool, int, int]:
     """
     Извлекает из строки вида '1920x1080' ширину и высоту
     :param resolution_str: Строка, содержащая два целых числа, разделенных маленькой латинской буквой 'x', где первое число - ширина, а второе - высота

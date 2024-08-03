@@ -6,7 +6,7 @@ import time
 import base64
 import cv2
 import random
-from typing import Callable
+from typing import Callable, Optional
 from datetime import datetime
 
 from robot.hardware.cameras import CameraAccessor
@@ -47,17 +47,15 @@ class DocumentsCheckApp(BasePipelineApp):
 
         self.is_serving = False
 
-
     def check_is_running(self) -> bool:
         return super().check_is_running() and (not route.is_boarding_finished() or self.is_serving)
-    
-    
+
     def read_passport(self) -> PassportData:
         self.logger.debug("Reading passport...")
         passport_image = CameraAccessor.documents_camera.image_bgr.copy()
         passport_read_event = threading.Event()
-        passport_data: PassportData | None = None
-        error: Exception | None = None
+        passport_data: Optional[PassportData] = None
+        error: Optional[Exception] = None
 
         def callback_success(data: PassportData):
             nonlocal passport_data
@@ -84,7 +82,6 @@ class DocumentsCheckApp(BasePipelineApp):
             raise PassportNotFoundError()
         
         return passport_data
-    
 
     def check_ticket(self, passport_data: PassportData) -> TicketInfo:
         ticket = TicketsRepository.get_by_passport(passport_data.passport_number)
@@ -93,7 +90,7 @@ class DocumentsCheckApp(BasePipelineApp):
             self.show_ticket_not_found()
             self.api.await_continue(5)
             raise TicketNotFoundError()
-        
+        return ticket
 
     def read_face(self) -> face_util.FaceDescriptor:
         image_element = self.window.dom.get_element("#cameraImage")
@@ -104,7 +101,7 @@ class DocumentsCheckApp(BasePipelineApp):
         face_not_found_confirmations = 25   # кол-во кадров, на которых лицо не найдено, после которого квадрат пропадет. Чтобы квадрат не моргал
 
         face_processing_result: face_util.FaceDescriptor | None  = None
-        face_processing_error: Exception | None = None
+        face_processing_error: Optional[Exception] = None
         face_processing_started = False
         time_start = time.time()
         time_start_tracking = 0
@@ -192,7 +189,6 @@ class DocumentsCheckApp(BasePipelineApp):
                     self.set_face_rect_pos(1 - average_center_x / image.shape[1], average_center_y / image.shape[0])
 
             self.send_camera_image(image_element, image)
-
 
     def pipeline(self):
         self.is_serving = False

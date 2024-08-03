@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 import datetime
 from dataclasses import dataclass
+from typing import Optional, List
 
 
 @dataclass
-class ProductSummary():
+class ProductSummary:
     id: str
     name: str
     icon_url: str
@@ -13,7 +14,7 @@ class ProductSummary():
 
 
 @dataclass
-class ProductDetails():
+class ProductDetails:
     id: str
     name: str
     image_url: str
@@ -23,15 +24,15 @@ class ProductDetails():
 
 
 @dataclass
-class BasketPosition():
+class BasketPosition:
     product_id: str
     amount: int
     total_price: float
 
 
 @dataclass
-class PassengerBasket():
-    positions: list[BasketPosition]
+class PassengerBasket:
+    positions: List[BasketPosition]
     total_price: float
 
 
@@ -45,19 +46,19 @@ class BasketPositionRemove(BaseModel):
 
 
 @dataclass
-class OrderPosition():
+class OrderPosition:
     product_id: str
     amount: int
     total_price: float
 
 
 @dataclass
-class OrderDetails():
+class OrderDetails:
     id: str
     passenger_id: str
-    positions: list[OrderPosition]
+    positions: list
     created: datetime.datetime
-    payed: datetime.datetime | None
+    payed: Optional[datetime.datetime]
     total_price: float
 
 

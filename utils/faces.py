@@ -2,12 +2,12 @@ import time
 import cv2
 import math
 import numpy
-from typing import TypeAlias, Optional
+from typing import Optional
 import os.path
 from utils.cv import Image
 
 
-FaceDescriptor: TypeAlias = numpy.ndarray
+FaceDescriptor = numpy.ndarray
 
 
 __recognition = None
@@ -24,7 +24,7 @@ def load_dependencies(resources_dir: str):
     __face_cascade = cv2.CascadeClassifier(os.path.join(resources_dir, "haarcascade_frontalface_alt.xml"))
 
 
-def get_face_descriptor(image: Image, face_location: Optional[tuple[int, int, int, int]] = None) -> FaceDescriptor | None:
+def get_face_descriptor(image: Image, face_location: Optional[tuple] = None) -> Optional[FaceDescriptor]:
     if not __recognition:
         raise ImportError("'face_recognition' is not imported. Call 'load_dependencies()' first")
     
@@ -35,7 +35,7 @@ def get_face_descriptor(image: Image, face_location: Optional[tuple[int, int, in
     return descriptors[0] if len(descriptors) > 0 else None
 
 
-def find_face(image: Image) -> tuple[int, int, int, int] | None:
+def find_face(image: Image) -> Optional[tuple]:
     if not __face_cascade:
         raise ImportError("'haarcascade_frontalface_alt.xml' is not loaded. Call 'load_dependencies()' first")
     

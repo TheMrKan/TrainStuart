@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from utils.cv import Image
 from utils.faces import FaceDescriptor
 from utils.scanner import PassportData
-from typing import Optional, Protocol, Any, Callable
+from typing import Optional, Protocol, Any, Callable, Tuple
 from multiprocessing.connection import Connection
 import traceback
 import time
@@ -16,7 +16,7 @@ class ExceptionResponse:
 @dataclass
 class GetFaceDescriptorRequest:
     image: Image
-    face_location: Optional[tuple[int, int, int, int]]
+    face_location: Optional[Tuple[int, int, int, int]]
 
 
 @dataclass
@@ -74,21 +74,17 @@ class AsyncWorker:
                     continue
                 request = self.__parameters.connection.recv()
 
-                match request:
-                    case GetFaceDescriptorRequest():
-                        handler = self.__process_get_face_descriptor
-                    case ReadPassportRequest():
-                        handler = self.__process_read_passport
-                    case _:
-                        handler = None
+                handler = None
+                if isinstance(request, GetFaceDescriptorRequest):
+                    handler = self.__process_get_face_descriptor
+                elif isinstance(request, ReadPassportRequest):
+                    handler = self.__process_read_passport
 
                 self.__process(request, handler)
-
 
     def __send_exception(self, exception: Exception):
         response = ExceptionResponse(exception)
         self.__parameters.connection.send(response)
-
 
     def __process(self,
                   request: Any,
@@ -107,11 +103,9 @@ class AsyncWorker:
         finally:
             self.__parameters.operation_timeout = False
 
-
     def __process_get_face_descriptor(self, request: GetFaceDescriptorRequest) -> GetFaceDescriptorResponse:
         descriptor = self.__face_util.get_face_descriptor(request.image, request.face_location)
         return GetFaceDescriptorResponse(descriptor)
-
 
     def __process_read_passport(self, request: ReadPassportRequest) -> ReadPassportResponse:
         data = self.__scanner.get_passport_data(request.image)

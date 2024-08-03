@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from server.core.products import Product
 import server.core.products as products
-from typing import Iterable
+from typing import Iterable, Optional
 from utils.collections import first_or_default
 
 
@@ -15,14 +15,14 @@ class Position:
 @dataclass
 class Basket:
     passenger_id: str
-    positions: list[Position]
+    positions: list
     total_price: float
 
 
-baskets: dict[str, Basket] = {}
+baskets: dict = {}
 
 
-def get_basket(passenger_id: str) -> Basket | None:
+def get_basket(passenger_id: str) -> Optional[Basket]:
     return baskets.get(passenger_id, None)
 
 
@@ -44,7 +44,7 @@ def update_basket(passenger_id: str, product: Product, amount: int):
     products.assert_available_amount(product, amount)
     
     basket = get_basket(passenger_id) or create_basket(passenger_id)
-    position: Position | None = first_or_default(basket.positions, lambda p: p.product.id == product.id)
+    position: Optional[Position] = first_or_default(basket.positions, lambda p: p.product.id == product.id)
     if not position:
         position = Position(product, 0, 0)
         basket.positions.append(position)
@@ -58,14 +58,14 @@ def update_basket(passenger_id: str, product: Product, amount: int):
 def remove_from_basket(passenger_id: str, product: Product):
     basket = get_basket(passenger_id)
     if basket:
-         position = first_or_default(basket.positions, lambda p: p.product.id == product.id)
-         if position:
-             basket.positions.remove(position)
+        position = first_or_default(basket.positions, lambda p: p.product.id == product.id)
+        if position:
+            basket.positions.remove(position)
     basket.total_price = get_total_price(basket.positions)
 
 
 def clear_basket(passenger_id: str):
-     basket = get_basket(passenger_id)
-     if basket:
+    basket = get_basket(passenger_id)
+    if basket:
         basket.positions.clear()
         basket.total_price = 0

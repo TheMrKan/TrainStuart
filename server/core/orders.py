@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import uuid
 from copy import deepcopy
 from server.core.misc import CoreError
+from typing import Optional
 
 from server.core.products import Product
 import server.core.products as products
@@ -17,17 +18,17 @@ from server.core.passengers import Passenger
 class Order:
     id: str
     passenger: Passenger
-    positions: list[Position]
+    positions: list
     created: datetime
-    payed: datetime | None
+    payed: Optional[datetime]
     total_price: float
 
 
 class OrderCompletionError(CoreError):
     order: Order
-    reason: CoreError | None
+    reason: Optional[CoreError]
 
-    def __init__(self, order: Order, reason: CoreError | None, *args: object) -> None:
+    def __init__(self, order: Order, reason: Optional[CoreError], *args: object) -> None:
         self.order = order
         self.reason = reason
         super().__init__(*args)
@@ -36,11 +37,11 @@ class OrderCompletionError(CoreError):
 orders = {}
 
 
-def by_id(order_id: str) -> Order | None:
+def by_id(order_id: str) -> Optional[Order]:
     return orders.get(order_id, None)
 
 
-def create(passenger: Passenger, positions: list[Position]) -> Order:
+def create(passenger: Passenger, positions: list) -> Order:
     order = Order(
         str(uuid.uuid1()), 
         passenger, 

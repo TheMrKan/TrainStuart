@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException
+from typing import List
+
 from server.routers.models import ProductSummary, ProductDetails
 import server.core.products as products
 
@@ -7,7 +9,7 @@ router = APIRouter(prefix="/products")
 
 
 @router.get("/list")
-def get_list() -> list[ProductSummary]:
+def get_list() -> List[ProductSummary]:
     products = products.all()
 
     summaries = []

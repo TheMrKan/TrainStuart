@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 from server.core.misc import CoreError
 
 
@@ -50,11 +51,11 @@ FAKE_PRODUCTS_DB = {
 }
 
 
-def all() -> list[Product]:
+def all() -> list:
     return list(FAKE_PRODUCTS_DB.values())
 
 
-def by_id(product_id: str) -> Product | None:
+def by_id(product_id: str) -> Optional[Product]:
     return FAKE_PRODUCTS_DB.get(product_id, None)
 
 

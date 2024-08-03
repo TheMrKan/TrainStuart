@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import uuid1
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Optional
 from enum import Enum
 import math
 from server.core.misc import CoreError
@@ -37,18 +37,18 @@ class UndeliverablePositionError(CoreError):
         super().__init__(self.message)
         
 
-deliveries: dict[str, RequestedDelivery] = {}
+deliveries: dict = {}
 
 
 def requested() -> Iterator[RequestedDelivery]:
     return (d for d in deliveries.values() if d.status == DeliveryStatus.REQUESTED)
 
 
-def by_id(delivery_id: str) -> RequestedDelivery | None:
+def by_id(delivery_id: str) -> Optional[RequestedDelivery]:
     return deliveries.get(delivery_id, None)
 
 
-def request_positions(positions: Iterable[Position], seat: int, initial_priority: int = 1) -> list[RequestedDelivery]:
+def request_positions(positions: Iterable[Position], seat: int, initial_priority: int = 1) -> list:
     result = []
     for pos in positions:
         item = items.by_id(pos.product.item_id)
@@ -58,7 +58,7 @@ def request_positions(positions: Iterable[Position], seat: int, initial_priority
     return result
 
 
-def request_many(item: Item, amount: int, seat: int, initial_priority: int = 1) -> list[RequestedDelivery]:
+def request_many(item: Item, amount: int, seat: int, initial_priority: int = 1) -> list:
     return [request(item, seat, initial_priority) for _ in range(amount)]
 
 

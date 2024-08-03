@@ -32,7 +32,7 @@ class BasePipelineAPI:
         """
         self.continue_event.set()
 
-    def await_continue(self, timeout: float | None = None) -> bool:
+    def await_continue(self, timeout: Optional[float] = None) -> bool:
         """
         Блокирует поток до тех пор, пока пользователь не нажмет кнопку "Продолжить"
         :param timeout: Таймаут ожидания
@@ -75,11 +75,11 @@ class BasePipelineApp:
 
     logger: logging.Logger
     # если window != None а is_running = False, значит приложение выключается через shutdown. Если window = None, значит приложение завершается закрытием окна
-    window: webview.Window | None    # когда становится None, значит окно приложения закрылось
+    window: Optional[webview.Window]    # когда становится None, значит окно приложения закрылось
     is_running: bool    # устанавливается в True в run; в False - в shutdown. Служит сигналом для завершения циклов в __main
     cancellation: CancellationToken
     api: BasePipelineAPI    # JS API
-    app_thread: threading.Thread | None    # поток, в котором выполняется функция __main. Устанавливается сразу при запуске __main
+    app_thread: Optional[threading.Thread]    # поток, в котором выполняется функция __main. Устанавливается сразу при запуске __main
 
     def __init__(self):
         self.logger = logging.getLogger(self.NAME)

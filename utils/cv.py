@@ -1,5 +1,5 @@
 import cv2
 import numpy
-from typing import TypeAlias, Union
+from typing import Union
 
-Image: TypeAlias = Union[numpy.ndarray, cv2.Mat, cv2.UMat]
+Image = Union[numpy.ndarray, cv2.Mat, cv2.UMat]
