@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <script src="/static/js/gui_navigation.js"></script>
+    <title>Инициализация</title>
+</head>
+<script>
+    const APP_WS_URL = "ws://localhost:8001/apps/StartupApp"
+    function connect_to_app() {
+        const socket = new WebSocket(APP_WS_URL);
+
+        socket.onopen = function() {
+            console.log('Connected to app channel');
+        };
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            var element = document.getElementById("status");
+            element.innerHTML = data["status"];
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+
+        socket.onclose = function(event) {
+            if (event.wasClean) {
+                console.log('WebSocket connection closed. Code:', event.code, 'Reason:', event.reason);
+            } else {
+                console.log('WebSocket connection aborted. Retrying in 1 second...');
+                setTimeout(connect_to_navigation, 1000);
+            }
+        };
+    }
+
+    window.addEventListener('load', function() {
+        console.log(`Waiting connection to the app channel on '${APP_WS_URL}'...`)
+        connect_to_app();
+    });
+</script>
+<body>
+   <header class="header">
+        <div class="content">
+            <div class="main-text">
+                <h3 class="name">Робот-стюард</h3>
+            </div>
+        </div>
+        <hr class="horiz-line">
+        <h2 class="title-header">Идет загрузка. Пожалуйста, подождите...</h2>
+        <hr class="horiz-line">
+    </header>
+
+    <section class="section step1-processing" id="process">
+        <h1 class="text step-text" style="font-size: 28px;" id="status"></h1>
+        <svg class="svg-loading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width="200" height="200" style="shape-rendering: auto; display: block; background: transparent;" xmlns:xlink="http://www.w3.org/1999/xlink"><g><circle stroke-linecap="round" fill="none" stroke-dasharray="50.26548245743669 50.26548245743669" stroke="#fa5252" stroke-width="8" r="32" cy="50" cx="50">
+        <animateTransform values="0 50 50;360 50 50" keyTimes="0;1" dur="1s" repeatCount="indefinite" type="rotate" attributeName="transform"></animateTransform>
+        </circle><g></g></g></svg>
+    </section>
+</body>
+</html>

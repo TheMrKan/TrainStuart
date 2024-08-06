@@ -29,6 +29,10 @@ class ServerConfig(Protocol):
     polling_interval: float
 
 
+class GUIConfig(Protocol):
+    loading_page: str
+
+
 class ConfigProtocol(Protocol):
     logging: dict
     hardware: HardwareConfig
@@ -37,6 +41,7 @@ class ConfigProtocol(Protocol):
     route: RouteConfig
     resources_dir: str
     server: ServerConfig
+    gui: GUIConfig
 
 
 # чтобы показывались методы из ConfigProvider

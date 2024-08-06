@@ -38,5 +38,5 @@ server:
   host: "http://127.0.0.1:8000/"
   polling_interval: 3
 
-
-
+gui:
+  loading_page: "loading"
