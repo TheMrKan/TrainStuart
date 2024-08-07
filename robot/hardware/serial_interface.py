@@ -65,8 +65,8 @@ def setup():
 
 def send_command(command_code: str,
                  *args: int,
-                 _await_confirmation: bool = True,
-                 _await_completion: bool = False,
+                 confirmation: bool = True,
+                 completion: bool = False,
                  completion_timeout: Optional[int] = None,
                  completion_cancellation: Optional[CancellationToken] = None):
     command = Command(command_code, *args)
@@ -79,17 +79,18 @@ def send_command(command_code: str,
     on_message_sent.wait()
     on_message_sent.clear()
 
-    if _await_confirmation:
+    if confirmation:
         await_confirmation()
 
-    if _await_completion:
+    if completion:
         await_completion(completion_timeout, completion_cancellation)
 
 
 def send_request(request_code: str,
                  *args: int,
+                 response: Optional[bool] = True,
                  timeout: Optional[int] = None,
-                 cancellation: Optional[CancellationToken] = None) -> List[int]:
+                 cancellation: Optional[CancellationToken] = None) -> Optional[List[int]]:
     request = Request(request_code, *args)
 
     on_message_sent.clear()
@@ -101,7 +102,9 @@ def send_request(request_code: str,
     on_message_sent.wait()
     on_message_sent.clear()
 
-    return await_response(request_code, timeout, cancellation)
+    if response:
+        return await_response(request_code, timeout, cancellation)
+    return None
 
 
 def await_confirmation(timeout: Optional[float] = None, cancellation: Optional[CancellationToken] = None):

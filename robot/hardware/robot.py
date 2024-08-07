@@ -20,30 +20,30 @@ def initialize():
 
 
 def move_to(x: int, y: int):
-    raise NotImplementedError
+    iserial.send_command("M", x, y, completion=True)
 
 
 def rotate_to(angle: int):
-    raise NotImplementedError
+    iserial.send_command("R", angle, completion=True)
 
 
 def set_actual_pos(x: int, y: int):
-    raise NotImplementedError
+    iserial.send_command("P", x, y, completion=True)
 
 
 def set_head_rotation(horiz: int, vert: int):
-    raise NotImplementedError
+    iserial.send_command("H", horiz, vert, completion=True)
 
 
 def open_container(container: RobotContainer, side: Side):
-    raise NotImplementedError
+    iserial.send_command("C", container.value, side.value, completion=True)
 
 
 def close_container(container: RobotContainer):
-    raise NotImplementedError
+    iserial.send_command("C", container.value, 0, completion=True)
 
 
 def get_camera_distance() -> int:
-    raise NotImplementedError
+    return iserial.send_request("Hd")[0]
 
 
