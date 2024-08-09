@@ -1,4 +1,5 @@
 import time
+from typing import Callable
 
 from robot.hardware.cameras import CameraAccessor
 from robot.core.async_processor import AsyncProcessor
@@ -26,26 +27,16 @@ class Runtime:
         startup_app = StartupApp()
         startup_app.run()
 
-        startup_app.set_status("Настройка камер...")
-        CameraAccessor.initialize()
-
-        startup_app.set_status("Загрузка обработчика...")
-        AsyncProcessor.initialize()
-
-        startup_app.set_status("Получение билетов...")
-        TicketsRepository.load()
-
-        startup_app.set_status("Получение информации о маршруте...")
-        route.initialize()
-        #iserial.setup()
-
-        startup_app.set_status("Подключение к серверу поезда...")
-        server.start_polling()
-
-        startup_app.set_status("Подключение кнопок вызова...")
-        calls.initialize()
-
-        startup_app.set_status("Готово!")
+        try:
+            self.__initialize(startup_app.set_status)
+            startup_app.set_status("Готово!")
+            time.sleep(1)
+        except Exception as e:
+            startup_app.set_status(f"Ошибка при загрузке. Выключение. {str(e)}")
+            time.sleep(3)
+            return
+        finally:
+            startup_app.shutdown()
 
         try:
             while True:
@@ -53,8 +44,25 @@ class Runtime:
         except KeyboardInterrupt:
             pass
 
-        startup_app.shutdown()
+    def __initialize(self, status_log: Callable[[str, ], None]):
+        status_log("Настройка камер...")
+        CameraAccessor.initialize()
 
+        status_log("Загрузка обработчика...")
+        AsyncProcessor.initialize()
+
+        status_log("Получение билетов...")
+        TicketsRepository.load()
+
+        status_log("Получение информации о маршруте...")
+        route.initialize()
+        # iserial.setup()
+
+        status_log("Подключение к серверу поезда...")
+        server.start_polling()
+
+        status_log("Подключение кнопок вызова...")
+        calls.initialize()
 
     def shutdown(self):
         server.stop_polling()

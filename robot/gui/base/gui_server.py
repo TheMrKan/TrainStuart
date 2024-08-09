@@ -151,7 +151,7 @@ def start():
     logger.info("GUI server is running")
 
 
-def send(path: str, message: Union[dict]):
+def send(path: str, message: Union[dict, bytes]):
     outgoing_messages[path] = message
 
 

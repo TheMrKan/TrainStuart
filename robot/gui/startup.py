@@ -2,20 +2,20 @@ from typing import Union
 
 import robot.gui.base.navigation as gui_navigation
 from robot.gui.base import gui_server
+from robot.gui.base.app import BaseApp
 
 
-class StartupApp:
+class StartupApp(BaseApp):
 
     APP_NAME = "StartupApp"
 
-    def __init__(self):
-        pass
-
     def run(self):
+        super().run()
         gui_navigation.set_current_url("initializing")
 
     def set_status(self, message: str):
-        gui_server.send(f"/apps/{self.APP_NAME}", {"code": "status", "status": message})
+        self.send({"code": "status", "status": message})
 
     def shutdown(self):
         gui_navigation.set_current_url(None)
+        super().shutdown()
