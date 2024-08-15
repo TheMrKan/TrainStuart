@@ -108,7 +108,7 @@ class ContinuousFaceDetector:
     __face_lost: Optional[datetime]
     __is_tracking: bool
 
-    def __init__(self, source: Callable[[], Image], min_size: int = 300):
+    def __init__(self, source: Callable[[], Image], min_size: int = 500):
         self.source = source
         self.min_size = min_size
         self.face = None

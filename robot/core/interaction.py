@@ -1,12 +1,10 @@
-from datetime import datetime
 import time
-from typing import Optional, Tuple
+from typing import Optional
 import logging
-from enum import Enum
 from threading import Event
 
 from robot.hardware.cameras import CameraAccessor
-from robot.core.personal.person import Person, find_by_face_descriptor, add_by_face
+from core.person import Person, find_by_face_descriptor, add_by_face
 from robot.core.async_processor import AsyncProcessor
 from utils.faces import ContinuousFaceDetector, FaceLocation, FaceDescriptor
 from utils.cv import Image
@@ -76,6 +74,7 @@ def __create_interaction_face(trigger: FaceInteractionTrigger) -> Interaction:
 
     logger.debug("Getting descriptor of trigger face...")
     AsyncProcessor.get_face_descriptor_async(trigger.camera_image, success_callback, error_callback, trigger.face_location)
+    time.sleep(2)
     event.wait()
 
     if descriptor is None:
@@ -84,24 +83,20 @@ def __create_interaction_face(trigger: FaceInteractionTrigger) -> Interaction:
     logger.debug("Got descriptor of trigger face")
 
     person = find_by_face_descriptor(descriptor)
+    new_person = False
     if not person:
+        new_person = True
         person = add_by_face(descriptor)
         logger.debug("Person was not found so a new one was added")
 
     logger.info(f"Creating interaction with person {person}")
     inter = Interaction(trigger, person)
+    inter.new_person = new_person
     return inter
 
 
-def track_face():
-    while True:
-        state = __face_detector.tick()
-        if state == __face_detector.State.LOST:
-            logger.debug("Lost interaction face")
-            return
-
-        if state == __face_detector.State.TRACKING:
-            face_center = (int(round(__face_detector.face[0] + __face_detector.face[2] / 2)), int(round(__face_detector.face[1] + __face_detector.face[3] / 2)))
+def check_face_state() -> ContinuousFaceDetector.State:
+    return __face_detector.tick()
 
 
 def reset():

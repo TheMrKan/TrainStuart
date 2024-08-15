@@ -10,19 +10,19 @@
 
 @font-face {
     font-family: 'RussianRail';
-    src: url("static/fonts/RussianRailGPro-Reg.woff2") format('woff2');
+    src: url("/static/fonts/RussianRailGPro-Reg.woff2") format('woff2');
     font-weight: 300;
     font-style: normal;
 }
 @font-face {
     font-family: 'RussianRail';
-    src: url("static/fonts/RussianRailGPro-Medium.woff2") format('woff2');
+    src: url("/static/fonts/RussianRailGPro-Medium.woff2") format('woff2');
     font-weight: 500;
     font-style: normal;
 }
 @font-face {
     font-family: 'RussianRail';
-    src: url("static/fonts/RussianRailGPro-Bold.woff2") format('woff2');
+    src: url("/static/fonts/RussianRailGPro-Bold.woff2") format('woff2');
     font-weight: 600;
     font-style: normal;
 }
@@ -335,16 +335,16 @@ dialog::backdrop {
     background-size: cover;
 }
 .btn-second:nth-child(1) {
-    background-image: url("../static/images/eat.jpg");
+    background-image: url("/static/images/eat.jpg");
 }
 .btn-second:nth-child(2) {
-    background-image: url("../static/images/suvenir.jpg");
+    background-image: url("/static/images/suvenir.jpg");
 }
 .btn-second:nth-child(3) {
-    background-image: url("../static/images/taksi.jpg");
+    background-image: url("/static/images/taksi.jpg");
 }
 .btn-second:nth-child(4) {
-    background-image: url("../static/images/hotel.jpg");
+    background-image: url("/static/images/hotel.jpg");
 }
 
 .second-content {
