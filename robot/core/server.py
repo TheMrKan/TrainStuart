@@ -71,7 +71,7 @@ def __poll(url):
     '''response = requests.get(url)
     response.raise_for_status()
     json: dict = response.json()'''
-    json = {"updated": {"calls": {}}}
+    json = {"updated": {}}
 
     server_poll_response = ServerPollResponse(datetime.now(), json.get("updated", {}))
 

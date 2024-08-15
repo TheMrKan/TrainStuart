@@ -10,7 +10,7 @@ import robot.core.calls as calls
 import robot.hardware.serial_interface as iserial
 from robot.gui.base import gui_server, navigation as gui_navigation
 from robot.gui.startup import StartupApp
-from robot.gui.idle import IdleApp
+from robot.behaviour.station_idle import StationIdleBehaviour
 
 
 class Runtime:
@@ -39,11 +39,8 @@ class Runtime:
         finally:
             startup_app.shutdown()
 
-        idle_app = IdleApp()
         while not route.is_service_finished():
-            idle_app.run()
-            if idle_app.next:
-                break
+            StationIdleBehaviour().run()
 
     def __initialize(self, status_log: Callable[[str, ], None]):
         status_log("Настройка камер...")
