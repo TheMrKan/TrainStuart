@@ -11,7 +11,7 @@ class StationIdleBehaviour:
     __app: IdleApp
 
     def __init__(self):
-        self.__logger = logging.getLogger(StationIdleBehaviour.__name__)
+        self.__logger = logging.getLogger('StationIdleBehaviour')
         self.__app = IdleApp()
 
     def run(self):
@@ -34,5 +34,8 @@ class StationIdleBehaviour:
         self.__app.shutdown()
 
     def __behave(self):
-        interaction.wait_for_interaction()
-        self.__logger.info("Interaction started")
+        self.__logger.debug("Waiting for interaction...")
+        trigger = interaction.wait_for_interaction_trigger()
+        self.__logger.debug("Interaction triggered")
+        inter = interaction.create_interaction(trigger)
+        self.__logger.debug("Interaction created")
