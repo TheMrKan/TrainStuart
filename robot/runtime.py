@@ -1,4 +1,5 @@
 import time
+from typing import Callable
 
 from robot.hardware.cameras import CameraAccessor
 from robot.core.async_processor import AsyncProcessor
@@ -9,6 +10,7 @@ import robot.core.calls as calls
 import robot.hardware.serial_interface as iserial
 from robot.gui.base import gui_server, navigation as gui_navigation
 from robot.gui.startup import StartupApp
+from robot.behaviour.station_idle import StationIdleBehaviour
 
 
 class Runtime:
@@ -26,35 +28,39 @@ class Runtime:
         startup_app = StartupApp()
         startup_app.run()
 
-        startup_app.set_status("Настройка камер...")
+        try:
+            self.__initialize(startup_app.set_status)
+            startup_app.set_status("Готово!")
+            time.sleep(1)
+        except Exception as e:
+            startup_app.set_status(f"Ошибка при загрузке. Выключение. {str(e)}")
+            time.sleep(3)
+            return
+        finally:
+            startup_app.shutdown()
+
+        while not route.is_service_finished():
+            StationIdleBehaviour().run()
+
+    def __initialize(self, status_log: Callable[[str, ], None]):
+        status_log("Настройка камер...")
         CameraAccessor.initialize()
 
-        startup_app.set_status("Загрузка обработчика...")
+        status_log("Загрузка обработчика...")
         AsyncProcessor.initialize()
 
-        startup_app.set_status("Получение билетов...")
+        status_log("Получение билетов...")
         TicketsRepository.load()
 
-        startup_app.set_status("Получение информации о маршруте...")
+        status_log("Получение информации о маршруте...")
         route.initialize()
-        #iserial.setup()
+        # iserial.setup()
 
-        startup_app.set_status("Подключение к серверу поезда...")
+        status_log("Подключение к серверу поезда...")
         server.start_polling()
 
-        startup_app.set_status("Подключение кнопок вызова...")
+        status_log("Подключение кнопок вызова...")
         calls.initialize()
-
-        startup_app.set_status("Готово!")
-
-        try:
-            while True:
-                time.sleep(3)
-        except KeyboardInterrupt:
-            pass
-
-        startup_app.shutdown()
-
 
     def shutdown(self):
         server.stop_polling()

@@ -113,7 +113,7 @@ struct Message SerialIO::parseMessage(String message) {
   }
 
   if (argStr != "") {
-    output.args[argIndex++] = argStr.toInt();
+    output.args[argIndex] = argStr.toInt();
   }
 
   return output;

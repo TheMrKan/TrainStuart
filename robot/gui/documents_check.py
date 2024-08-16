@@ -143,7 +143,6 @@ class DocumentsCheckApp(BasePipelineApp):
                         time_start_tracking = current_time
                     elif current_time - time_start_tracking > 0.5:
                         if not face_processing_started:
-                            bounds = (face_location[1], face_location[0] + face_location[2], face_location[1] + face_location[3], face_location[0])   # top, right, bottom, left
 
                             def callback_success(descriptor: face_util.FaceDescriptor):
                                 nonlocal face_processing_result
@@ -154,7 +153,7 @@ class DocumentsCheckApp(BasePipelineApp):
                                 face_processing_error = exception
 
                             self.logger.debug("Face decriptor processing started")
-                            AsyncProcessor.get_face_descriptor_async(image, callback_success, callback_error, face_location=bounds)
+                            AsyncProcessor.get_face_descriptor_async(image, callback_success, callback_error, face_location=face_location)
                             face_processing_started = True
 
                         elif face_processing_error:

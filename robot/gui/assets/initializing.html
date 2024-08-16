@@ -6,41 +6,16 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <script src="/static/js/gui_channel.js"></script>
     <script src="/static/js/gui_navigation.js"></script>
     <title>Инициализация</title>
 </head>
 <script>
-    const APP_WS_URL = "ws://localhost:8001/apps/StartupApp"
-    function connect_to_app() {
-        const socket = new WebSocket(APP_WS_URL);
-
-        socket.onopen = function() {
-            console.log('Connected to app channel');
-        };
-
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
+    window.addEventListener("channel_ready", function (event) {
+        event.detail.channel.addEventListener("code_status", function(event) {
             var element = document.getElementById("status");
-            element.innerHTML = data["status"];
-        };
-
-        socket.onerror = function(error) {
-            console.error('WebSocket error:', error);
-        };
-
-        socket.onclose = function(event) {
-            if (event.wasClean) {
-                console.log('WebSocket connection closed. Code:', event.code, 'Reason:', event.reason);
-            } else {
-                console.log('WebSocket connection aborted. Retrying in 1 second...');
-                setTimeout(connect_to_navigation, 1000);
-            }
-        };
-    }
-
-    window.addEventListener('load', function() {
-        console.log(`Waiting connection to the app channel on '${APP_WS_URL}'...`)
-        connect_to_app();
+            element.innerHTML = event.detail.status;
+        });
     });
 </script>
 <body>

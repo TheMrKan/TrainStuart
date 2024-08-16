@@ -1,35 +1,8 @@
-const NAVIGATION_URL = "ws://localhost:8001/navigation"
-
-function connect_to_navigation() {
-    const socket = new WebSocket(NAVIGATION_URL);
-
-    socket.onopen = function() {
-        console.log('Connected to GUI navigation');
-    };
-
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        console.log(`Received URL for redirection: ${data["url"]}`);
-        if (window.location.href !== data["url"]) {
-            window.location.href = data["url"];
-        }
-    };
-
-    socket.onerror = function(error) {
-        console.error('WebSocket error:', error);
-    };
-
-    socket.onclose = function(event) {
-        if (event.wasClean) {
-            console.log('WebSocket connection closed. Code:', event.code, 'Reason:', event.reason);
-        } else {
-            console.log('WebSocket connection aborted. Retrying in 1 second...');
-            setTimeout(connect_to_navigation, 1000);
-        }
-    };
-}
-
-window.addEventListener('load', function() {
-    console.log(`Waiting connection to the GUI navigation on '${NAVIGATION_URL}'...`)
-    connect_to_navigation();
+window.addEventListener("channel_ready", function (event) {
+  event.detail.channel.addEventListener("code_navigation", function (event) {
+    console.log(`Navigation ${event.detail.url}`)
+    if (window.location.href !== event.detail.url) {
+      window.location.href = event.detail.url;
+    }
+  });
 });

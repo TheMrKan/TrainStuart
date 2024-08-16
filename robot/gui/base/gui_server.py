@@ -6,7 +6,7 @@ from asyncio.exceptions import TimeoutError
 import threading
 from bottle import Bottle, run, static_file, ServerAdapter
 import logging
-from typing import Tuple, Optional, Any, Union
+from typing import Tuple, Optional, Any, Union, List, Dict
 from pymitter import EventEmitter
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ websocket_stop_event = threading.Event()
 websocket_thread: threading.Thread
 websocket_loop: asyncio.BaseEventLoop
 
-outgoing_messages = {}
+outgoing_messages: Dict[str, List[Union[dict, bytes]]] = {}
 
 on_connected = EventEmitter()
 on_message_received = EventEmitter()
@@ -69,10 +69,11 @@ async def websocket_server(websocket: WebSocketServerProtocol, path: str):
             except TimeoutError:
                 pass
 
-            outgoing_message: Union[dict, bytes, None] = outgoing_messages.get(path, None)
-            if outgoing_message:
-                await send_outgoing_message(websocket, outgoing_message)
-                del outgoing_messages[path]
+            path_outgoing_messages: Optional[List[Union[dict, bytes]]] = outgoing_messages.get(path, None)
+            if path_outgoing_messages:
+                for msg in path_outgoing_messages:
+                    await send_outgoing_message(websocket, msg)
+                path_outgoing_messages.clear()
         except websockets.exceptions.WebSocketException:
             break
         except Exception as e:
@@ -151,8 +152,9 @@ def start():
     logger.info("GUI server is running")
 
 
-def send(path: str, message: Union[dict]):
-    outgoing_messages[path] = message
+def send(path: str, message: Union[dict, bytes]):
+    outgoing_messages.setdefault(path, [])
+    outgoing_messages[path].append(message)
 
 
 def stop():
