@@ -17,17 +17,23 @@ FaceLocation = Tuple[int, int, int, int]
 
 
 __recognition = None
-__face_cascade = None
+__face_cascades: Optional[list] = None
 
 
 def load_dependencies(resources_dir: str):
     global __recognition
-    global __face_cascade
+    global __face_cascades
 
     import face_recognition as recog
     __recognition = recog
 
-    __face_cascade = cv2.CascadeClassifier(os.path.join(resources_dir, "haarcascade_frontalface_alt.xml"))
+    cascade_names = ("haarcascade_frontalface_default.xml",
+                     "haarcascade_frontalface_alt.xml",
+                     "haarcascade_frontalface_alt2.xml",
+                     "haarcascade_frontalface_alt_tree.xml")
+    __face_cascades = []
+    for name in cascade_names:
+        __face_cascades.append(cv2.CascadeClassifier(os.path.join(resources_dir, name)))
 
 
 def get_face_descriptor(image: Image, face_location: Optional[FaceLocation] = None) -> Optional[FaceDescriptor]:
@@ -51,16 +57,19 @@ def find_face(image: Image, min_size: int = 300) -> Optional[FaceLocation]:
     :param min_size: Минимальный размер стороны квадрата найденного лица в пикселях
     :return: (x, y, w, h) или None, если ни одно лицо не найдено
     """
-    if not __face_cascade:
-        raise ImportError("'haarcascade_frontalface_alt.xml' is not loaded. Call 'load_dependencies()' first")
-    
-    faces = __face_cascade.detectMultiScale(
-                image,
-                scaleFactor=1.4,
-                minNeighbors=3,
-                minSize=(min_size, min_size)
-        )
-    return sorted(faces, key=lambda loc: loc[2] * loc[3], reverse=True)[0] if len(faces) > 0 else None
+    if not __face_cascades:
+        raise ImportError("HAAR cascades are not loaded. Call 'load_dependencies()' first")
+
+    for cascade in __face_cascades:
+        faces = cascade.detectMultiScale(
+                    image,
+                    scaleFactor=1.4,
+                    minNeighbors=3,
+                    minSize=(min_size, min_size)
+            )
+        if len(faces) > 0:
+            return sorted(faces, key=lambda loc: loc[2] * loc[3], reverse=True)[0]
+    return None
 
 
 def compare_faces(face_a: FaceDescriptor, face_b: FaceDescriptor) -> float:

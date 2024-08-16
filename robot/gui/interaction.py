@@ -18,4 +18,5 @@ class InteractionApp(BaseApp):
         if self.interaction.person.name:
             self.send("greetings", name=self.interaction.person.name)
         if not self.interaction.new_person:
-            self.send("message", message="Хм... Я не знаю Вашего имени, но определенно уже видел вас!")
+            self.logger.debug("Send not a new person")
+            self.send("message", message="Хм... Я уже видел вас!")

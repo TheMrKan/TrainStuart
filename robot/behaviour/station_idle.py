@@ -47,6 +47,7 @@ class StationIdleBehaviour:
         try:
             inter = interaction.create_interaction(trigger)
             self.__logger.debug("Interaction created")
+            time.sleep(1)
             self.__app.set_interaction(inter)
 
             while True:
