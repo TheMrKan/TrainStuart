@@ -1,4 +1,4 @@
-
+import multiprocessing
 from typing import Callable, Optional, Any
 from multiprocessing import Pipe, Process, Manager
 from multiprocessing.connection import Connection
@@ -31,6 +31,8 @@ class AsyncProcessor:
     def initialize(cls):
 
         cls.__response_awaiter = None
+
+        multiprocessing.set_start_method("spawn", force=True)
 
         cls.__manager = Manager()
         # на все объекты, получаемые из Manager, всегда должна оставаться хотя бы одна ссылка, иначе будут ошибки
@@ -69,7 +71,7 @@ class AsyncProcessor:
 
         request = GetFaceDescriptorRequest(image, face_location)
         cls.__connection.send(request)
-        cls.__await_response(success_callback, error_callback, 5)
+        cls.__await_response(success_callback, error_callback, 10)
 
     @classmethod
     def read_passport_async(cls, image: Image,

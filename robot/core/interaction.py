@@ -4,14 +4,14 @@ import logging
 from threading import Event
 
 from robot.hardware.cameras import CameraAccessor
-from core.person import Person, find_by_face_descriptor, add_by_face
+from robot.core.person import Person, find_by_face_descriptor, add_by_face
 from robot.core.async_processor import AsyncProcessor
 from utils.faces import ContinuousFaceDetector, FaceLocation, FaceDescriptor
 from utils.cv import Image
 
 
 logger = logging.getLogger(__name__)
-__face_detector = ContinuousFaceDetector(lambda: CameraAccessor.main_camera.image_bgr, 400)
+__face_detector = ContinuousFaceDetector(lambda: CameraAccessor.main_camera.image_bgr, 200)
 
 
 class InteractionTrigger:
@@ -45,7 +45,7 @@ def wait_for_interaction_trigger() -> InteractionTrigger:
         if state == __face_detector.State.FOUND or state == __face_detector.State.TRACKING:
             return FaceInteractionTrigger(__face_detector.image, __face_detector.face)
         elif state == __face_detector.State.WAITING:
-            time.sleep(0.5)
+            time.sleep(0.25)
         else:
             time.sleep(0.1)
 
@@ -74,7 +74,6 @@ def __create_interaction_face(trigger: FaceInteractionTrigger) -> Interaction:
 
     logger.debug("Getting descriptor of trigger face...")
     AsyncProcessor.get_face_descriptor_async(trigger.camera_image, success_callback, error_callback, trigger.face_location)
-    time.sleep(2)
     event.wait()
 
     if descriptor is None:

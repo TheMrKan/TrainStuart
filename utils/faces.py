@@ -126,6 +126,9 @@ class ContinuousFaceDetector:
         self.image = self.source()
         self.face = find_face(self.image, self.min_size)
 
+        #cv2.imshow("Main Camera", cv2.resize(self.image, (600, 372)))
+        #cv2.waitKey(1)
+
         now = datetime.now()
         if self.face is None:
             if self.__face_detected and not self.__is_tracking:

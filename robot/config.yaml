@@ -15,6 +15,11 @@ logging:
       - console
     level: DEBUG
     propagate: False
+  loggers:
+    websockets.server:
+      handlers:
+        - console
+      level: "ERROR"
 
 resources_dir: "../resources"
 
