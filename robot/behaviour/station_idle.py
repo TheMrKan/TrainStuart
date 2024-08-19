@@ -51,11 +51,12 @@ class StationIdleBehaviour:
             self.__app.set_interaction(inter)
 
             while True:
-                state = interaction.check_face_state()
+                state = interaction.update_face_state()
                 if state == state.LOST or state == state.WAITING:
                     self.__logger.debug("Face lost. Stopping interaction...")
                     break
-                time.sleep(0.25)
+                interaction.rotate_to_face()
+                time.sleep(0.1)
 
         finally:
             self.__app.shutdown()
