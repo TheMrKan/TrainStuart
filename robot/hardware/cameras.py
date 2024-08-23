@@ -102,6 +102,8 @@ class CameraHandler:
         if not ret:
             return False
 
+        bgr = cv2.flip(bgr, 1)
+
         hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
         self.image_bgr = bgr
         self.image_hsv = hsv

@@ -61,7 +61,13 @@ def begin(_shared: SharedProtocol, _on_state_changed, _on_confirmation_received,
     shared = _shared
     connection = None
     try:
-        connection = serial.Serial(shared.serial_name, 115200, timeout=0.1)
+        connection = serial.Serial(
+            port=shared.serial_name,
+            baudrate=115200,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+        )
         shared.is_connected = True
     except Exception as e:
         shared.exception = e
@@ -86,15 +92,19 @@ def loop():
 
             send_outgoing_message()
 
-            time.sleep(0.1)
         except:
             traceback.print_exc()
+        finally:
+            time.sleep(0.1)
 
 
 def read_serial(buffer: List[str]) -> Optional[str]:
     while connection.in_waiting:
         raw = connection.read()
-        char = raw.decode()
+        char = raw.decode("ascii")
+        if char == "\r":
+            continue
+        print(f"SERIAL CHAR <<< {char}")
         if char == "\n":
             line = "".join(buffer)
             buffer.clear()
@@ -103,6 +113,7 @@ def read_serial(buffer: List[str]) -> Optional[str]:
 
 
 def handle_line(line: str):
+    print(f"SERIAL <<< {line}")
     if try_handle_confirmation(line):
         return
 
@@ -123,7 +134,7 @@ def try_handle_confirmation(line: str) -> bool:
 def try_handle_completion(line: str) -> bool:
     if line != "OK":
         return False
-
+    print("Completion received")
     on_completion_received.set()
     return True
 
@@ -152,5 +163,7 @@ def send_outgoing_message():
 
     command_str = str(shared.outgoing_message)
     connection.write(command_str.encode("ascii"))
+    print(f"SERIAL >>> {command_str}")
     shared.outgoing_message = None
     on_message_sent.set()
+

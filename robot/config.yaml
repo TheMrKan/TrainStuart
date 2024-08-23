@@ -27,7 +27,7 @@ hardware:
   main_camera: 0
   main_camera_resolution: 1920x1080
   documents_camera: 1
-  serial: COM0
+  serial: ttyUSB0
 
 passport_check:
   show_dev_tools: False

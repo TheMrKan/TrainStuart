@@ -45,6 +45,7 @@ def setup():
     on_message_sent = Event()
     shared.response_code = None
     shared.response_args = None
+    shared.outgoing_message = None
 
     process = Process(target=begin,
                       args=(shared, on_state_changed, on_confirmation_received, on_completion_received, on_response_received, on_message_sent),

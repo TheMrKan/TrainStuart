@@ -1,5 +1,6 @@
 import time
 from typing import Callable
+import logging
 
 from robot.hardware.cameras import CameraAccessor
 from robot.core.async_processor import AsyncProcessor
@@ -7,13 +8,18 @@ from robot.core.tickets import TicketsRepository
 import robot.core.route as route
 import robot.core.server as server
 import robot.core.calls as calls
-import robot.hardware.serial_interface as iserial
+from robot.hardware import robot_interface
 from robot.gui.base import gui_server, navigation as gui_navigation
 from robot.gui.startup import StartupApp
 from robot.behaviour.station_idle import StationIdleBehaviour
 
 
 class Runtime:
+
+    __logger: logging.Logger
+
+    def __init__(self):
+        self.__logger = logging.getLogger(__name__)
 
     def start(self):
         try:
@@ -29,11 +35,16 @@ class Runtime:
         startup_app.run()
 
         try:
-            self.__initialize(startup_app.set_status)
+            def status_log(msg: str):
+                startup_app.set_status(msg)
+                self.__logger.info(msg)
+
+            self.__initialize(status_log)
             startup_app.set_status("Готово!")
             time.sleep(1)
         except Exception as e:
             startup_app.set_status(f"Ошибка при загрузке. Выключение. {str(e)}")
+            self.__logger.error("An error occured while loading", exc_info=e)
             time.sleep(3)
             return
         finally:
@@ -54,7 +65,9 @@ class Runtime:
 
         status_log("Получение информации о маршруте...")
         route.initialize()
-        # iserial.setup()
+
+        status_log("Подключение оборудования...")
+        robot_interface.initialize()
 
         status_log("Подключение к серверу поезда...")
         server.start_polling()

@@ -9,7 +9,7 @@ from robot.core.person import Person, find_by_face_descriptor, add_by_face
 from robot.core.async_processor import AsyncProcessor
 from utils.faces import ContinuousFaceDetector, FaceLocation, FaceDescriptor
 from utils.cv import Image
-
+from robot.hardware import robot_interface
 import cv2
 
 
@@ -112,9 +112,9 @@ DISTANCES = {
 }
 
 DST_TO_ANGLE_MULTS = {
-    90: 0.05,
-    50: 0.025,
-    35: 0.0125
+    90: 0.03,
+    50: 0.018,
+    35: 0.00675
 }
 
 
@@ -139,19 +139,21 @@ def rotate_to_face():
     head_angle_delta = 0
     distance = 0
 
-    ALLOWED_DELTA_REL = 0.4
+    ALLOWED_DELTA_REL = 0.2
     OUT_DELTA_REL = 0.8
     if delta_rel <= ALLOWED_DELTA_REL:
         logger.debug("Delta is in allowed range. Returning...")
     elif delta_rel <= OUT_DELTA_REL:
         distance = __get_distance_to_face(int((__face_detector.face[2] + __face_detector.face[3]) / 2))
-        head_angle_delta = DST_TO_ANGLE_MULTS[distance] * delta
+        head_angle_delta = int(round(DST_TO_ANGLE_MULTS[distance] * delta))
         logger.debug(f"Head rotation delta: {head_angle_delta}")
         logger.debug(f"Face size: {__face_detector.face[2], __face_detector.face[3]}")
+
+        robot_interface.modify_head_rotation(head_angle_delta, 0)
     else:
         logger.debug(f"Face is too far from center. Returning...")
 
-    image = __face_detector.image
+    image = __face_detector.image.copy()
 
     image = cv2.line(image,
                      (int(camera_center[0] - camera_center[0] * ALLOWED_DELTA_REL), 0),
@@ -178,7 +180,7 @@ def rotate_to_face():
     image = cv2.circle(image, camera_center, 5, (255, 0, 0), 4)
     image = cv2.circle(image, face_center, 5, (0, 0, 255), 4)
 
-    image = cv2.resize(__face_detector.image, (600, 372))
+    image = cv2.resize(image, (600, 372))
 
     image = cv2.putText(image, f"Delta: {head_angle_delta}", (5, 25),
                         cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
@@ -187,8 +189,8 @@ def rotate_to_face():
     image = cv2.putText(image, f"Distance: {distance}", (5, 75),
                         cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
 
-    cv2.imshow("Head rotation", image)
-    cv2.waitKey(1)
+    #cv2.imshow("Head rotation", image)
+    #cv2.waitKey(1)
 
 def reset():
     __face_detector.reset()

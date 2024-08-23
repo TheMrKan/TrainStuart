@@ -15,8 +15,17 @@ class RobotContainer(enum.Enum):
     TABLET_1 = 4
 
 
+head_horizontal = 0
+head_vertical = 0
+
+
 def initialize():
     iserial.setup()
+    iserial.await_completion()
+
+
+def stop():
+    iserial.send_command("S")
 
 
 def move_to(x: int, y: int):
@@ -31,8 +40,16 @@ def set_actual_pos(x: int, y: int):
     iserial.send_command("P", x, y, completion=True)
 
 
-def set_head_rotation(horiz: int, vert: int):
-    iserial.send_command("H", horiz, vert, completion=True)
+def set_head_rotation(horiz: int, vert: int, completion=True):
+    global head_horizontal
+    global head_vertical
+    head_horizontal = horiz
+    head_vertical = vert
+    iserial.send_command("H", horiz, vert, completion=completion)
+
+
+def modify_head_rotation(horiz_delta: int, vert_delta: int, completion=True):
+    set_head_rotation(head_horizontal + horiz_delta, head_vertical + vert_delta, completion)
 
 
 def open_container(container: RobotContainer, side: Side):

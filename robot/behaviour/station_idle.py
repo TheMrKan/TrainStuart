@@ -5,6 +5,7 @@ from typing import Union
 from robot.gui.idle import IdleApp
 from robot.gui.interaction import InteractionApp
 from robot.core import route, interaction
+from robot.hardware import robot_interface
 
 
 class StationIdleBehaviour:
@@ -36,6 +37,8 @@ class StationIdleBehaviour:
         self.__app.shutdown()
 
     def __behave(self):
+        robot_interface.set_head_rotation(0, 20)
+
         self.__logger.debug("Waiting for interaction...")
         trigger = interaction.wait_for_interaction_trigger()
         self.__logger.debug("Interaction triggered")
@@ -56,7 +59,7 @@ class StationIdleBehaviour:
                     self.__logger.debug("Face lost. Stopping interaction...")
                     break
                 interaction.rotate_to_face()
-                time.sleep(0.1)
+                #time.sleep(0.1)
 
         finally:
             self.__app.shutdown()
