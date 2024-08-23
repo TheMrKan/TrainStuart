@@ -1,6 +1,7 @@
 // энкодер и прерывания
 #include <Arduino.h>
 #include <EncButton.h>
+#include "SerialIO.h"
 
 #include "defs.h"
 EncButton enc(CLK, DT);
@@ -10,9 +11,14 @@ const float angleTicks = MAX_TICK / (float)(headInputRight + abs(headInputLeft))
 
 byte power = 140;
 
+SerialIO IO;
+
 // int targetAngle = 0;
 int targetTick = 0;
 bool headLoopRunning = false;
+
+struct Message message;
+
 
 void isr() {
   enc.tickISR();
@@ -44,32 +50,20 @@ void setup() {
 
 }
 
-bool endFlag = false;
-bool flag = true;
-unsigned long c = 0;
+void handleMessage() {
+  if (message.code == "H") {
+    HeadRemote(message.args[0]);
+  }
+}
 
 void loop() {
   check_position();
 
   headLoop();
-  if (!headLoopRunning) {
-     //Print();
-  }
-  
-  if (flag && !headLoopRunning) {
-    if (c == 0) {
-      c = millis();
-    }
-    else {
-      if (millis() - c >= 2000) {
-        c = 0;
-        int rnd = random(-150, 120);
-        Serial.println("--- Enc " + String(enc.counter) + " Target "  + String(targetTick) + " New " + String(rnd));
-        HeadRemote(rnd);
-        Serial.println("Target " + String(targetTick) + " Running " + String(headLoopRunning));
-        flag = false;
-      }
-    }
+
+  message = IO.readMessage();
+  if (message.code != "") {
+    handleMessage();
   }
 }
 
@@ -77,24 +71,13 @@ bool isEnd() {
   return !digitalRead(END_CAP);
 }
 
-bool awaitStop = false;
-int awaitStopEnc = 0;
-long unsigned awaitStopTimer = 0;
-bool awaitStopCompleted = false;
-int smoothStart = 0;
+bool endFlag = false;
 
 void check_position() {
   enc.tick();
   if (isEnd()) {
     if (!endFlag) {
       targetTick = 0;
-      last_x = headInputLeft;
-      awaitStop = false;
-      awaitStopCompleted = false;
-      awaitStopTimer = 0;
-      awaitStopEnc = 0;
-      headLoopRunning = false;
-      smoothStart = 0;
       endFlag = true;
     }
   }
@@ -106,6 +89,7 @@ void check_position() {
 void zero() {
   if (isEnd()) {
     last_x = headInputLeft;
+    endFlag = true;
     return;
   }
 
@@ -114,10 +98,12 @@ void zero() {
     digitalWrite(PIN_IN1_head, LOW);
     digitalWrite(PIN_IN2_head, HIGH);
   }
+  enc.counter = 0;
   digitalWrite(PIN_IN1_head, LOW);
   digitalWrite(PIN_IN2_head, LOW);
 
   last_x = headInputLeft;
+  endFlag = true;
 }
 
 void Print() {
@@ -128,6 +114,19 @@ void Print() {
 void home() {
   HeadRemote(0);
 }
+
+bool awaitStop = false;
+int awaitStopEnc = 0;
+unsigned long awaitStopTimer = 0;
+bool awaitStopCompleted = false;
+
+int smoothStart = 0;
+
+int bonusEnc = 0;
+unsigned long bonusTimer = 0;
+int bonusPower = 100;
+
+const int MAX_DELTA = 2;
 
 void headLoop() {
   if (!headLoopRunning) {
@@ -145,26 +144,27 @@ void headLoop() {
         awaitStopEnc = 0;
         awaitStopTimer = 0;
         awaitStopCompleted = true;
-        Serial.println("Await stop completed");
+        //Serial.println("Await stop completed");
       }
     }
   }
 
+  int delta = targetTick - enc.counter;
   if (awaitStopCompleted) {
     awaitStopCompleted = false;
-    if (abs(targetTick - enc.counter) < 5) {
+    if (abs(delta) < MAX_DELTA) {
       headLoopRunning = false;
-      Serial.println("Return");
+      //Serial.println("Return");
       return;
     }
   }
 
   if (!awaitStop) {
-    int delta = targetTick - enc.counter;
+    
     //Serial.println("Move " + String(delta));
     
-    if (abs(delta) < 5) {
-      Serial.println("Start await stop");
+    if (abs(delta) < MAX_DELTA) {
+      //Serial.println("Start await stop");
       digitalWrite(PIN_IN1_head, LOW);
       digitalWrite(PIN_IN2_head, LOW);
       delay(50);
@@ -174,6 +174,10 @@ void headLoop() {
       awaitStopEnc = enc.counter;
       awaitStopTimer = millis();
       awaitStopCompleted = false;
+
+      bonusPower = 100;
+      bonusEnc = 0;
+      bonusTimer = 0;
     }
     else {
       bool dir = delta > 0;
@@ -185,14 +189,29 @@ void headLoop() {
       if (smoothStart == 0) {
         smoothStart = enc.counter;
       } 
-      else if (abs(enc.counter - targetTick) < 100){
+      else if (abs(delta) < 100) {
         int smoothTotal = abs(targetTick - smoothStart);
         int smoothProgress = abs(enc.counter - smoothStart);
-        smoothProgressPercent = min((float)smoothProgress / smoothTotal, 1);
+        smoothProgressPercent = max(min((float)smoothProgress / smoothTotal, 1), 0.1) * 0.8;
+      }
+      else if (abs(delta) < 200) {
+        smoothProgressPercent = 0.2;
       }
 
-      int _power = max(power * (1 - smoothProgressPercent), 80);
-      Serial.println(String(_power));
+      if (bonusTimer == 0 || enc.counter != bonusEnc) {
+        bonusEnc = enc.counter;
+        bonusTimer = millis();
+      }
+      else if (millis() - bonusTimer > 200) {
+        bonusPower = min(100, max(70, map(delta, 0, 200, 70, 100)));
+        bonusEnc = enc.counter;
+        bonusTimer = millis();
+      }
+
+      int _power = min(max(power * (1 - smoothProgressPercent), 50) + bonusPower, 150);
+      bonusPower = max(0, bonusPower - 5);
+      Serial.println(String(_power) + " " + String(bonusPower) + " " + String(targetTick) + " " + String(enc.counter));
+
       analogWrite(EN_Head, _power); 
     }
   }
@@ -200,23 +219,12 @@ void headLoop() {
 
 void HeadRemote(int x) {
 
+  last_x += round(enc.counter / angleTicks);
   int targetAngle = x - last_x;
-  last_x = x;
+  Serial.println("Enc " + String(enc.counter) + " " + String(last_x));
   enc.counter = 0;
   targetTick = round(targetAngle * angleTicks);
 
   headLoopRunning = true;
-  Serial.println("HeadRemote " + String(targetTick));
-  // while (abs(enc.counter) < current_x) {
-  //   enc.tick();
-  //   Serial.print(enc.counter);Serial.print("\t");Serial.print(dir);Serial.print("\t");
-  //   Serial.print(x);Serial.print("\t");Serial.println(last_x);
-  //   digitalWrite(PIN_IN1_head, dir ? HIGH : LOW);
-  //   digitalWrite(PIN_IN2_head, dir ? LOW : HIGH);
-  //   analogWrite(EN_Head, power);
-  // }
-  // digitalWrite(PIN_IN1_head, LOW);
-  // digitalWrite(PIN_IN2_head, LOW);
-  // // analogWrite(EN_Head, 0);
-  // last_x = x;
+  Serial.println("HeadRemote " +  String(targetTick));
 }
