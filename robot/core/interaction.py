@@ -3,6 +3,7 @@ import time
 from typing import Optional, Iterable
 import logging
 from threading import Event
+import cv2
 
 from robot.hardware.cameras import CameraAccessor
 from robot.core.person import Person, find_by_face_descriptor, add_by_face
@@ -10,7 +11,8 @@ from robot.core.async_processor import AsyncProcessor
 from utils.faces import ContinuousFaceDetector, FaceLocation, FaceDescriptor
 from utils.cv import Image
 from robot.hardware import robot_interface
-import cv2
+from robot.dev import control_panel
+
 
 
 logger = logging.getLogger(__name__)
@@ -180,8 +182,6 @@ def rotate_to_face():
     image = cv2.circle(image, camera_center, 5, (255, 0, 0), 4)
     image = cv2.circle(image, face_center, 5, (0, 0, 255), 4)
 
-    image = cv2.resize(image, (600, 372))
-
     image = cv2.putText(image, f"Delta: {head_angle_delta}", (5, 25),
                         cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
     image = cv2.putText(image, f"Face: {__face_detector.face[2], __face_detector.face[3]}", (5, 50),
@@ -189,8 +189,8 @@ def rotate_to_face():
     image = cv2.putText(image, f"Distance: {distance}", (5, 75),
                         cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
 
-    #cv2.imshow("Head rotation", image)
-    #cv2.waitKey(1)
+    control_panel.send_image("rotate_to_face", image)
+
 
 def reset():
     __face_detector.reset()

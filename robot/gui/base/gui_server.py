@@ -8,6 +8,9 @@ from bottle import Bottle, run, static_file, ServerAdapter
 import logging
 from typing import Tuple, Optional, Any, Union, List, Dict
 from pymitter import EventEmitter
+from utils.cv import Image
+import cv2
+import urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -126,15 +129,15 @@ def run_http():
 
 
 def get_absolute_ws_url(rel_path: str) -> str:
-    return "ws://localhost:8001/" + rel_path
+    return urllib.parse.urljoin("ws://localhost:8001/", rel_path)
 
 
 def get_absolute_http_page_url(rel_path: str) -> str:
-    return "http://localhost:8000/" + rel_path
+    return urllib.parse.urljoin("http://localhost:8000/", rel_path)
 
 
 def get_absolute_http_static_url(rel_path: str) -> str:
-    return "http://localhost:8000/static/" + rel_path
+    return urllib.parse.urljoin("http://localhost:8000/static/", rel_path)
 
 
 def start():
@@ -159,6 +162,11 @@ def send(path: str, message: Union[dict, bytes], queue_limit: int = 0):
         while len(queue) > queue_limit:
             del queue[0]
     queue.append(message)
+
+
+def send_image(path: str, image: Image):
+    _, img = cv2.imencode(".png", image)
+    send(path, img.tobytes(), 1)
 
 
 def stop():

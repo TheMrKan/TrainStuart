@@ -4,33 +4,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Панель управления</title>
-    <script src="/static/js/ws_video_stream.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
         img {
-            max-width: 80%;
-            max-height: 80%;
-            border: 2px solid #ccc;
+            max-width: 40%;
+            border: 2px solid #444;
+            margin-bottom: 20px;
         }
     </style>
-</head>
-<body>
-    <div>
-        <h2>WebSocket Image Viewer</h2>
-        <img id="main-camera-image" alt="WebSocket image will appear here">
-        <button onclick="main_camera_stream.begin()">Start Stream</button>
-        <button onclick="main_camera_stream.stop()">Stop Stream</button>
-    </div>
+
+    <script src="/static/js/ws_video_stream.js"></script>
+    <script src="/static/js/gui_channel.js"></script>
 
     <script>
-        var main_camera_stream = new WSVideoStream("ws://localhost:8001/control_panel/main_camera", document.getElementById("main-camera-image"));
+        CHANNEL_PATH = "/control_panel";
+
+        const streams = {};
+        var activeStream = null;
+
+        window.addEventListener("channel_ready", function (event) {
+
+            event.detail.channel.addEventListener("code_stream", function(event) {
+                addStream(event.detail.id, event.detail.url, event.detail.name);
+            });
+
+        });
+
+        function addStream(id, url, name) {
+            console.log(`Adding stream ${name} (${url})`);
+            var imageElement = document.getElementById("stream-image");
+            streams[id] = {"id": id, "url": url, "name": name, "stream": new WSVideoStream(url, imageElement)};
+            var tabs = document.getElementById("streams-tabs");
+            var tabsList = tabs.getElementsByTagName("ul")[0];
+            tabsList.insertAdjacentHTML("beforeend", `<li id="stream-button-${id}"><a onclick="onStreamClicked('${id}')">${name}</a></li>`);
+        }
+
+        function onStreamClicked(id) {
+            if (activeStream?.id == id) {
+                stopActiveStream();
+            }
+            else {
+                setActiveStream(id);
+            }
+        }
+
+        function setActiveStream(id) {
+            if (activeStream) {
+                stopActiveStream();
+            }
+
+            var stream = streams[id];
+            if (!stream) {
+                console.log(`Unknown stream ${id}`);
+                return;
+            }
+
+            activeStream = stream;
+            document.getElementById(`stream-button-${id}`).classList.add("is-active");
+            activeStream.stream.begin();
+        }
+
+        function stopActiveStream() {
+            if (!activeStream) {
+                return;
+            }
+
+            activeStream.stream.stop();
+            var tabsList = document.getElementById("streams-tabs").getElementsByTagName("ul")[0];
+            tabsList.childNodes.forEach((el) => {
+                el.classList?.remove("is-active");
+            });
+            activeStream = null;
+        }
+
     </script>
+</head>
+<body>
+<p class="subtitle is-4 has-text-centered mt-3 mb-0">Панель управления</p>
+<section class="section is-fullwidth container is-fluid">
+    <div class="box">
+        <p class="subtitle is-4 has-text-centered">Потоки</p>
+        <div id="streams-tabs" class="tabs">
+            <ul>
+
+            </ul>
+        </div>
+        <img id="stream-image">
+    </div>
+</section>
+
+
+
 </body>
 </html>
