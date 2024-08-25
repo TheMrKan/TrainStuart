@@ -18,6 +18,7 @@ class StationIdleBehaviour:
         self.__app = IdleApp()
 
     def run(self):
+        self.__logger.info(f"Running {type(self).__name__} behaviour")
         try:
             self.__initialize()
 

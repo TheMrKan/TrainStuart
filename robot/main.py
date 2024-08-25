@@ -17,6 +17,9 @@ def main():
 
     prepare_dependencies()
 
+    import robot.container
+    robot.container.build()
+
     # импорт после настроек логгера, чтобы logging.getLogger в модулях работал корректно
     from robot.runtime import Runtime
 
