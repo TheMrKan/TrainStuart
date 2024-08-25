@@ -152,9 +152,13 @@ def start():
     logger.info("GUI server is running")
 
 
-def send(path: str, message: Union[dict, bytes]):
+def send(path: str, message: Union[dict, bytes], queue_limit: int = 0):
     outgoing_messages.setdefault(path, [])
-    outgoing_messages[path].append(message)
+    queue = outgoing_messages[path]
+    if queue_limit > 0:
+        while len(queue) > queue_limit:
+            del queue[0]
+    queue.append(message)
 
 
 def stop():

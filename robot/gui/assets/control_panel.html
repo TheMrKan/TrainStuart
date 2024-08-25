@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления</title>
+    <script src="/static/js/ws_video_stream.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        img {
+            max-width: 80%;
+            max-height: 80%;
+            border: 2px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h2>WebSocket Image Viewer</h2>
+        <img id="main-camera-image" alt="WebSocket image will appear here">
+        <button onclick="main_camera_stream.begin()">Start Stream</button>
+        <button onclick="main_camera_stream.stop()">Stop Stream</button>
+    </div>
+
+    <script>
+        var main_camera_stream = new WSVideoStream("ws://localhost:8001/control_panel/main_camera", document.getElementById("main-camera-image"));
+    </script>
+</body>
+</html>

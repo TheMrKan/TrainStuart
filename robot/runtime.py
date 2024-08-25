@@ -12,6 +12,7 @@ from robot.hardware import robot_interface
 from robot.gui.base import gui_server, navigation as gui_navigation
 from robot.gui.startup import StartupApp
 from robot.behaviour.station_idle import StationIdleBehaviour
+from robot.dev import control_panel
 
 
 class Runtime:
@@ -74,6 +75,9 @@ class Runtime:
 
         status_log("Подключение кнопок вызова...")
         calls.initialize()
+
+        status_log("Настройка панели управления...")
+        control_panel.initialize()
 
     def shutdown(self):
         server.stop_polling()

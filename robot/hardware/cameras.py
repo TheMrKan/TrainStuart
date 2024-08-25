@@ -4,7 +4,7 @@ import numpy
 import logging
 import time
 import robot.config as config
-from typing import Optional
+from typing import Optional, List, Callable
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,8 @@ class CameraHandler:
     __logger: logging.Logger
     __image_grabbed: threading.Event
     __is_running: bool    # используется для остановки reader_thread
+
+    on_image_grabbed: List[Callable[[], None]] = []
 
     def __init__(self, index: int, width: int = 0, height: int = 0):
         self.index = index
@@ -92,7 +94,6 @@ class CameraHandler:
         thread.daemon = True
         return thread
 
-
     def __grab_image(self) -> bool:
         """
         Считывает изображение с камеры и записывает его в двух форматах в self.image_bgr и self.image_hsv
@@ -109,6 +110,9 @@ class CameraHandler:
         self.image_hsv = hsv
 
         self.__image_grabbed.set()
+        for callback in self.on_image_grabbed:
+            callback()
+
         return True
 
     def __reader_thread_worker(self):
