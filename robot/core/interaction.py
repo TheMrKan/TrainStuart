@@ -14,7 +14,6 @@ from robot.hardware import robot_interface
 from robot.dev import control_panel
 
 
-
 logger = logging.getLogger(__name__)
 __face_detector = ContinuousFaceDetector(lambda: CameraAccessor.main_camera.image_bgr, 400)
 
@@ -155,41 +154,43 @@ def rotate_to_face():
     else:
         logger.debug(f"Face is too far from center. Returning...")
 
-    image = __face_detector.image.copy()
+    stream = control_panel.get_stream("rotate_to_face", "Наведение на лицо")
+    if stream.is_active:
+        image = __face_detector.image.copy()
 
-    image = cv2.line(image,
-                     (int(camera_center[0] - camera_center[0] * ALLOWED_DELTA_REL), 0),
-                     (int(camera_center[0] - camera_center[0] * ALLOWED_DELTA_REL), __face_detector.image.shape[0]),
-                     (150, 150, 150),
-                     5)
-    image = cv2.line(image,
-                     (int(camera_center[0] + camera_center[0] * ALLOWED_DELTA_REL), 0),
-                     (int(camera_center[0] + camera_center[0] * ALLOWED_DELTA_REL), __face_detector.image.shape[0]),
-                     (150, 150, 150),
-                     5)
+        image = cv2.line(image,
+                         (int(camera_center[0] - camera_center[0] * ALLOWED_DELTA_REL), 0),
+                         (int(camera_center[0] - camera_center[0] * ALLOWED_DELTA_REL), __face_detector.image.shape[0]),
+                         (150, 150, 150),
+                         5)
+        image = cv2.line(image,
+                         (int(camera_center[0] + camera_center[0] * ALLOWED_DELTA_REL), 0),
+                         (int(camera_center[0] + camera_center[0] * ALLOWED_DELTA_REL), __face_detector.image.shape[0]),
+                         (150, 150, 150),
+                         5)
 
-    image = cv2.line(image,
-                     (int(camera_center[0] - camera_center[0] * OUT_DELTA_REL), 0),
-                     (int(camera_center[0] - camera_center[0] * OUT_DELTA_REL), __face_detector.image.shape[0]),
-                     (90, 90, 90),
-                     5)
-    image = cv2.line(image,
-                     (int(camera_center[0] + camera_center[0] * OUT_DELTA_REL), 0),
-                     (int(camera_center[0] + camera_center[0] * OUT_DELTA_REL), __face_detector.image.shape[0]),
-                     (90, 90, 90),
-                     5)
+        image = cv2.line(image,
+                         (int(camera_center[0] - camera_center[0] * OUT_DELTA_REL), 0),
+                         (int(camera_center[0] - camera_center[0] * OUT_DELTA_REL), __face_detector.image.shape[0]),
+                         (90, 90, 90),
+                         5)
+        image = cv2.line(image,
+                         (int(camera_center[0] + camera_center[0] * OUT_DELTA_REL), 0),
+                         (int(camera_center[0] + camera_center[0] * OUT_DELTA_REL), __face_detector.image.shape[0]),
+                         (90, 90, 90),
+                         5)
 
-    image = cv2.circle(image, camera_center, 5, (255, 0, 0), 4)
-    image = cv2.circle(image, face_center, 5, (0, 0, 255), 4)
+        image = cv2.circle(image, camera_center, 5, (255, 0, 0), 4)
+        image = cv2.circle(image, face_center, 5, (0, 0, 255), 4)
 
-    image = cv2.putText(image, f"Delta: {head_angle_delta}", (5, 25),
-                        cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
-    image = cv2.putText(image, f"Face: {__face_detector.face[2], __face_detector.face[3]}", (5, 50),
-                        cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
-    image = cv2.putText(image, f"Distance: {distance}", (5, 75),
-                        cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
+        image = cv2.putText(image, f"Delta: {head_angle_delta}", (5, 25),
+                            cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
+        image = cv2.putText(image, f"Face: {__face_detector.face[2], __face_detector.face[3]}", (5, 50),
+                            cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
+        image = cv2.putText(image, f"Distance: {distance}", (5, 75),
+                            cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
 
-    control_panel.send_image("rotate_to_face", image)
+        stream.send_image(image)
 
 
 def reset():
