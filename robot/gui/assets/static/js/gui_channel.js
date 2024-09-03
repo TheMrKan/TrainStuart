@@ -8,7 +8,7 @@ class GUIChannel extends EventTarget {
     }
 
     connect() {
-        this.socket = new WebSocket("ws://localhost:8001" + this.path);
+        this.socket = new WebSocket("ws://robot:8001" + this.path);
         var path = this.path;
         var _channel = this;
         this.socket.onopen = function() {

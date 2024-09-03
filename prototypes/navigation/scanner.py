@@ -5,8 +5,8 @@ from typing import Tuple, Optional, List
 import math
 
 COLOR_RANGES = [
-    ((0, 30, 40), (10, 255, 255)),
-    ((170, 30, 40), (180, 255, 255))
+    ((0, 100, 30), (10, 255, 255)),
+    ((170, 100, 30), (180, 255, 255))
 ]
 MIN_CODE_RECT_AREA = 1500
 CONTOURS_APPROX_EPSILON = 10
@@ -135,10 +135,10 @@ def test():
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    cap.set(cv2.CAP_PROP_EXPOSURE, 20)
+    cap.set(cv2.CAP_PROP_EXPOSURE, 10)
     while True:
         _, img = cap.read()
-        #img = cv2.resize(img, (int(1920 / 2), int(1080 / 2)))
+        img = cv2.resize(img, (int(1920 / 3), int(1080 / 3)))
 
         cv2.imshow("Image", img)
         hsv_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)

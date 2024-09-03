@@ -135,6 +135,7 @@ def __on_message_received(message: Union[dict, bytes]):
 def __create_stream(stream_id: str, name: Optional[str] = None, camera_handler: Optional[CameraHandler] = None) -> Stream:
     stream = Stream(stream_id, name) if camera_handler is None else CameraStream(stream_id, name, camera_handler)
     __streams[stream_id] = stream
+    __logger.debug("Created stream %s", stream_id)
     if __connected:
         __send_stream(stream_id, name)
     return stream

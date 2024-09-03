@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "SerialIO.h"
 
-#define IOSerial Serial
+#define IOSerial Serial1
 
 SerialIO::SerialIO() {
   IOSerial.begin(115200);

@@ -63,7 +63,6 @@ def http_page(page):
 
 async def websocket_server(websocket: WebSocketServerProtocol, path: str):
     await emit_connected(path)
-
     while not websocket_stop_event.is_set():
         try:
             try:
@@ -71,7 +70,6 @@ async def websocket_server(websocket: WebSocketServerProtocol, path: str):
                 await handle_incoming_message(path, incoming_message)
             except TimeoutError:
                 pass
-
             path_outgoing_messages: Optional[List[Union[dict, bytes]]] = outgoing_messages.get(path, None)
             if path_outgoing_messages:
                 for msg in path_outgoing_messages:
@@ -105,13 +103,16 @@ async def handle_incoming_message(path: str, message: Union[str, bytes]):
 async def send_outgoing_message(websocket: WebSocketServerProtocol, message: Union[dict, bytes]):
     if isinstance(message, dict):
         message = json.dumps(message)
-    await websocket.send(message)
+    try:
+        await asyncio.wait_for(websocket.send(message), 1)
+    except TimeoutError:
+        logger.debug("Outgoing message timeout")
 
 
 def run_websocket():
     global websocket_loop
     asyncio.set_event_loop(asyncio.new_event_loop())
-    server = websockets.serve(websocket_server, "localhost", 8001)
+    server = websockets.serve(websocket_server, "robot", 8001)
     websocket_loop = asyncio.get_event_loop()
     websocket_loop.run_until_complete(server)
 
@@ -122,22 +123,22 @@ def run_websocket():
 
 def run_http():
     global http_server
-    http_server = StoppableServer(host="localhost", port=8000, quite=True)
+    http_server = StoppableServer(host="robot", port=8000, quite=True)
     logger.debug("HTTP server is running")
     run(bottle_app, server=http_server)
     logger.debug("HTTP server is stopped")
 
 
 def get_absolute_ws_url(rel_path: str) -> str:
-    return urllib.parse.urljoin("ws://localhost:8001/", rel_path)
+    return urllib.parse.urljoin("ws://robot:8001/", rel_path)
 
 
 def get_absolute_http_page_url(rel_path: str) -> str:
-    return urllib.parse.urljoin("http://localhost:8000/", rel_path)
+    return urllib.parse.urljoin("http://robot:8000/", rel_path)
 
 
 def get_absolute_http_static_url(rel_path: str) -> str:
-    return urllib.parse.urljoin("http://localhost:8000/static/", rel_path)
+    return urllib.parse.urljoin("http://robot:8000/static/", rel_path)
 
 
 def start():
@@ -158,9 +159,11 @@ def start():
 def send(path: str, message: Union[dict, bytes], queue_limit: int = 0):
     outgoing_messages.setdefault(path, [])
     queue = outgoing_messages[path]
+
+    l = len(queue)
     if queue_limit > 0:
-        while len(queue) > queue_limit:
-            del queue[0]
+        if l >= queue_limit:
+            queue.clear()
     queue.append(message)
 
 

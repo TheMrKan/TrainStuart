@@ -28,7 +28,7 @@ hardware:
   main_camera_resolution: 1920x1080
   documents_camera: 1
   dummy_robot: True
-  serial: ttyUSB0
+  serial: /dev/ttyTHS1
 
 passport_check:
   show_dev_tools: False
