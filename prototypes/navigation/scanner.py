@@ -1,17 +1,18 @@
 import cv2
 import cv2 as cv
 import numpy as np
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Union, Any
 import math
+import timeit
 
 COLOR_RANGES = [
-    ((0, 100, 30), (10, 255, 255)),
-    ((170, 100, 30), (180, 255, 255))
+    [(0, 115, 40), (15, 255, 255)],
+    [(150, 120, 40), (180, 255, 255)]
 ]
 MIN_CODE_RECT_AREA = 1500
 CONTOURS_APPROX_EPSILON = 10
 BIT_CHECK_NEIGHBOURS = 5
-PADDING = 0.2
+PADDING = 0.142
 
 CODE_SIZE = 2
 
@@ -25,9 +26,8 @@ def _find_code_rect(hsv_image: cv.UMat,
                     approx_epsilon: float) -> Optional[Tuple[Point, Point, Point, Point]]:
     mask = np.zeros(hsv_image.shape[:2], np.uint8)
     for crange in color_ranges:
-        print(crange)
         mask |= cv.inRange(hsv_image, crange[0], crange[1])
-    cv2.imshow("Mask", mask)
+    cv2.imshow("Mask", cv2.resize(mask, (int(1024 / 2), int(576 / 2))))
     cv2.waitKey(1)
     contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
@@ -122,49 +122,79 @@ def read_code(image_hsv: cv.UMat) -> Tuple[Optional[List[bool]], Optional[Tuple[
     return values, tuple(code_rect), bit_positions
 
 
-def read_qr_code(bgr_image: cv.UMat) -> Optional[str]:
-
-    qcd = cv2.QRCodeDetector()
-    retval, decoded_info, points, straight_qrcode = qcd.detectAndDecodeMulti(bgr_image)
-    for c in decoded_info:
-        if c:
-            return c
-
-
 def test():
+    print("Debug 0")
     cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    print("Debug 1")
+    '''cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    print("Debug 2")
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    cap.set(cv2.CAP_PROP_EXPOSURE, 10)
-    while True:
-        _, img = cap.read()
-        img = cv2.resize(img, (int(1920 / 3), int(1080 / 3)))
+    print("Debug 3")
+    cap.set(cv2.CAP_PROP_EXPOSURE, 25)
+    cap.set(cv2.CAP_PROP_FPS, 60)'''
+    print("Debug 4")
 
-        cv2.imshow("Image", img)
-        hsv_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+    cv2.namedWindow("Image")
+    cv2.resizeWindow("Image", 500, 281)
 
-        code_rect = _find_code_rect(hsv_img, MIN_CODE_RECT_AREA, COLOR_RANGES, CONTOURS_APPROX_EPSILON)
+    cv2.namedWindow("Mask")
+    cv2.resizeWindow("Mask", 500, 281)
 
-        if code_rect is not None:
+    cv2.namedWindow("Mask", cv2.WINDOW_NORMAL)
+    cv2.imshow("Mask", np.zeros((576, 1024), np.uint8))
 
-            bit_positions = _get_bit_positions(code_rect, CODE_SIZE, PADDING)
+    r = COLOR_RANGES[0]
+    cv.createTrackbar('H0', 'Mask', r[1][0], 255, lambda x: None)
+    cv.createTrackbar('S0', 'Mask', r[0][1], 255, lambda x: None)
+    cv.createTrackbar('V0', 'Mask', r[0][2], 255, lambda x: None)
 
-            values = []
-            for pos in bit_positions:
-                values.append(_get_bit_value(hsv_img, pos, BIT_CHECK_NEIGHBOURS, COLOR_RANGES))
+    r = COLOR_RANGES[1]
+    cv.createTrackbar('H1', 'Mask', r[0][0], 255, lambda x: None)
+    cv.createTrackbar('S1', 'Mask', r[0][1], 255, lambda x: None)
+    cv.createTrackbar('V1', 'Mask', r[0][2], 255, lambda x: None)
 
-            for p in code_rect:
-                cv.rectangle(img, (p[0] - 5, p[1] - 5), (p[0] + 5, p[1] + 5), (255, 255, 0), 2)
+    print(timeit.timeit("_, img = cap.read()", number=90, globals={"cap": cap}))
 
-            for i, p in enumerate(bit_positions):
-                color = (0, 255, 0) if values[i] else (0, 0, 255)
-                cv.putText(img, str(i), (p[0], p[1] - 15), cv.FONT_HERSHEY_COMPLEX, 0.9, (60, 80, 255), 2)
-                cv.circle(img, p, 2, color, 3)
-                cv.imshow(f"Test", img)
-        else:
-            print("Code rect not found")
+    try:
+        while True:
+            _, img = cap.read()
+            #img = cv2.resize(img, (int(1920 / 2), int(1080 / 2)))
 
-        cv.waitKey(1)
+            h, s, v = cv.getTrackbarPos('H0', 'Mask'), cv.getTrackbarPos('S0', 'Mask'), cv.getTrackbarPos('V0', 'Mask')
+            r = COLOR_RANGES[0]
+            r[1] = (h, r[1][1], r[1][2])
+            r[0] = (r[0][0], s, v)
+
+            h, s, v = cv.getTrackbarPos('H1', 'Mask'), cv.getTrackbarPos('S1', 'Mask'), cv.getTrackbarPos('V1', 'Mask')
+            r = COLOR_RANGES[1]
+            r[0] = h, s, v
+
+            hsv_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+            code_rect = _find_code_rect(hsv_img, MIN_CODE_RECT_AREA, COLOR_RANGES, CONTOURS_APPROX_EPSILON)
+
+            if code_rect is not None:
+
+                bit_positions = _get_bit_positions(code_rect, CODE_SIZE, PADDING)
+
+                values = []
+                for pos in bit_positions:
+                    values.append(_get_bit_value(hsv_img, pos, BIT_CHECK_NEIGHBOURS, COLOR_RANGES))
+
+                for p in code_rect:
+                    cv.rectangle(img, (p[0] - 5, p[1] - 5), (p[0] + 5, p[1] + 5), (255, 255, 0), 2)
+
+                for i, p in enumerate(bit_positions):
+                    color = (0, 255, 0) if values[i] else (0, 0, 255)
+                    cv.putText(img, str(i), (p[0], p[1] - 15), cv.FONT_HERSHEY_COMPLEX, 0.9, (60, 80, 255), 2)
+                    cv.circle(img, p, 2, color, 3)
+            else:
+                pass
+
+            cv2.imshow("Image", cv2.resize(img, (500, 281)))
+            cv.waitKey(1)
+    finally:
+        cap.release()
 
 
 if __name__ == "__main__":

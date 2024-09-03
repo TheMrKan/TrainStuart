@@ -47,9 +47,9 @@ void motor::tick() {
     X = -X;
   }
   currentX = startX + X;
-  Serial.println(currentX);
+  Serial.println(String("CX ") + String(currentX));
 
-  if (currentX == targetX) {
+  if ((dir == Forward && (currentX >= targetX)) || (dir == Backward && (currentX <= targetX))) {
     Serial.println("STOP");
     go(Stop);
     moveLoopRunning = false;
