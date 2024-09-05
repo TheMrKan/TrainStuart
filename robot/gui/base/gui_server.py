@@ -11,34 +11,12 @@ from pymitter import EventEmitter
 from utils.cv import Image
 import cv2
 import urllib.parse
+import multiprocessing
 
 logger = logging.getLogger(__name__)
 
-
-class StoppableServer(ServerAdapter):
-    def run(self, handler):
-        from wsgiref.simple_server import make_server, WSGIRequestHandler
-
-        if self.quiet:
-            class QuietHandler(WSGIRequestHandler):
-                def log_request(*args, **kw): pass
-            handler_class = QuietHandler
-        else:
-            handler_class = WSGIRequestHandler
-
-        self.server = make_server(self.host, self.port, handler, handler_class=handler_class)
-        self.server.serve_forever(poll_interval=0.1)
-
-    def stop(self):
-        self.server.shutdown()
-
-
-bottle_app = Bottle()
-http_thread: threading.Thread
-http_server: StoppableServer
-
-STATIC_DIR = "gui/assets/static"
-TEMPLATES_DIR = "gui/assets"
+http_stop_event: multiprocessing.Event
+http_process: multiprocessing.Process
 
 websocket_stop_event = threading.Event()
 websocket_thread: threading.Thread
@@ -51,18 +29,9 @@ on_message_received = EventEmitter()
 on_disconnected = EventEmitter()
 
 
-@bottle_app.route('/static/<filename:path>')
-def http_static(filename):
-    return static_file(filename, root=STATIC_DIR)
-
-
-@bottle_app.route('<page:path>')
-def http_page(page):
-    return static_file(page + ".html", root=TEMPLATES_DIR)
-
-
 async def websocket_server(websocket: WebSocketServerProtocol, path: str):
     await emit_connected(path)
+
     while not websocket_stop_event.is_set():
         try:
             try:
@@ -70,6 +39,7 @@ async def websocket_server(websocket: WebSocketServerProtocol, path: str):
                 await handle_incoming_message(path, incoming_message)
             except TimeoutError:
                 pass
+
             path_outgoing_messages: Optional[List[Union[dict, bytes]]] = outgoing_messages.get(path, None)
             if path_outgoing_messages:
                 for msg in path_outgoing_messages:
@@ -122,11 +92,16 @@ def run_websocket():
 
 
 def run_http():
-    global http_server
-    http_server = StoppableServer(host="robot", port=8000, quite=True)
-    logger.debug("HTTP server is running")
-    run(bottle_app, server=http_server)
-    logger.debug("HTTP server is stopped")
+    global http_process
+    global http_stop_event
+
+    http_stop_event = multiprocessing.Event()
+    import robot.gui.base.http as http
+    http_process = multiprocessing.Process(target=http.run,
+                                           args=(http_stop_event, ),
+                                           name="robot.gui.base.gui_server.http",
+                                           daemon=True)
+    http_process.start()
 
 
 def get_absolute_ws_url(rel_path: str) -> str:
@@ -176,7 +151,7 @@ def stop():
     logger.debug("Stopping GUI server...")
     websocket_stop_event.set()
     websocket_loop.call_soon_threadsafe(websocket_loop.stop)
-    http_server.stop()
+    http_stop_event.set()
 
     websocket_thread.join()
     http_thread.join()
