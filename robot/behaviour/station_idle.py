@@ -6,43 +6,29 @@ from robot.gui.idle import IdleApp
 from robot.gui.interaction import InteractionApp
 from robot.core import route, interaction
 from robot.hardware import robot_interface
+from robot.behaviour.base import BaseBehaviour
 
 
-class StationIdleBehaviour:
+class StationIdleBehaviour(BaseBehaviour):
 
-    __logger: logging.Logger
     __app: Union[IdleApp, InteractionApp]
 
     def __init__(self):
-        self.__logger = logging.getLogger('StationIdleBehaviour')
+        super().__init__()
         self.__app = IdleApp()
 
-    def run(self):
-        self.__logger.info(f"Running {type(self).__name__} behaviour")
-        try:
-            self.__initialize()
-
-            while True:
-                try:
-                    self.__behave()
-                except Exception as e:
-                    self.__logger.exception("Unhandled exception in __behave", exc_info=e)
-
-        finally:
-            self.__finalize()
-
-    def __initialize(self):
+    def initialize(self):
         self.__app.run()
 
-    def __finalize(self):
+    def finalize(self):
         self.__app.shutdown()
 
-    def __behave(self):
+    def behave(self):
         robot_interface.set_head_rotation(0, 20)
 
-        self.__logger.debug("Waiting for interaction...")
+        self.logger.debug("Waiting for interaction...")
         trigger = interaction.wait_for_interaction_trigger()
-        self.__logger.debug("Interaction triggered")
+        self.logger.debug("Interaction triggered")
 
         self.__app.shutdown()
         self.__app = InteractionApp()
@@ -50,14 +36,14 @@ class StationIdleBehaviour:
 
         try:
             inter = interaction.create_interaction(trigger)
-            self.__logger.debug("Interaction created")
+            self.logger.debug("Interaction created")
             time.sleep(1)
             self.__app.set_interaction(inter)
 
             while True:
                 state = interaction.update_face_state()
                 if state == state.LOST or state == state.WAITING:
-                    self.__logger.debug("Face lost. Stopping interaction...")
+                    self.logger.debug("Face lost. Stopping interaction...")
                     break
                 interaction.rotate_to_face()
                 #time.sleep(0.1)

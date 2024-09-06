@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from utils.cv import Image
 from utils.faces import FaceDescriptor
-from utils.scanner import PassportData
+from utils.docs_reader import PassportData
 from typing import Optional, Protocol, Any, Callable, Tuple
 from multiprocessing.connection import Connection
 import traceback
@@ -62,7 +62,7 @@ class AsyncWorker:
         self.__face_util = face_util
         self.__face_util.load_dependencies(parameters.resources_dir)
 
-        import utils.scanner as scanner
+        import utils.docs_reader as scanner
         self.__scanner = scanner
 
         self.run()

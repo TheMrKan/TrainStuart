@@ -4,7 +4,7 @@ from multiprocessing import Pipe, Process, Manager
 from multiprocessing.connection import Connection
 from threading import Thread
 from dataclasses import dataclass
-from utils.scanner import PassportData
+from utils.docs_reader import PassportData
 from utils.faces import FaceDescriptor
 from utils.cv import Image
 from robot.core.async_worker import *

@@ -25,7 +25,7 @@ resources_dir: "../resources"
 
 hardware:
   main_camera: 0
-  main_camera_resolution: 1920x1080
+  main_camera_resolution: 640x480
   documents_camera: 1
   dummy_robot: True
   serial: /dev/ttyTHS1
