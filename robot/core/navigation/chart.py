@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from typing import Dict, Tuple, List
+from robot.config import instance as config
 
 
 Vector2 = Tuple[int, int]
@@ -29,7 +30,7 @@ def parse_vector_2(data: dict) -> Vector2:
 
 
 def load():
-    with open("chart.json", "r") as f:
+    with open(config.data_dir + "/chart.json", "r") as f:
         raw: Dict = json.load(f)
         raw_points = raw.get("points", [])
         for r in raw_points:

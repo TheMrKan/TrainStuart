@@ -104,7 +104,7 @@ def read_serial(buffer: List[str]) -> Optional[str]:
         char = raw.decode("ascii")
         if char == "\r":
             continue
-        print(f"SERIAL CHAR <<< {char}")
+
         if char == "\n":
             line = "".join(buffer)
             buffer.clear()

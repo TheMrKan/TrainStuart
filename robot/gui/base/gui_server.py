@@ -125,8 +125,7 @@ def start():
     websocket_thread = threading.Thread(target=run_websocket, daemon=True, name="robot.gui.gui_server.websocket")
     websocket_thread.start()
 
-    http_thread = threading.Thread(target=run_http, daemon=True, name="robot.gui.gui_server.http")
-    http_thread.start()
+    run_http()
 
     logger.info("GUI server is running")
 
@@ -154,6 +153,5 @@ def stop():
     http_stop_event.set()
 
     websocket_thread.join()
-    http_thread.join()
     logger.info("GUI server is stopped")
 

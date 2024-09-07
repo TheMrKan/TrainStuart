@@ -21,7 +21,7 @@ head_vertical = 0
 
 def initialize():
     iserial.setup()
-    iserial.await_completion()
+    #iserial.await_completion()
 
 
 def stop():
@@ -37,7 +37,7 @@ def rotate_to(angle: int):
 
 
 def set_actual_pos(x: int, y: int):
-    iserial.send_command("P", x, y, completion=True)
+    iserial.send_command("P", x, y, completion=False)
 
 
 def set_head_rotation(horiz: int, vert: int, completion=True):

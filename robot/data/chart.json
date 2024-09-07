@@ -6,23 +6,33 @@
       "y": 0
     },
     {
-      "id": "marker_right_1",
-      "x": 70,
+      "id": "marker_left_1",
+      "x": 140,
       "y": 0
     },
     {
-      "id": "marker_right_6",
-      "x": -70,
-      "y": 0
-    },
-    {
-      "id": "marker_right_14",
+      "id": "marker_left_6",
       "x": 0,
       "y": 0
     },
     {
+      "id": "marker_left_14",
+      "x": 70,
+      "y": 0
+    },
+    {
       "id": "seat_1",
-      "x": 50,
+      "x": 30,
+      "y": 20
+    },
+    {
+      "id": "seat_5",
+      "x": 70,
+      "y": 20
+    },
+    {
+      "id": "seat_9",
+      "x": 140,
       "y": 20
     }
   ],

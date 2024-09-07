@@ -50,7 +50,7 @@ def get_face_descriptor(image: Image, face_location: Optional[FaceLocation] = No
     return descriptors[0] if len(descriptors) > 0 else None
 
 
-def find_face(image: Image, min_size: int = 300) -> Optional[FaceLocation]:
+def find_face(image: Image, min_size: int = 200) -> Optional[FaceLocation]:
     """
     Возвращает самое большое найденное лицо на изображении
     :param image: BGR изображение

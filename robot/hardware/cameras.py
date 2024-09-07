@@ -103,7 +103,7 @@ class CameraHandler:
         if not ret:
             return False
 
-        bgr = cv2.flip(bgr, 1)
+        #bgr = cv2.flip(bgr, 1)
 
         hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
         self.image_bgr = bgr
@@ -125,6 +125,7 @@ class CameraHandler:
                     self.__logger.warning(f"Failed to get image from camera {self.index}")
                     time.sleep(0.3)
                     continue
+                time.sleep(0.01)
 
             except Exception as e:
                 self.__logger.error(f"An error occured in reader thread of camera {self.index}", exc_info=e)

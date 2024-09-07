@@ -41,6 +41,7 @@ class ConfigProtocol(Protocol):
     idle: IdleAppConfig
     route: RouteConfig
     resources_dir: str
+    data_dir: str
     server: ServerConfig
     gui: GUIConfig
 

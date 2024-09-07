@@ -17,7 +17,7 @@ class StoppableServer(ServerAdapter):
             handler_class = WSGIRequestHandler
 
         self.server = make_server(self.host, self.port, handler, handler_class=handler_class)
-        self.server.serve_forever(poll_interval=0.1)
+        self.server.serve_forever(poll_interval=0.05)
 
     def stop(self):
         self.server.shutdown()
@@ -63,4 +63,3 @@ def __watcher():
     while not stop_event.is_set():
         time.sleep(0.5)
     http_server.stop()
-

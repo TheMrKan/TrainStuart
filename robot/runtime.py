@@ -12,7 +12,9 @@ from robot.hardware import robot_interface
 from robot.gui.base import gui_server, navigation as gui_navigation
 from robot.gui.startup import StartupApp
 from robot.behaviour.station_idle import StationIdleBehaviour
+from robot.behaviour.carriage_moving import CarriageMovingBehaviour
 from robot.dev import control_panel
+from robot.core.navigation import chart
 
 
 class Runtime:
@@ -51,8 +53,9 @@ class Runtime:
         finally:
             startup_app.shutdown()
 
-        while not route.is_service_finished():
-            StationIdleBehaviour().run()
+        CarriageMovingBehaviour().run()
+        while True:
+            time.sleep(1)
 
     def __initialize(self, status_log: Callable[[str, ], None]):
         status_log("Настройка камер...")
@@ -75,6 +78,8 @@ class Runtime:
 
         status_log("Подключение кнопок вызова...")
         calls.initialize()
+
+        chart.load()
 
         status_log("Настройка панели управления...")
         control_panel.initialize()
