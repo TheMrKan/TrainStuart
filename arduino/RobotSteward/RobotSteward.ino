@@ -31,6 +31,9 @@ VL53L0X_RangingMeasurementData_t measureHead;
 #include "Head.h"
 Head head(&multiservo[7]);
 
+// #include "Laser.h"
+// Laser laserF(&multiservo[8], FRONT);
+
 #include "motor.h"
 motor wheels;
 
@@ -45,6 +48,25 @@ struct Message currentMessage;
 bool getReady = false;
 
 int dist;
+
+
+
+
+    static const int left = 60;
+    static const int right = 120;
+
+    bool dir = true;
+    int currentAngle = 0, index = 0, isPeriod = 0;
+    unsigned long tmr = 0;
+
+    // Массив. Количество ячеек - это двойная разница углов
+    static const int lenArray = (right - left) * 2;
+    int array1[lenArray], array2[lenArray], array3[lenArray];
+    float array[lenArray];
+
+    const int maxDist = 500;
+
+    int side;
 
 void setID() {
   pinMode(SHT_LOX1, OUTPUT);
@@ -113,12 +135,17 @@ void setup() {
         multiservo[count].attach(count);
     }
     multiservo[7].detach();
+    multiservo[8].write(left);
+    // laserF.begin();
+
+
     wheels.begin();
     Serial.println("Adafruit VL53L0X test");
     setID();
     Serial.println(String(getDistanse(0)) + "  " + String(getDistanse(1)) + "  " + String(getDistanse(2)));
     head.begin();
-    wheels.setSpeed(200, ALL);
+
+    wheels.setSpeed(150, ALL);
     head.home();
 
     getReady = false;
@@ -127,15 +154,22 @@ void setup() {
 void loop() {
     head.tick();
     wheels.tick();
-    dist = getDistanse(0);
+    // if (getReady) scan();// laserF.scan();
+    //scan();
+    //dist = getDistanse(0);
 
     if (head.getState('x') && head.getState('y')) {
       if (!getReady) {
         Serial.println("READY");
         getReady = true;
       }
-      else IO.sendCompletion();
+      IO.sendCompletion();
     }
+    if (wheels.getState('x') && wheels.getState('y')) {
+      IO.sendCompletion();
+      wheels.clearState();
+    }
+
     struct Message newMessage = IO.readMessage();
     if (newMessage.code != "") {
         handleMessage(newMessage);
@@ -154,20 +188,25 @@ void handleMessage(struct Message message) {
         if (message.code == "H") {
           head.rotate(message.args[0], message.args[1]);
         }
-        if (message.code == "S") {
+        else if (message.code == "S") {
           head.stop();
         }
-        if (message.code == "Hd") {
+        else if (message.code == "Hd") {
           Serial.println(getDistanse(message.args[0]));
         }
-        if (message.code == "M") {
-          Serial.println(message.args[0]);
-          // if (message.args[0] == 1) {
-          //   wheels.go(Forward);
-          //   delay(12000);
-          //   wheels.go(Stop);
-          // }
-          wheels.run(message.args[0], message.args[1]);
+        else if (message.code == "M") {
+          wheels.run(message.args[0], 0);
+        }
+        else if (message.code == "Mt") {
+          wheels.go(Forward);
+          delay(message.args[0]);
+          wheels.go(Stop);
+        }
+        else if (message.code == "P") {
+          wheels.setCurrentPosition(message.args[0], message.args[1]);
+        }
+        else {
+          Serial.println("Unknown code: " + message.code);
         }
     }
     else {
@@ -209,4 +248,17 @@ int getDistanse(int index) {
       return measureHead.RangeMilliMeter;
     } else return 0;
   }
+}
+
+void scan() {
+  if (dir && currentAngle < right) {
+    ++currentAngle;
+    // Считывание дистанции
+  }
+  else if (!dir && currentAngle > left) {
+    --currentAngle;
+    // Считывание дистанции
+  }
+  //Serial.println(currentAngle);
+  multiservo[8].write(currentAngle);
 }

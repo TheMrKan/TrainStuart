@@ -28,6 +28,8 @@ motor::motor() {
   
 }
 
+unsigned long lastSendX = 0;
+
 void motor::begin() {
   for (int i = 37; i <= 49; i++) pinMode(i, OUTPUT);
   pinMode(4, OUTPUT);
@@ -47,18 +49,33 @@ void motor::tick() {
     X = -X;
   }
   currentX = startX + X;
-  Serial.println(String("CX ") + String(currentX));
+
+  if (millis() - lastSendX > 500) {
+    Serial.println(String("CX ") + String(currentX));
+    lastSendX = millis();
+  } 
+  
 
   if ((dir == Forward && (currentX >= targetX)) || (dir == Backward && (currentX <= targetX))) {
-    Serial.println("STOP");
+    Serial.println("STOP " + String(currentX));
     go(Stop);
     moveLoopRunning = false;
+
+    completeX = true;
+    completeY = true;
     return;
   }
   go(dir);
+  completeX = false;
+  completeY = false;
 }
 
 void motor::run(int x, int y) {
+  if (x == currentX) completeX = true;
+  else completeX = false;
+  if (y == currentY) completeY = true;
+  else completeY = false;
+
   targetX = x;
   targetY = y;
 
@@ -73,6 +90,16 @@ void motor::run(int x, int y) {
   tmr = millis();
   moveLoopRunning = true;
 
+}
+
+void motor::setCurrentPosition(int x, int y) {
+  startX = x;
+  startY = y;
+  currentX = x;
+  currentY = y;
+
+  tmr = millis();
+  Serial.println("SET POS " + String(x) + String(" ") + String(y));
 }
 
 void motor::setSpeed(int speed, Type type) {
@@ -184,4 +211,21 @@ void motor::motor_run(Type motor, Direction dir) {
       digitalWrite(PIN_IN4_2, dir2);
       break;
   }
+}
+
+bool motor::getState(char axis) {
+  if (axis = 'x') {
+    if (completeX) {
+      return true;
+    } return false;
+  } else {
+    if (completeY) {
+      return true;
+    } return false;
+  }
+}
+
+void motor::clearState() {
+  completeX = false;
+  completeY = false;
 }

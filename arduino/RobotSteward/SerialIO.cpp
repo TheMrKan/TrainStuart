@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "SerialIO.h"
 
-#define IOSerial Serial
+#define IOSerial Serial1
 
 SerialIO::SerialIO() {
   IOSerial.begin(115200);
@@ -43,6 +43,7 @@ void SerialIO::sendMessage(struct Message message) {
 }
 
 void SerialIO::sendConfirmation() {
+  Serial.println("+");
   IOSerial.println("+");
 }
 
@@ -105,7 +106,7 @@ struct Message SerialIO::parseMessage(String message) {
       }
     }
     else {
-      if (isWritingArgs) {
+      if (isWritingArgs && (c == '-' || isDigit(c))) {
         argStr += c;
       }
       else {

@@ -18,11 +18,14 @@ class motor {
     void setSpeed(int speed, Type type);
     void run(int x, int y);
     void go(Move _move);
+    bool getState(char axis);
+
+    void clearState();
+    void setCurrentPosition(int x, int y);
   private:
     Move move, dir;
     void motor_run(Type motor, Direction dir);
     
-
     bool moveLoopRunning = false;
     unsigned long tmr;
     unsigned long targetTime;
@@ -31,5 +34,7 @@ class motor {
     int targetX, targetY;
     int startX, startY;
 
-    float SPEED = 258.5 / 12;
+    bool completeX = false, completeY = false;
+
+    float SPEED = 215 / 12;
 };

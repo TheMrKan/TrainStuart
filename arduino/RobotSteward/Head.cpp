@@ -139,6 +139,11 @@ void Head::rotate(int x, int y) {
 void Head::rotateX(int x) {
     if (x > 160) x = 160;
     if (x < -165) x = -165;
+
+    if (currentX == x) {
+      stateX = true;
+      return;
+    }
     
     currentX += round(-enc.counter / angleTicks);
     int targetAngle = x - currentX;
