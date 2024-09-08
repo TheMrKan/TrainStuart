@@ -1,5 +1,10 @@
 import robot.hardware.serial_interface as iserial
 import enum
+import logging
+
+logger = logging.getLogger(__name__)
+
+WHEELS_SPEED_X = 215 / 12
 
 
 class Side(enum.Enum):
@@ -29,7 +34,9 @@ def stop():
 
 
 def move_to(x: int, y: int):
+    logger.debug(f"Send move to {x} {y}")
     iserial.send_command("M", x, y, completion=True)
+    logger.debug(f"Completed move to {x} {y}")
 
 
 def rotate_to(angle: int):

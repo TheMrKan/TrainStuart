@@ -2,7 +2,7 @@ import time
 import cv2
 import math
 import numpy
-from typing import Optional, Callable, Tuple, List
+from typing import Optional, Callable, Tuple, List, Any
 import os.path
 from utils.cv import Image
 from datetime import datetime
@@ -94,6 +94,77 @@ def get_nearest_descriptor_index(descriptor: FaceDescriptor, known_descriptors: 
         return compared.index(m)
     except ValueError:
         return -1
+
+
+'''class ContinuousDetector:
+
+    class State(Enum):
+        WAITING = 0
+        FOUND_GUESS = 1
+        FOUND_GUESS_WAITING = 2
+        FOUND_GUESS_FAILED = 3
+        FOUND = 4
+        TRACKING = 5
+        LOST_GUESS = 6
+        LOST_GUESS_WAITING = 7
+        LOST = 8
+
+    target: Callable[[*Any], Optional[Any]]
+    result: Optional[Any]
+    seconds_to_loose: float = 1
+    seconds_to_find: float = 1
+
+    __args: Tuple[Any]
+    __detected: Optional[datetime]
+    __lost: Optional[datetime]
+    __is_tracking: bool
+
+    def __init__(self, target: Callable[[*Any], Optional[Any]], *args: Any):
+        self.target = target
+        self.__args = args
+        self.__detected = None
+        self.__lost = None
+        self.__is_tracking = False
+
+    def reset(self):
+        self.__detected = None
+        self.__lost = None
+        self.__is_tracking = False
+
+    def tick(self) -> State:
+        self.result = self.target(*self.__args)
+
+        now = datetime.now()
+        if self.result is None:
+            if self.__detected and not self.__is_tracking:
+                self.__detected = None
+                return self.State.FOUND_GUESS_FAILED
+            if self.__lost:
+                if (now - self.__lost).total_seconds() > self.seconds_to_loose:
+                    self.reset()
+                    return self.State.LOST
+                else:
+                    return self.State.LOST_GUESS_WAITING
+            else:
+                if self.__detected:
+                    self.__lost = now
+                    return self.State.LOST_GUESS
+                return self.State.WAITING
+
+        self.__lost = None
+
+        if not self.__detected:
+            self.__detected = now
+            return self.State.FOUND_GUESS
+        else:
+            if not self.__is_tracking:
+                if (now - self.__detected).total_seconds() > self.seconds_to_find:
+                    self.__is_tracking = True
+                    return self.State.FOUND
+                else:
+                    return self.State.FOUND_GUESS_WAITING
+            else:
+                return self.State.TRACKING'''
 
 
 class ContinuousFaceDetector:

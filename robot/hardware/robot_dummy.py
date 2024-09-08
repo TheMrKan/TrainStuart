@@ -1,27 +1,19 @@
 import enum
 import time
 import logging
+import math
+
+from robot.hardware.robot_interface import *
 
 __logger = logging.getLogger(__name__)
-
-
-class Side(enum.Enum):
-    LEFT = 1
-    RIGHT = 2
-
-
-class RobotContainer(enum.Enum):
-    BIG = 0
-    SMALL_0 = 1
-    SMALL_1 = 2
-    TABLET_0 = 3
-    TABLET_1 = 4
 
 HEAD_HORIZONTAL_SPEED = 9 / 180
 HEAD_VERTICAL_SPEED = 2 / 30
 
 head_horizontal = 0
 head_vertical = 0
+
+wheels_x, wheels_y = 0, 0
 
 
 def initialize():
@@ -33,7 +25,10 @@ def stop():
 
 
 def move_to(x: int, y: int):
-    time.sleep(1)
+    global wheels_x, wheels_y
+    dst = math.sqrt((wheels_x - x) ** 2 + (wheels_y - y) ** 2)
+    time.sleep(dst / WHEELS_SPEED_X)
+    wheels_x, wheels_y = x, y
 
 
 def rotate_to(angle: int):

@@ -2,6 +2,7 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 from threading import Thread, Event
+import logging
 
 from robot.core.navigation import chart, visual_positioning
 from robot.core.navigation.chart import Vector2, Zone
@@ -29,6 +30,9 @@ MOVEMENT_LINE_RIGHT = 30
 """
 
 
+logger = logging.getLogger(__name__)
+
+
 class Movement:
     start: Vector2
     destination: Vector2
@@ -43,15 +47,34 @@ passage: Zone
 
 def start():
     global current_x, current_y, passage
-    current_x, current_y = chart.get_point_position("start")
-    passage = chart.zones["passage"]
+    pos = find_start_position()
+    if pos is None:
+        logger.warning("Failed to calculate start position via visual positioning")
+        current_x, current_y = chart.get_point_position("start")
+    else:
+        current_x, current_y = pos
+        logger.info(f"Start position: {current_x} {current_y}")
+
     robot_interface.set_actual_pos(current_x, current_y)
+
+    passage = chart.zones["passage"]
+
+
+def find_start_position() -> Optional[chart.Vector2]:
+    robot_interface.set_head_rotation(-90, 0)
+    pos = visual_positioning.try_get_position(robot_interface.head_horizontal)
+    if pos is not None:
+        return pos
+
+    robot_interface.set_head_rotation(90, 0)
+    pos = visual_positioning.try_get_position(robot_interface.head_horizontal)
+    return pos
 
 
 def go_to_seat(seat: int):
-    print(f"Going to seat {seat}")
+    logger.debug(f"Going to seat {seat}")
     seat_pos = chart.get_position_for_seat(seat)
-    print(f"Seat position: {seat_pos}")
+    logger.debug(f"Seat position: {seat_pos}")
     movement = prepare_movement(seat_pos)
     process_movement(movement)
 
@@ -86,15 +109,28 @@ def process_movement(movement: Movement):
 
     thread = Thread(target=robot_interface.move_to, args=(movement.destination[0], 0))
     thread.start()
+    time.sleep(0.5)
 
-    for pos in visual_positioning.watcher():
-        if not thread.is_alive():
-            break
+    last_send_pos: Optional[chart.Vector2] = None
+    last_send_time: float = 0
+    while thread.is_alive():
+        pos = visual_positioning.try_get_position(movement.head_rotation)
 
         if not pos:
             continue
 
-        print(pos)
+        if last_send_pos is None or abs(last_send_pos[0] - pos[0]) > 5:
+            if last_send_pos is None or abs(last_send_pos[0] - pos[0]) < (time.time() - last_send_time) * robot_interface.WHEELS_SPEED_X * 2:
+                logger.debug(pos)
+                robot_interface.set_actual_pos(pos[0], 0)
+                last_send_pos = pos
+                last_send_time = time.time()
+            else:
+                logger.debug(f"Delta is too big ({abs(last_send_pos[0] - pos[0]):.1f} / {(time.time() - last_send_time) * robot_interface.WHEELS_SPEED_X * 2:.1f})")
+        else:
+            #logger.debug(f"Delta is too low ({abs(last_send_pos[0] - pos[0]):.1f})")
+            pass
+    logger.debug("Loop completed")
 
     time.sleep(0.5)
     current_x, current_y = movement.destination

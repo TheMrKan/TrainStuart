@@ -4,7 +4,7 @@ import numpy as np
 from typing import Tuple
 import chart
 
-DISTANCE = 129
+DISTANCE = 90
 FOCAL = 900
 
 
@@ -31,7 +31,7 @@ def camera_position(image_size: Tuple[int, int], marker: Tuple[int, int],
 cap = cv2.VideoCapture(0)
 last_ax, last_ay = 0, 0
 
-chart.load_map()
+chart.load()
 
 while True:
     _, img = cap.read()
@@ -62,7 +62,7 @@ while True:
         rx, _, ry = camera_position((img.shape[1], img.shape[0]), center, DISTANCE, FOCAL)
 
         try:
-            ax, ay = chart.get_absolute_position(f"R{num}", rx, ry)
+            ax, ay = chart.get_absolute_position(f"marker_left_{num}", (rx, ry))
             last_ax, last_ay = ax, ay
         except KeyError:
             print(f"Unknown point {num}")
@@ -70,7 +70,7 @@ while True:
 
         print(f"Point: {num}\tX: {ax}\tY: {ay}")
 
-        vx, vy = cx - ax, cy - ay
+        vx, vy = cx + ax, cy - ay
         cv2.circle(chart_image, (vx, vy), 5, (255, 255, 0), 5)
 
     cv2.imshow("Image", cv2.resize(img, (500, 288)))

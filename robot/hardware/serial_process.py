@@ -41,6 +41,7 @@ on_confirmation_received: Event
 on_completion_received: Event
 on_response_received: Event
 on_message_sent: Event
+sending: float = 0
 
 
 def begin(_shared: SharedProtocol, _on_state_changed, _on_confirmation_received, _on_completion_received, _on_response_received, _on_message_sent):
@@ -81,6 +82,7 @@ def begin(_shared: SharedProtocol, _on_state_changed, _on_confirmation_received,
 def loop():
     global shared
     global connection
+    global sending
 
     buffer: List[str] = []
 
@@ -90,12 +92,16 @@ def loop():
             if line:
                 handle_line(line)
 
-            send_outgoing_message()
+            if sending == 0:
+                send_outgoing_message()
+            elif time.time() - sending > 0.5:
+                sending = 0
+                send_outgoing_message()
 
         except:
             traceback.print_exc()
         finally:
-            time.sleep(0.1)
+            time.sleep(0.02)
 
 
 def read_serial(buffer: List[str]) -> Optional[str]:
@@ -126,6 +132,11 @@ def handle_line(line: str):
 def try_handle_confirmation(line: str) -> bool:
     if line != "+":
         return False
+
+    global sending
+
+    sending = 0
+    shared.outgoing_message = None
 
     on_confirmation_received.set()
     return True
@@ -158,12 +169,13 @@ def try_handle_response(line: str) -> bool:
 
 
 def send_outgoing_message():
-    if not shared.outgoing_message:
+    global sending
+    if not shared.outgoing_message or sending:
         return
 
     command_str = str(shared.outgoing_message)
     connection.write(command_str.encode("ascii"))
     print(f"SERIAL >>> {command_str}")
-    shared.outgoing_message = None
+    sending = time.time()
     on_message_sent.set()
 
