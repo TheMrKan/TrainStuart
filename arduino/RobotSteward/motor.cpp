@@ -51,13 +51,13 @@ void motor::tick() {
   currentX = startX + X;
 
   if (millis() - lastSendX > 500) {
-    Serial.println(String("CX ") + String(currentX));
+    // Serial.println(String("CX ") + String(currentX));
     lastSendX = millis();
   } 
   
 
   if ((dir == Forward && (currentX >= targetX)) || (dir == Backward && (currentX <= targetX))) {
-    Serial.println("STOP " + String(currentX));
+    // Serial.println("STOP " + String(currentX));
     go(Stop);
     moveLoopRunning = false;
 

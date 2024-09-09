@@ -31,8 +31,9 @@ VL53L0X_RangingMeasurementData_t measureHead;
 #include "Head.h"
 Head head(&multiservo[7]);
 
-// #include "Laser.h"
-// Laser laserF(&multiservo[8], FRONT);
+#include "Laser.h"
+Laser laserF(&multiservo[8], &lox2, FRONT);
+// Laser laserB(&multiservo[9], &lox1, BACK);
 
 #include "motor.h"
 motor wheels;
@@ -52,21 +53,21 @@ int dist;
 
 
 
-    static const int left = 60;
-    static const int right = 120;
+    // static const int left = 60;
+    // static const int right = 120;
 
-    bool dir = true;
-    int currentAngle = 0, index = 0, isPeriod = 0;
-    unsigned long tmr = 0;
+    // bool dir = true;
+    // int currentAngle = 0, index = 0, isPeriod = 0;
+    // unsigned long tmr = 0;
 
-    // Массив. Количество ячеек - это двойная разница углов
-    static const int lenArray = (right - left) * 2;
-    int array1[lenArray], array2[lenArray], array3[lenArray];
-    float array[lenArray];
+    // // Массив. Количество ячеек - это двойная разница углов
+    // static const int lenArray = (right - left) * 2;
+    // int array1[lenArray], array2[lenArray], array3[lenArray];
+    // float array[lenArray];
 
-    const int maxDist = 500;
+    // const int maxDist = 500;
 
-    int side;
+    // int side;
 
 void setID() {
   pinMode(SHT_LOX1, OUTPUT);
@@ -135,13 +136,15 @@ void setup() {
         multiservo[count].attach(count);
     }
     multiservo[7].detach();
-    multiservo[8].write(left);
-    // laserF.begin();
-
-
+    // multiservo[8].write(left);
+    
     wheels.begin();
+
     Serial.println("Adafruit VL53L0X test");
     setID();
+    laserF.begin();
+    // laserB.begin();
+
     Serial.println(String(getDistanse(0)) + "  " + String(getDistanse(1)) + "  " + String(getDistanse(2)));
     head.begin();
 
@@ -151,16 +154,22 @@ void setup() {
     getReady = false;
 }
 
+unsigned long loopTime, totalLoopTime;
+
 void loop() {
+    loopTime = millis();
     head.tick();
     wheels.tick();
-    // if (getReady) scan();// laserF.scan();
+    if (getReady)  {
+      laserF.scan();
+      // laserB.scan();
+    }
     //scan();
     //dist = getDistanse(0);
 
     if (head.getState('x') && head.getState('y')) {
       if (!getReady) {
-        Serial.println("READY");
+        // Serial.println("READY");
         getReady = true;
       }
       IO.sendCompletion();
@@ -174,6 +183,9 @@ void loop() {
     if (newMessage.code != "") {
         handleMessage(newMessage);
     }
+    totalLoopTime = millis() - loopTime;
+    // Serial.println(laserF.getSide());
+    // Serial.println("ServoF: " + String(laserF.getSide()) + " ServoB: " + String(laserB.getSide()));
 }
 
 void handleMessage(struct Message message) {
@@ -230,35 +242,35 @@ void handleMessage(struct Message message) {
 // #endif
 
 int getDistanse(int index) {
-  lox1.rangingTest(&measure1, false); // pass in 'true' to get debug data printout!
-  lox2.rangingTest(&measure2, false); // pass in 'true' to get debug data printout!
-  loxHead.rangingTest(&measureHead, false); // pass in 'true' to get debug data printout!
+  // lox1.rangingTest(&measure1, false); // pass in 'true' to get debug data printout!
+  // lox2.rangingTest(&measure2, false); // pass in 'true' to get debug data printout!
+  // loxHead.rangingTest(&measureHead, false); // pass in 'true' to get debug data printout!
 
 
-  if (index == 1) {
-    if(measure1.RangeStatus != 4) {     // if not out of range
-      return measure1.RangeMilliMeter;
-    } else return 0;
-  } else if (index == 2) {
-    if(measure2.RangeStatus != 4) {     // if not out of range
-      return measure2.RangeMilliMeter;
-    } else return 0;
-  } else if (index == 0) {
-    if(measureHead.RangeStatus != 4) {  // if not out of range
-      return measureHead.RangeMilliMeter;
-    } else return 0;
-  }
+  // if (index == 1) {
+  //   if(measure1.RangeStatus != 4) {     // if not out of range
+  //     return measure1.RangeMilliMeter;
+  //   } else return 0;
+  // } else if (index == 2) {
+  //   if(measure2.RangeStatus != 4) {     // if not out of range
+  //     return measure2.RangeMilliMeter;
+  //   } else return 0;
+  // } else if (index == 0) {
+  //   if(measureHead.RangeStatus != 4) {  // if not out of range
+  //     return measureHead.RangeMilliMeter;
+  //   } else return 0;
+  // }
 }
 
-void scan() {
-  if (dir && currentAngle < right) {
-    ++currentAngle;
-    // Считывание дистанции
-  }
-  else if (!dir && currentAngle > left) {
-    --currentAngle;
-    // Считывание дистанции
-  }
-  //Serial.println(currentAngle);
-  multiservo[8].write(currentAngle);
-}
+// void scan() {
+//   if (dir && currentAngle < right) {
+//     ++currentAngle;
+//     // Считывание дистанции
+//   }
+//   else if (!dir && currentAngle > left) {
+//     --currentAngle;
+//     // Считывание дистанции
+//   }
+//   //Serial.println(currentAngle);
+//   multiservo[8].write(currentAngle);
+// }
