@@ -37,6 +37,17 @@ class GUIChannel extends EventTarget {
             }
         };
     }
+
+    send(code, data = null) {
+        if (data === null) {
+            data = {"code": code};
+        }
+        else {
+            data["code"] = code;
+        }
+
+        this.socket.send(JSON.stringify(data));
+    }
 }
 
 

@@ -7,7 +7,9 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
-    <link rel="stylesheet" type="text/css" href="./static/styles.css">
+    <script src="/static/js/gui_channel.js"></script>
+    <script src="/static/js/gui_navigation.js"></script>
+    <script src="/static/js/ws_video_stream.js"></script>
     <title>Считывание биометрии</title>
 </head>
 <body>
@@ -144,12 +146,30 @@
 
     function setRectPos(x_rel, y_rel) {
         $("#rect").css("top", 1024 * y_rel - 200);
-        $("#rect").css("left", 640 * x_rel - 320);
+        $("#rect").css("left", 600 * x_rel - 300);
     };
 
-    function setCameraImage(src) {
-        $("#cameraImage").attr("src", src)
-    };
+
+    
+
+    window.addEventListener("channel_ready", function (event) {
+        event.detail.channel.addEventListener("code_show_face_rect", function(event) {
+            enableRect();
+        });
+
+        event.detail.channel.addEventListener("code_hide_face_rect", function(event) {
+            disableRect();
+        });
+
+        event.detail.channel.addEventListener("code_face_rect_position", function(event) {
+            setRectPos(event.detail.x, event.detail.y);
+        });
+    });
+
+    window.addEventListener('load', function() {
+        videoStream = new WSVideoStream("ws://robot:8001/app/image", document.getElementById("cameraImage"));
+        videoStream.begin();
+    });
 
 </script>
 </body>

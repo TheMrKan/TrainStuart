@@ -15,6 +15,7 @@ from robot.behaviour.station_idle import StationIdleBehaviour
 from robot.behaviour.carriage_moving import CarriageMovingBehaviour
 from robot.dev import control_panel
 from robot.core.navigation import chart
+from robot.gui.documents_check import DocumentsCheckApp
 
 
 class Runtime:
@@ -53,9 +54,14 @@ class Runtime:
         finally:
             startup_app.shutdown()
 
-        CarriageMovingBehaviour().run()
         while True:
-            time.sleep(1)
+            app = DocumentsCheckApp()
+            try:
+                app.run()
+            except Exception as e:
+                self.__logger.exception("An error occured in DocumentsCheckApp", exc_info=e)
+            finally:
+                app.shutdown()
 
     def __initialize(self, status_log: Callable[[str, ], None]):
         status_log("Настройка камер...")

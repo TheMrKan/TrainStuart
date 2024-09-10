@@ -10,44 +10,51 @@ from datetime import datetime
 
 from robot.hardware.cameras import CameraAccessor
 import robot.config as config
-from robot.gui.apps import BasePipelineApp, PipelineLogicError
+from robot.gui.base.app import BaseApp
+from robot.gui.base import gui_server
 import utils.faces as face_util
 from robot.core.async_processor import AsyncProcessor
 from robot.core.tickets import TicketsRepository, TicketInfo
-from utils.cancelations import sleep, await_event, CancellationToken
-from utils.scanner import PassportData
+from utils.docs_reader import PassportData
 import robot.core.route as route
 
 
-class PassportNotFoundError(PipelineLogicError):
+class PassportNotFoundError(Exception):
     pass
 
 
-class TicketNotFoundError(PipelineLogicError):
+class TicketNotFoundError(Exception):
     pass
 
 
-class DocumentsCheckApp(BasePipelineApp):
+class DocumentsCheckApp(BaseApp):
 
     NAME = "DocumentsCheck"
-    ASSETS_PATH = "./gui/assets/"
+    INITIAL_PAGE = "passport"
 
-    PAGES = {
-        "default": "loading.html",
-        "put_passport": "passport.html",
-        "face": "face.html",
-        "done": "done.html"
-    }
+    def run(self):
+        super().run()
+        self.logger.debug("Running DocumentsCheck app")
 
-    is_serving: bool
+        self.wait_message("read_passport")
 
-    def __init__(self):
-        super().__init__()
+        passport_data = self.read_passport()
 
-        self.is_serving = False
+        self.logger.debug(f"Passport found: {passport_data}. Looking for a ticket...")
 
-    def check_is_running(self) -> bool:
-        return super().check_is_running() and (not route.is_boarding_finished() or self.is_serving)
+        ticket = self.check_ticket(passport_data)
+
+        self.logger.debug(f"Ticket found: {ticket}. Going to step 2...")
+        self.send_page("face")
+
+        face = self.read_face()
+
+        self.send_page("done")
+
+        similarity = face_util.compare_faces(passport_data.face_descriptor, face)
+        self.logger.debug(f"Similarity: {similarity}")
+
+        time.sleep(5)
 
     def read_passport(self) -> PassportData:
         self.logger.debug("Reading passport...")
@@ -67,7 +74,7 @@ class DocumentsCheckApp(BasePipelineApp):
             passport_read_event.set()
 
         AsyncProcessor.read_passport_async(passport_image, callback_success, callback_error)
-        await_event(passport_read_event, None, self.cancellation)
+        passport_read_event.wait()
 
         if error:
             raise error
@@ -76,8 +83,8 @@ class DocumentsCheckApp(BasePipelineApp):
 
         if not passport_found:
             self.logger.debug("Passport not found.")
-            self.show_passport_not_found()
-            self.api.await_continue(5)
+            self.send("passport_not_found")
+            time.sleep(5)
             raise PassportNotFoundError()
         
         return passport_data
@@ -86,8 +93,8 @@ class DocumentsCheckApp(BasePipelineApp):
         ticket = TicketsRepository.get_by_passport(passport_data.passport_number)
         if not ticket:
             self.logger.debug("Ticket not found.")
-            self.show_ticket_not_found()
-            self.api.await_continue(5)
+            self.send("ticket_not_found")
+            time.sleep(5)
             raise TicketNotFoundError()
         return ticket
 
@@ -97,7 +104,7 @@ class DocumentsCheckApp(BasePipelineApp):
         face_center_history_y = []
         face_not_found_confirmations = 25   # кол-во кадров, на которых лицо не найдено, после которого квадрат пропадет. Чтобы квадрат не моргал
 
-        face_processing_result: face_util.FaceDescriptor | None  = None
+        face_processing_result: Optional[face_util.FaceDescriptor] = None
         face_processing_error: Optional[Exception] = None
         face_processing_started = False
         time_start = time.time()
@@ -111,7 +118,7 @@ class DocumentsCheckApp(BasePipelineApp):
             nonlocal face_processing_error
             nonlocal face_not_found_confirmations
             nonlocal time_start
-            self.hide_face_rect()
+            self.send("hide_face_rect")
             is_rect_displayed = False
             time_start_tracking = 0
             face_center_history_x.clear()
@@ -123,8 +130,6 @@ class DocumentsCheckApp(BasePipelineApp):
             time_start = time.time()
 
         while True:
-            if not self.check_is_running():
-                return
             current_time = time.time()
 
             image = self.crop_image(CameraAccessor.main_camera.image_bgr.copy())
@@ -162,12 +167,12 @@ class DocumentsCheckApp(BasePipelineApp):
 
                         elif face_processing_result is not None and current_time - time_start_tracking > 1.5:
                             self.logger.debug(f"Recognition completed")
-                            self.hide_face_rect()
+                            self.send("hide_face_rect")
                             return face_processing_result
 
                     center = int(face_location[0] + (face_location[2] / 2)), int(face_location[1] + (face_location[3] / 2))
                     if not is_rect_displayed:
-                        self.show_face_rect()
+                        self.send("show_face_rect")
                         is_rect_displayed = True
 
                     # фильтр, чтобы квадрат не дергался
@@ -181,69 +186,10 @@ class DocumentsCheckApp(BasePipelineApp):
                     average_center_x = sum(face_center_history_x) / len(face_center_history_x)
                     average_center_y = sum(face_center_history_y) / len(face_center_history_y)
 
-                    # вычитаем из 1, т. к. изображение выводится зеркально
-                    self.set_face_rect_pos(1 - average_center_x / image.shape[1], average_center_y / image.shape[0])
+                    x_rel, y_rel = average_center_x / image.shape[1], average_center_y / image.shape[0]
+                    self.send("face_rect_position", x=x_rel, y=y_rel)
 
-            self.send_camera_image(image)
-
-    def pipeline(self):
-        self.is_serving = False
-        self.send_page("put_passport")
-
-        # если ожидание завершено из-за таймаута, значит настало время отправления. Приложение должно закрыться
-        # после завершения пайплайна check_is_running вернет False и выполнение завершится
-        if not self.api.await_continue((route.departure_time - datetime.now()).total_seconds()):
-            return
-        
-        self.is_serving = True
-
-        passport_data = self.read_passport()
-
-        self.logger.debug(f"Passport found: {passport_data}. Looking for a ticket...")
-
-        ticket = self.check_ticket(passport_data)
-
-        self.logger.debug(f"Ticket found: {ticket}. Going to step 2...")
-        self.send_page("face")
-
-        face = self.read_face()
-
-        self.send_page("done")
-
-        similarity = face_util.compare_faces(passport_data.face_descriptor, face)
-        self.logger.debug(f"Similarity: {similarity}")
-
-        sleep(5, self.cancellation)
-
-    def show_passport_not_found(self):
-        self.window.evaluate_js("""
-            $("#process").toggle();
-            $("#no_passport").toggle();
-            """)
-        
-    def show_ticket_not_found(self):
-        self.window.evaluate_js("""
-            $("#process").toggle();
-            $("#no_ticket").toggle();
-            """)
-
-    def hide_face_rect(self):
-        self.window.evaluate_js("disableRect();")
-
-    def show_face_rect(self):
-        self.window.evaluate_js("enableRect();")
-
-    def set_face_rect_pos(self, x_rel: float, y_rel: float):
-        '''
-        x и y задаются в процентах от 0 до 1.
-        '''
-        self.window.evaluate_js(f"setRectPos({x_rel}, {y_rel});")
-
-    def send_camera_image(self, image: cv2.Mat):
-        cv2.flip(image, 1, image)
-        _, png = cv2.imencode(".png", image)
-        image_b64 = base64.b64encode(png).decode("utf-8")
-        self.window.evaluate_js(f"setCameraImage('data:image/png;base64, {image_b64}');")
+            gui_server.send_image("/app/image", image)
 
     @staticmethod
     def crop_image(image: cv2.UMat) -> cv2.UMat:
@@ -254,16 +200,6 @@ class DocumentsCheckApp(BasePipelineApp):
         h, w, _ = image.shape
         target_ratio = 0.5625  # 9:16
         target_width = h * target_ratio
-        return image[:, int(w / 2 - target_width / 2):int(w / 2 + target_width / 2)]
+        return cv2.flip(image[:, int(w / 2 - target_width / 2):int(w / 2 + target_width / 2)], 1)
 
-    @staticmethod
-    def get_window_params() -> dict:
-        # для отладки на ПК. Позже будет переделано. На устройстве должно стоять
-        # {"fullscreen": True}
-        # TODO: привязать эти параметры к конфигу
-        return {"width": 600, "height": 1024}
-
-    @staticmethod
-    def get_webview_start_params() -> dict:
-        return {"debug": config.instance.passport_check.show_dev_tools}
 

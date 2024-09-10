@@ -1,6 +1,7 @@
 import logging
 import time
 from typing import Dict, Callable, Union, Optional
+from threading import Event
 
 import robot.gui.base.gui_server as gui_server
 import robot.gui.base.navigation as gui_navigation
@@ -14,6 +15,9 @@ class BaseApp:
     INITIAL_PAGE: Optional[str] = None
 
     _is_running: bool
+    _wait_code: Optional[str]
+    _wait_event: Optional[Event]
+    _last_message: Optional[dict]
     server_path: str
     logger: logging.Logger
 
@@ -22,6 +26,9 @@ class BaseApp:
 
         self.server_path = f"/app"
         self._is_running = False
+
+        self._wait_code = None
+        self._wait_event = None
 
     def run(self):
         self.subscribe()
@@ -42,12 +49,17 @@ class BaseApp:
 
     def subscribe(self):
 
-        gui_server.on_message_received.on(self.server_path, self.on_message)
+        gui_server.on_message_received.on(self.server_path, self.__on_message)
         for subpath, listener in self.LISTENERS.items():
             gui_server.on_message_received.on(self.server_path + "/" + subpath, listener)
 
     def __on_message(self, message: dict):
         code: str = message.get("code", None) or ""
+        self._last_message = message
+
+        if self._wait_code == code and self._wait_event is not None:
+            self._wait_event.set()
+
         handler = self.HANDLERS.get(code, None)
         if handler:
             try:
@@ -69,8 +81,17 @@ class BaseApp:
 
         gui_server.send(path, message)
 
+    def wait_message(self, code: str) -> dict:
+        self._wait_code = code
+        self._wait_event = Event()
+
+        self._wait_event.wait()
+        self._wait_event = None
+        self._wait_code = None
+        return self._last_message
+
     def unsubscribe(self):
-        gui_server.on_message_received.off(self.server_path, self.on_message)
+        gui_server.on_message_received.off(self.server_path, self.__on_message)
         for subpath, listener in self.LISTENERS.items():
             gui_server.on_message_received.off(self.server_path + "/" + subpath, listener)
 
