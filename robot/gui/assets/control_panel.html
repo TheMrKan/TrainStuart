@@ -13,73 +13,16 @@
             border: 2px solid #444;
             margin-bottom: 20px;
         }
+
+        svg {
+            width: 50%; /* Устанавливаем ширину SVG в 50% */
+            height: auto; /* Автоматическая высота для сохранения пропорций */
+        }
     </style>
 
     <script src="/static/js/ws_video_stream.js"></script>
     <script src="/static/js/gui_channel.js"></script>
 
-    <script>
-        CHANNEL_PATH = "/control_panel";
-
-        const streams = {};
-        var activeStream = null;
-
-        window.addEventListener("channel_ready", function (event) {
-
-            event.detail.channel.addEventListener("code_stream", function(event) {
-                addStream(event.detail.id, event.detail.url, event.detail.name);
-            });
-
-        });
-
-        function addStream(id, url, name) {
-            console.log(`Adding stream ${name} (${url})`);
-            var imageElement = document.getElementById("stream-image");
-            streams[id] = {"id": id, "url": url, "name": name, "stream": new WSVideoStream(url, imageElement)};
-            var tabs = document.getElementById("streams-tabs");
-            var tabsList = tabs.getElementsByTagName("ul")[0];
-            tabsList.insertAdjacentHTML("beforeend", `<li id="stream-button-${id}"><a onclick="onStreamClicked('${id}')">${name}</a></li>`);
-        }
-
-        function onStreamClicked(id) {
-            if (activeStream?.id == id) {
-                stopActiveStream();
-            }
-            else {
-                setActiveStream(id);
-            }
-        }
-
-        function setActiveStream(id) {
-            if (activeStream) {
-                stopActiveStream();
-            }
-
-            var stream = streams[id];
-            if (!stream) {
-                console.log(`Unknown stream ${id}`);
-                return;
-            }
-
-            activeStream = stream;
-            document.getElementById(`stream-button-${id}`).classList.add("is-active");
-            activeStream.stream.begin();
-        }
-
-        function stopActiveStream() {
-            if (!activeStream) {
-                return;
-            }
-
-            activeStream.stream.stop();
-            var tabsList = document.getElementById("streams-tabs").getElementsByTagName("ul")[0];
-            tabsList.childNodes.forEach((el) => {
-                el.classList?.remove("is-active");
-            });
-            activeStream = null;
-        }
-
-    </script>
 </head>
 <body>
 <p class="subtitle is-4 has-text-centered mt-3 mb-0">Панель управления</p>
@@ -93,9 +36,259 @@
         </div>
         <img id="stream-image">
     </div>
+    <div class="box">
+        <p class="subtitle is-4 has-text-centered">Навигация</p>
+        
+        <svg id="floorPlan" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
 </section>
 
+<script>
+    CHANNEL_PATH = "/control_panel";
 
+    const streams = {};
+    var activeStream = null;
+
+    window.addEventListener("channel_ready", function (event) {
+
+        event.detail.channel.addEventListener("code_stream", function(event) {
+            addStream(event.detail.id, event.detail.url, event.detail.name);
+        });
+
+    });
+
+    function addStream(id, url, name) {
+        console.log(`Adding stream ${name} (${url})`);
+        var imageElement = document.getElementById("stream-image");
+        streams[id] = {"id": id, "url": url, "name": name, "stream": new WSVideoStream(url, imageElement)};
+        var tabs = document.getElementById("streams-tabs");
+        var tabsList = tabs.getElementsByTagName("ul")[0];
+        tabsList.insertAdjacentHTML("beforeend", `<li id="stream-button-${id}"><a onclick="onStreamClicked('${id}')">${name}</a></li>`);
+    }
+
+    function onStreamClicked(id) {
+        if (activeStream?.id == id) {
+            stopActiveStream();
+        }
+        else {
+            setActiveStream(id);
+        }
+    }
+
+    function setActiveStream(id) {
+        if (activeStream) {
+            stopActiveStream();
+        }
+
+        var stream = streams[id];
+        if (!stream) {
+            console.log(`Unknown stream ${id}`);
+            return;
+        }
+
+        activeStream = stream;
+        document.getElementById(`stream-button-${id}`).classList.add("is-active");
+        activeStream.stream.begin();
+    }
+
+    function stopActiveStream() {
+        if (!activeStream) {
+            return;
+        }
+
+        activeStream.stream.stop();
+        var tabsList = document.getElementById("streams-tabs").getElementsByTagName("ul")[0];
+        tabsList.childNodes.forEach((el) => {
+            el.classList?.remove("is-active");
+        });
+        activeStream = null;
+    }
+
+    // Получаем элемент SVG
+    const svg = document.getElementById('floorPlan');
+
+    // Функция для создания элементов SVG
+    function createSVGElement(tag, attrs) {
+        const elem = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (let attr in attrs) {
+            elem.setAttribute(attr, attrs[attr]);
+        }
+        return elem;
+    }
+
+    // Функция для настройки viewBox (масштабирование и смещение начала координат)
+    function setViewBox(x, y, width, height) {
+        svg.setAttribute('viewBox', `${x} ${y} ${width} ${height}`);
+    }
+
+    const MAP_WIDTH = 900;
+    const MAP_HEIGHT = 300;
+
+    const MAP_PADDING = 10;
+
+    const GRAY_MAIN = "#757575";
+    const GRAY_SUB = "#303030";
+
+    setViewBox(0, 0, MAP_WIDTH + MAP_PADDING * 2, MAP_HEIGHT + MAP_PADDING * 2);
+
+    function drawBorder(map_width, map_heiht, padding) {
+        const border = createSVGElement("rect", {
+            id: "border",
+            x: MAP_PADDING,
+            y: MAP_PADDING,
+            width: MAP_WIDTH,
+            height: MAP_HEIGHT,
+            rx: 6,
+            opacity: "undefined",
+            stroke: GRAY_MAIN,
+            "fill-opacity": "0", 
+        });
+        svg.appendChild(border);
+    }
+
+    drawBorder(MAP_WIDTH, MAP_HEIGHT, MAP_PADDING);
+
+    const ZERO_X = 150;
+    const ZERO_Y = MAP_HEIGHT / 2;
+
+    function toSVGPos(x, y) {
+        return [ZERO_X + x, ZERO_Y - y];
+    }
+
+    function drawZero() {
+        var [svg_x, svg_y] = toSVGPos(0, 0);
+        
+        const zeroGroup = createSVGElement("g", {
+            id: "zero",
+            "fill-opacity": 0,
+            "stroke-width": 1,
+            stroke: GRAY_SUB,
+        });
+
+        const zeroVert = createSVGElement("line", {
+            id: "zero_vert",
+            x1: svg_x,
+            y1: svg_y - 15,
+            x2: svg_x,
+            y2: svg_y + 15,
+        })
+        zeroGroup.append(zeroVert);
+
+        const zeroHoriz = createSVGElement("line", {
+            id: "zero_horiz",
+            x1: svg_x - 15,
+            y1: svg_y,
+            x2: svg_x + 15,
+            y2: svg_y,
+        })
+        zeroGroup.append(zeroHoriz);
+
+        svg.append(zeroGroup);
+    }
+
+    drawZero();
+
+    const ROBOT_WIDTH = 88;
+    const ROBOT_HEIGHT = 26;
+
+    function addRobot(x, y) {
+        const [svg_x, svg_y] = toSVGPos(x, y);
+
+        const robot = createSVGElement("svg", {
+            id: "robot",
+            x: svg_x - ROBOT_WIDTH / 2,
+            y: svg_y - ROBOT_HEIGHT / 2,
+        });
+
+        const robotMain = createSVGElement("rect", {
+            id: "robot_main",
+            x: 0,
+            y: 0,
+            width: ROBOT_WIDTH,
+            height: ROBOT_HEIGHT,
+            rx: 10,
+            stroke: GRAY_MAIN,
+            fill: GRAY_SUB
+        })
+        robot.append(robotMain);
+
+        const robotHead = createSVGElement("ellipse", {
+            id: "robot_head",
+            cx: ROBOT_WIDTH / 2,
+            cy: ROBOT_HEIGHT * 0.3,
+            rx: 4,
+            ry: 4,
+            stroke: GRAY_MAIN,
+            fill: GRAY_SUB
+        })
+        robot.append(robotHead);
+
+        svg.append(robot);
+    }
+
+    addRobot(0, 0);
+
+    function setRobotPos(x, y) {
+        const [svg_x, svg_y] = toSVGPos(x, y);
+        const robot = document.getElementById("robot");
+        robot.setAttribute("x", svg_x - ROBOT_WIDTH / 2);
+        robot.setAttribute("y", svg_y - ROBOT_HEIGHT / 2);
+    }
+
+    
+
+    // // Рисуем стены
+    // const walls = [
+    //     { x1: 10, y1: 10, x2: 890, y2: 10 },   // верхняя стена
+    //     { x1: 10, y1: 10, x2: 10, y2: 290 },   // левая стена
+    //     { x1: 890, y1: 10, x2: 890, y2: 290 }, // правая стена
+    //     { x1: 10, y1: 290, x2: 890, y2: 290 }  // нижняя стена
+    // ];
+
+    // walls.forEach(wall => {
+    //     const line = createSVGElement('line', {
+    //         x1: wall.x1,
+    //         y1: wall.y1,
+    //         x2: wall.x2,
+    //         y2: wall.y2,
+    //         stroke: 'black',
+    //         'stroke-width': 5
+    //     });
+    //     svg.appendChild(line);
+    // });
+
+    // // Рисуем дверь
+    // const door = createSVGElement('rect', {
+    //     x: 400,
+    //     y: 290,
+    //     width: 100,
+    //     height: 10,
+    //     fill: 'brown'
+    // });
+    // svg.appendChild(door);
+
+    // // Рисуем окно
+    // const window1 = createSVGElement('rect', {
+    //     x: 100,
+    //     y: 5,
+    //     width: 50,
+    //     height: 10,
+    //     fill: 'blue'
+    // });
+    // svg.appendChild(window1);
+
+    // // Добавляем текстовые метки
+    // const roomLabel = createSVGElement('text', {
+    //     x: 400,
+    //     y: 150, // Центр комнаты по вертикали, так как высота 300
+    //     fill: 'black',
+    //     'font-size': '20'
+    // });
+    // roomLabel.textContent = 'Комната';
+    // svg.appendChild(roomLabel);
+
+
+</script>
 
 </body>
 </html>
