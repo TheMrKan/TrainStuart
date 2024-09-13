@@ -5,10 +5,9 @@ from utils.cv import Image
 
 from robot.gui.base import gui_server
 from robot.hardware.cameras import CameraAccessor, CameraHandler
+from robot.core.navigation import chart
 
 __logger = logging.getLogger(__name__)
-
-__connected = False
 
 PATH = "/control_panel"
 
@@ -99,6 +98,13 @@ def initialize():
     __create_stream("main_camera", "Камера", CameraAccessor.main_camera)
     __create_stream("documents_camera", "Документы", CameraAccessor.documents_camera)
 
+    if is_connected():
+        __send_chart()
+
+
+def is_connected():
+    return gui_server.is_ws_connected(PATH)
+
 
 def get_stream(stream_id: str, name: Optional[str] = None) -> Stream:
     if stream_id not in __streams.keys():
@@ -108,6 +114,10 @@ def get_stream(stream_id: str, name: Optional[str] = None) -> Stream:
 
 def get_stream_path(stream_id: str) -> str:
     return PATH + "/" + stream_id
+
+
+def update_robot_pos(x: int, y: int):
+    gui_server.send(PATH, {"code": "set_robot_pos", "x": x, "y": y}, 1)
 
 
 def _set_active_stream(stream: Optional[Stream]):
@@ -121,11 +131,10 @@ def _set_active_stream(stream: Optional[Stream]):
 
 
 def __on_connected():
-    global __connected
-    __connected = True
-
     for stream in __streams.values():
         __send_stream(stream.id, stream.name)
+
+    __send_chart()
 
 
 def __on_message_received(message: Union[dict, bytes]):
@@ -136,7 +145,7 @@ def __create_stream(stream_id: str, name: Optional[str] = None, camera_handler: 
     stream = Stream(stream_id, name) if camera_handler is None else CameraStream(stream_id, name, camera_handler)
     __streams[stream_id] = stream
     __logger.debug("Created stream %s", stream_id)
-    if __connected:
+    if is_connected():
         __send_stream(stream_id, name)
     return stream
 
@@ -146,6 +155,31 @@ def __send_stream(stream_id: str, name: Optional[str] = None):
     url = gui_server.get_absolute_ws_url(get_stream_path(stream_id))
     gui_server.send(PATH, {"code": "stream", "id": stream_id, "url": url, "name": name})
     __logger.debug("Sent stream: %s (%s)", name, url)
+
+
+def __send_chart():
+    logging.debug("Sending chart...")
+    zones = []
+    for zone in chart.zones.values():
+        zones.append({
+            "id": zone.id,
+            "p0": zone.p0,
+            "p1": zone.p1
+        })
+
+    points = []
+    for point in chart.points.values():
+        points.append({
+            "id": point.id,
+            "x": point.x,
+            "y": point.y,
+        })
+
+    gui_server.send(PATH, {
+        "code": "chart",
+        "zones": zones,
+        "points": points
+    }, 1)
 
 
 def __on_disconnected():

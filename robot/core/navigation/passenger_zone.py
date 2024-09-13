@@ -7,6 +7,7 @@ import logging
 from robot.core.navigation import chart, visual_positioning
 from robot.core.navigation.chart import Vector2, Zone
 from robot.hardware import robot_interface
+from robot.dev import control_panel
 
 
 ROBOT_DIMENSIONS = (13, 44, 13, 44)
@@ -111,10 +112,17 @@ def process_movement(movement: Movement):
     thread.start()
     time.sleep(0.5)
 
+    start_time = time.time()
     last_send_pos: Optional[chart.Vector2] = None
     last_send_time: float = 0
     while thread.is_alive():
         pos = visual_positioning.try_get_position(movement.head_rotation)
+
+        _path = (time.time() - start_time) * robot_interface.WHEELS_SPEED_X
+        if movement.start[0] > movement.destination[0]:
+            _path = -_path
+        _x = int(round(movement.start[0] + _path))
+        control_panel.update_robot_pos(_x, 0)
 
         if not pos:
             continue
@@ -130,6 +138,8 @@ def process_movement(movement: Movement):
         else:
             #logger.debug(f"Delta is too low ({abs(last_send_pos[0] - pos[0]):.1f})")
             pass
+
+
     logger.debug("Loop completed")
 
     time.sleep(0.5)

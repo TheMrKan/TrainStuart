@@ -6,7 +6,7 @@ from asyncio.exceptions import TimeoutError
 import threading
 from bottle import Bottle, run, static_file, ServerAdapter
 import logging
-from typing import Tuple, Optional, Any, Union, List, Dict
+from typing import Tuple, Optional, Any, Union, List, Dict, Set
 from pymitter import EventEmitter
 from utils.cv import Image
 import cv2
@@ -23,6 +23,7 @@ websocket_thread: threading.Thread
 websocket_loop: asyncio.BaseEventLoop
 
 outgoing_messages: Dict[str, List[Union[dict, bytes]]] = {}
+ws_connected: Set[str] = set()
 
 on_connected = EventEmitter()
 on_message_received = EventEmitter()
@@ -30,6 +31,7 @@ on_disconnected = EventEmitter()
 
 
 async def websocket_server(websocket: WebSocketServerProtocol, path: str):
+    ws_connected.add(path)
     await emit_connected(path)
 
     while not websocket_stop_event.is_set():
@@ -50,6 +52,7 @@ async def websocket_server(websocket: WebSocketServerProtocol, path: str):
         except Exception as e:
             logger.exception("An error occured in websocket_server", exc_info=e)
 
+    ws_connected.remove(path)
     await emit_disconnected(path)
 
 
@@ -144,6 +147,10 @@ def send(path: str, message: Union[dict, bytes], queue_limit: int = 0):
 def send_image(path: str, image: Image):
     _, img = cv2.imencode(".png", image)
     send(path, img.tobytes(), 1)
+
+
+def is_ws_connected(path: str):
+    return path in ws_connected
 
 
 def stop():
