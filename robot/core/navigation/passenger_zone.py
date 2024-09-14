@@ -15,20 +15,11 @@ ROBOT_DIMENSIONS = (13, 44, 13, 44)
 Габаритные размеры робота в сантиметрах в 4 стороны относительно точки, которая считается позицией робота. Порядок: Y+, X+, Y-, X-
 """
 
-GAP = 5
+GAP = 10
 """
 Минимальный зазор в сантиметрах между корпусом робота и препятствием при построении маршрута
 """
 
-MOVEMENT_LINE_LEFT = 30
-"""
-Координата Y линии, по которой передвигается робот, прижавшись к левому краю
-"""
-
-MOVEMENT_LINE_RIGHT = -30
-"""
-Координата Y линии, по которой передвигается робот, прижавшись к правому краю
-"""
 
 
 logger = logging.getLogger(__name__)
@@ -92,11 +83,12 @@ def prepare_movement(destination: Vector2) -> Movement:
     movement.destination = destination
 
     if destination[1] > 0:
-        movement.head_rotation = -90
-        line_y = MOVEMENT_LINE_LEFT
+        #movement.head_rotation = -90
+        line_y = passage.p0[1] - ROBOT_DIMENSIONS[0] - GAP
     else:
-        movement.head_rotation = 90
-        line_y = MOVEMENT_LINE_RIGHT
+        #movement.head_rotation = 90
+        line_y = passage.p1[1] + ROBOT_DIMENSIONS[2] + GAP
+    movement.head_rotation = 90
 
     movement.intermediate_points = [(current_x, line_y), (destination[0], line_y)]
 

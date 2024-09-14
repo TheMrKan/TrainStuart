@@ -14,14 +14,14 @@ class CarriageMovingBehaviour(BaseBehaviour):
         passenger_zone.start()
 
     def behave(self):
-        m = passenger_zone.prepare_movement((140, 20))
+        m = passenger_zone.prepare_movement((140, 0))
         self.logger.info(f"Moving to point 0")
         passenger_zone.process_movement(m)
         self.logger.info(f"Arrived to point 0")
 
         time.sleep(3)
 
-        m = passenger_zone.prepare_movement((0, 20))
+        m = passenger_zone.prepare_movement((0, 0))
         self.logger.info(f"Moving to point 1")
         passenger_zone.process_movement(m)
         self.logger.info(f"Arrived to point 1")
