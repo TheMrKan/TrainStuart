@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 from threading import Thread, Event
 import logging
 
@@ -20,12 +20,12 @@ GAP = 5
 Минимальный зазор в сантиметрах между корпусом робота и препятствием при построении маршрута
 """
 
-MOVEMENT_LINE_LEFT = -30
+MOVEMENT_LINE_LEFT = 30
 """
 Координата Y линии, по которой передвигается робот, прижавшись к левому краю
 """
 
-MOVEMENT_LINE_RIGHT = 30
+MOVEMENT_LINE_RIGHT = -30
 """
 Координата Y линии, по которой передвигается робот, прижавшись к правому краю
 """
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class Movement:
     start: Vector2
     destination: Vector2
-    movement_line_y: int
+    intermediate_points: List[Vector2]
     head_rotation: int
 
 
@@ -57,6 +57,7 @@ def start():
         logger.info(f"Start position: {current_x} {current_y}")
 
     robot_interface.set_actual_pos(current_x, current_y)
+    control_panel.update_robot_pos(current_x, current_y)
 
     passage = chart.zones["passage"]
 
@@ -91,11 +92,13 @@ def prepare_movement(destination: Vector2) -> Movement:
     movement.destination = destination
 
     if destination[1] > 0:
-        movement.movement_line_y = MOVEMENT_LINE_LEFT
         movement.head_rotation = -90
+        line_y = MOVEMENT_LINE_LEFT
     else:
-        movement.movement_line_y = MOVEMENT_LINE_RIGHT
         movement.head_rotation = 90
+        line_y = MOVEMENT_LINE_RIGHT
+
+    movement.intermediate_points = [(current_x, line_y), (destination[0], line_y)]
 
     return movement
 
@@ -103,7 +106,10 @@ def prepare_movement(destination: Vector2) -> Movement:
 def process_movement(movement: Movement):
     global current_x, current_y, current_movement
 
+    control_panel.send_robot_path([movement.start, *movement.intermediate_points, movement.destination])
+
     current_movement = movement
+    control_panel.update_robot_pos(*movement.start)
 
     robot_interface.set_head_rotation(movement.head_rotation, 0)
     time.sleep(0.5)
@@ -144,6 +150,8 @@ def process_movement(movement: Movement):
 
     time.sleep(0.5)
     current_x, current_y = movement.destination
+    control_panel.update_robot_pos(current_x, current_y)
+    control_panel.send_robot_path([])
     current_movement = None
     time.sleep(1)
 

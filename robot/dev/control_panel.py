@@ -117,7 +117,11 @@ def get_stream_path(stream_id: str) -> str:
 
 
 def update_robot_pos(x: int, y: int):
-    gui_server.send(PATH, {"code": "set_robot_pos", "x": x, "y": y}, 1)
+    gui_server.send(PATH, {"code": "set_robot_pos", "x": x, "y": y})
+
+
+def send_robot_path(points: List[chart.Vector2]):
+    gui_server.send(PATH, {"code": "robot_path", "points": points})
 
 
 def _set_active_stream(stream: Optional[Stream]):
@@ -179,7 +183,7 @@ def __send_chart():
         "code": "chart",
         "zones": zones,
         "points": points
-    }, 1)
+    })
 
 
 def __on_disconnected():

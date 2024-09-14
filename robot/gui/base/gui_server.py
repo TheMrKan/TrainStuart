@@ -45,12 +45,13 @@ async def websocket_server(websocket: WebSocketServerProtocol, path: str):
             path_outgoing_messages: Optional[List[Union[dict, bytes]]] = outgoing_messages.get(path, None)
             if path_outgoing_messages:
                 for msg in path_outgoing_messages:
+                    #logger.debug("Sending outgoing message to %s", path)
                     await send_outgoing_message(websocket, msg)
                 path_outgoing_messages.clear()
         except websockets.exceptions.WebSocketException:
             break
         except Exception as e:
-            logger.exception("An error occured in websocket_server", exc_info=e)
+            logger.exception("An error occurred in websocket_server", exc_info=e)
 
     ws_connected.remove(path)
     await emit_disconnected(path)
