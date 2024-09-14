@@ -42,9 +42,14 @@ void motor::begin() {
 }
 
 void motor::tick() {
-  if (!moveLoopRunning) return;
+  tickX();
+  tickY();
+}
 
-  int X = SPEED * (millis() - tmr)/1000;
+void motor::tickX() {
+  if (!moveXLoopRunning) return;
+
+  int X = SPEED_X * (millis() - tmr)/1000;
   if (dir == Backward) {
     X = -X;
   }
@@ -59,37 +64,82 @@ void motor::tick() {
   if ((dir == Forward && (currentX >= targetX)) || (dir == Backward && (currentX <= targetX))) {
     // Serial.println("STOP " + String(currentX));
     go(Stop);
-    moveLoopRunning = false;
+    moveXLoopRunning = false;
+
+    // moveYLoopRunning = true;
 
     completeX = true;
+    // completeY = true;
+    return;
+  }
+  setSpeed(150, ALL);
+  go(dir);
+  completeX = false;
+  // completeY = false;
+}
+
+void motor::tickY() {
+  if (!moveYLoopRunning) return;
+
+  int Y = SPEED_Y * (millis() - tmr)/1000;
+  if (dir == Left) {
+    Y = -Y;
+  }
+  currentY = startY + Y;  
+
+  if ((dir == Left && (currentY >= targetY)) || (dir == Right && (currentY <= targetY))) {
+    Serial.println("STOP " + String(currentY));
+    go(Stop);
+    moveYLoopRunning = false;
+
+    // completeX = true;
     completeY = true;
     return;
   }
   go(dir);
-  completeX = false;
+  setSpeed(178, BL);
+  setSpeed(178, BR);
+  setSpeed(181, FL);
+  setSpeed(181, FR);
+  // completeX = false;
   completeY = false;
+
+  Serial.println("Dir: " + String(dir) + " currentY: " + String(currentY));
 }
 
 void motor::run(int x, int y) {
+  if (abs(currentX - x) >= abs(currentY - y)) runX(x);
+  else runY(y);
+}
+
+void motor::runX(int x) {
   if (x == currentX) completeX = true;
   else completeX = false;
-  if (y == currentY) completeY = true;
-  else completeY = false;
 
   targetX = x;
-  targetY = y;
 
   if (targetX > currentX) dir = Forward;
   else dir = Backward;
 
   startX = currentX;
 
-  // targetTime = round(abs(targerX) / SPEED);
-  // Serial.println(targetTime);
-
   tmr = millis();
-  moveLoopRunning = true;
+  moveXLoopRunning = true;
+}
 
+void motor::runY(int y) {
+  if (y == currentY) completeY = true;
+  else completeY = false;
+
+  targetY = y;
+
+  if (targetY > currentY) dir = Left;
+  else dir = Right;
+
+  startY = currentY;
+  tmr = millis();
+  Serial.println("startY: " + String(startY) + " currentY: " + String(currentY) + " targetY: " + String(targetY));
+  moveYLoopRunning = true;
 }
 
 void motor::setCurrentPosition(int x, int y) {
@@ -143,17 +193,17 @@ void motor::go(Move _move) {
       break;
 
     case Right:
-      motor_run(FL, F);
-      motor_run(FR, B);
-      motor_run(BL, B);
-      motor_run(BR, F);
-      break;
-
-    case Left:
       motor_run(FL, B);
       motor_run(FR, F);
       motor_run(BL, F);
       motor_run(BR, B);
+      break;
+
+    case Left:
+      motor_run(FL, F);
+      motor_run(FR, B);
+      motor_run(BL, B);
+      motor_run(BR, F);
       break;
 
     case Rotate:

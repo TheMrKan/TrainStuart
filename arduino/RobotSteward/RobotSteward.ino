@@ -48,26 +48,9 @@ struct Message currentMessage;
 
 bool getReady = false;
 
-int dist;
+uint16_t dist;
 
-
-
-
-    // static const int left = 60;
-    // static const int right = 120;
-
-    // bool dir = true;
-    // int currentAngle = 0, index = 0, isPeriod = 0;
-    // unsigned long tmr = 0;
-
-    // // Массив. Количество ячеек - это двойная разница углов
-    // static const int lenArray = (right - left) * 2;
-    // int array1[lenArray], array2[lenArray], array3[lenArray];
-    // float array[lenArray];
-
-    // const int maxDist = 500;
-
-    // int side;
+uint16_t headDistData[20];
 
 void setID() {
   pinMode(SHT_LOX1, OUTPUT);
@@ -95,10 +78,10 @@ void setID() {
   delay(10);
 
   // initing LOX1
-  if(!lox1.begin(LOX1_ADDRESS)) {
-    Serial.println(F("Failed to boot first VL53L0X"));
-    while(1);
-  }
+  // if(!lox1.begin(LOX1_ADDRESS)) {
+  //   Serial.println(F("Failed to boot first VL53L0X"));
+  //   while(1);
+  // }
   delay(10);
 
   // activating LOX2
@@ -107,19 +90,15 @@ void setID() {
   delay(10);
 
   //initing LOX2
-  if(!lox2.begin(LOX2_ADDRESS)) {
-    Serial.println(F("Failed to boot second VL53L0X"));
-    while(1);
-  }
+  // if(!lox2.begin(LOX2_ADDRESS)) {
+  //   Serial.println(F("Failed to boot second VL53L0X"));
+  //   while(1);
+  // }
   delay(10);
 
   digitalWrite(SHT_LOXHead, HIGH);
   delay(10);
 
-  // if(!loxHead.begin(LOXHead_ADDRESS)) {
-  //   Serial.println(F("Failed to boot second VL53L0X"));
-  //   while(1);
-  // }
   if (!loxHead.begin()) {
     Serial.println(F("Failed to boot HEAD VL53L0X"));
     while(1);
@@ -142,14 +121,12 @@ void setup() {
 
     Serial.println("Adafruit VL53L0X test");
     setID();
-    laserF.begin();
+    // laserF.begin();
     // laserB.begin();
-
-    Serial.println(String(getDistanse(0)) + "  " + String(getDistanse(1)) + "  " + String(getDistanse(2)));
     head.begin();
 
-    wheels.setSpeed(150, ALL);
-    head.home();
+    wheels.setSpeed(255, ALL);
+    // head.home();
 
     getReady = false;
 }
@@ -161,11 +138,12 @@ void loop() {
     head.tick();
     wheels.tick();
     if (getReady)  {
-      laserF.scan();
+      // laserF.scan();
       // laserB.scan();
     }
     //scan();
-    //dist = getDistanse(0);
+    dist = getDistanse(0);
+
 
     if (head.getState('x') && head.getState('y')) {
       if (!getReady) {
@@ -207,11 +185,33 @@ void handleMessage(struct Message message) {
           Serial.println(getDistanse(message.args[0]));
         }
         else if (message.code == "M") {
-          wheels.run(message.args[0], 0);
+          wheels.run(message.args[0], message.args[1]);
+          // Serial.println(message.args[1]);
         }
         else if (message.code == "Mt") {
           wheels.go(Forward);
           delay(message.args[0]);
+          wheels.go(Stop);
+        }
+        else if (message.code == "Ml") {
+          // 181 181 178 178 (FL, FR, BL, BR)
+          // SpeedLeft 110/10 = 11 cm/c
+          wheels.setSpeed(message.args[2], BL);
+          wheels.setSpeed(message.args[3], BR);
+          wheels.setSpeed(message.args[0], FL);
+          wheels.setSpeed(message.args[1], FR);
+
+          wheels.go(Right);
+          delay(5000);
+          wheels.go(Stop);
+        }
+        else if (message.code == "Mr") {
+          wheels.setSpeed(message.args[2], BL);
+          wheels.setSpeed(message.args[3], BR);
+          wheels.setSpeed(message.args[0], FL);
+          wheels.setSpeed(message.args[1], FR);
+          wheels.go(Left);
+          delay(5000);
           wheels.go(Stop);
         }
         else if (message.code == "P") {
@@ -241,10 +241,10 @@ void handleMessage(struct Message message) {
 // }
 // #endif
 
-int getDistanse(int index) {
+uint16_t getDistanse(int index) {
   // lox1.rangingTest(&measure1, false); // pass in 'true' to get debug data printout!
   // lox2.rangingTest(&measure2, false); // pass in 'true' to get debug data printout!
-  // loxHead.rangingTest(&measureHead, false); // pass in 'true' to get debug data printout!
+  loxHead.rangingTest(&measureHead, false); // pass in 'true' to get debug data printout!
 
 
   // if (index == 1) {
@@ -260,6 +260,27 @@ int getDistanse(int index) {
   //     return measureHead.RangeMilliMeter;
   //   } else return 0;
   // }
+  uint16_t newDist = 0;
+  if (index == 0) {
+    if(measureHead.RangeStatus != 4) {  // if not out of range
+      newDist = measureHead.RangeMilliMeter;
+    }
+  }
+
+  if (newDist > 1500 || newDist < 150) {
+    newDist = 0;
+  }
+
+  uint16_t sum = newDist;
+  // Serial.println("Debug 0 "  + String(sum));
+  for (int i = 0; i < 19; i++) {
+    headDistData[i] = headDistData[i+1];
+    sum += headDistData[i];
+  }
+  //Serial.println("Debug 1 "  + String(sum));
+  headDistData[19] = newDist;
+
+  return round(sum / 20);
 }
 
 // void scan() {

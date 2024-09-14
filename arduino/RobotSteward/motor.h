@@ -25,8 +25,14 @@ class motor {
   private:
     Move move, dir;
     void motor_run(Type motor, Direction dir);
+
+    void tickX();
+    void tickY();
+
+    void runX(int x);
+    void runY(int y);
     
-    bool moveLoopRunning = false;
+    bool moveXLoopRunning = false, moveYLoopRunning = false;
     unsigned long tmr;
     unsigned long targetTime;
 
@@ -36,5 +42,6 @@ class motor {
 
     bool completeX = false, completeY = false;
 
-    float SPEED = 215 / 12;
+    float SPEED_X = 215 / 12;
+    float SPEED_Y = 110/10;
 };
