@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
-from server.routers.models import PassengerBasket, BasketPosition, BasketPositionUpdate, BasketPositionRemove, OrderDetails, OrderPosition
+from server.routers.models import PassengerBasket, BasketPosition, BasketPositionUpdate, BasketUpdated, \
+    BasketPositionRemove, OrderDetails, OrderPosition
 import server.core.products as products
 from server.core.products import OutOfStockError
 import server.core.baskets as baskets
@@ -28,13 +29,15 @@ def get_basket(passenger_id: str) -> PassengerBasket:
 
 
 @router.post("/{passenger_id}/update/")
-def update_basket(passenger_id: str, req: BasketPositionUpdate):
+def update_basket(passenger_id: str, req: BasketPositionUpdate) -> BasketUpdated:
     product = products.by_id(req.product_id)
     if not product:
         raise HTTPException(404, "Product not found")
     
     try:
-        baskets.update_basket(passenger_id, product, req.amount)
+        basket = baskets.update_basket(passenger_id, product, req.amount)
+        pos_price = [p for p in basket.positions if p.product is product][0].total_price if req.amount > 0 else 0
+        return BasketUpdated(pos_price, basket.total_price)
     except OutOfStockError:
         raise HTTPException(409, "Out of stock")
 

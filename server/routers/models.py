@@ -17,6 +17,7 @@ class ProductSummary:
 class ProductDetails:
     id: str
     name: str
+    icon_url: str
     image_url: str
     description: str
     price: float
@@ -39,6 +40,12 @@ class PassengerBasket:
 class BasketPositionUpdate(BaseModel):
     product_id: str
     amount: int
+
+
+@dataclass
+class BasketUpdated:
+    position_price: float
+    total_price: float
 
 
 class BasketPositionRemove(BaseModel):

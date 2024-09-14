@@ -36,14 +36,14 @@ def get_total_price(positions: Iterable[Position]) -> float:
     return sum(pos.total_price for pos in positions)
 
 
-def update_basket(passenger_id: str, product: Product, amount: int):
+def update_basket(passenger_id: str, product: Product, amount: int) -> Basket:
+    basket = get_basket(passenger_id) or create_basket(passenger_id)
     if amount <= 0:
         remove_from_basket(passenger_id, product)
-        return
+        return basket
     
     products.assert_available_amount(product, amount)
-    
-    basket = get_basket(passenger_id) or create_basket(passenger_id)
+
     position: Optional[Position] = first_or_default(basket.positions, lambda p: p.product.id == product.id)
     if not position:
         position = Position(product, 0, 0)
@@ -53,6 +53,7 @@ def update_basket(passenger_id: str, product: Product, amount: int):
     position.total_price = products.get_price(product, position.amount)
 
     basket.total_price = get_total_price(basket.positions)
+    return basket
 
 
 def remove_from_basket(passenger_id: str, product: Product):

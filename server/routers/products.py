@@ -10,10 +10,10 @@ router = APIRouter(prefix="/products")
 
 @router.get("/list")
 def get_list() -> List[ProductSummary]:
-    products = products.all()
+    prods = products.all()
 
     summaries = []
-    for prod in products:
+    for prod in prods:
         summary = ProductSummary(
             prod.id,
             prod.name,
@@ -35,6 +35,7 @@ def get_details(product_id: str) -> ProductDetails:
     details = ProductDetails(
         product.id,
         product.name,
+        product.icon_url,
         product.image_url,
         product.description,
         product.price,
