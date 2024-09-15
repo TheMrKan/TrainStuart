@@ -16,7 +16,8 @@ class BaseBehaviour:
 
             while True:
                 try:
-                    self.behave()
+                    if self.behave():
+                        break
                 except Exception as e:
                     self.logger.exception("Unhandled exception in __behave", exc_info=e)
 

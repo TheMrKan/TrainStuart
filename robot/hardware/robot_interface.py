@@ -50,8 +50,7 @@ def set_actual_pos(x: int, y: int):
 def set_head_rotation(horiz: int, vert: int, completion=True):
     global head_horizontal
     global head_vertical
-    head_horizontal = horiz
-    head_vertical = vert
+
     iserial.send_command("H", horiz, vert, completion=completion)
 
 

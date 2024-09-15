@@ -97,7 +97,7 @@ class BaseApp:
 
     def shutdown(self):
         self.unsubscribe()
-        #self.send_page(None)
+        self.send_page(None)
         self.is_running = False
 
 

@@ -32,6 +32,12 @@ class DocumentsCheckApp(BaseApp):
     NAME = "DocumentsCheck"
     INITIAL_PAGE = "passport"
 
+    success: bool
+
+    def __init__(self):
+        super().__init__()
+        self.success = False
+
     def run(self):
         super().run()
         self.logger.debug("Running DocumentsCheck app")
@@ -54,7 +60,7 @@ class DocumentsCheckApp(BaseApp):
         similarity = face_util.compare_faces(passport_data.face_descriptor, face)
         self.logger.debug(f"Similarity: {similarity}")
 
-        time.sleep(5)
+        self.success = True
 
     def read_passport(self) -> PassportData:
         self.logger.debug("Reading passport...")
