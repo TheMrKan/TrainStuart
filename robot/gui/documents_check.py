@@ -200,6 +200,8 @@ class DocumentsCheckApp(BaseApp):
         h, w, _ = image.shape
         target_ratio = 0.5625  # 9:16
         target_width = h * target_ratio
-        return cv2.flip(image[:, int(w / 2 - target_width / 2):int(w / 2 + target_width / 2)], 1)
+        image = image[:, int(w / 2 - target_width / 2):int(w / 2 + target_width / 2)]
+        image = cv2.flip(image, 1)
+        return image
 
 

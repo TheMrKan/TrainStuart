@@ -37,7 +37,7 @@ async def websocket_server(websocket: WebSocketServerProtocol, path: str):
     while not websocket_stop_event.is_set():
         try:
             try:
-                incoming_message = await asyncio.wait_for(websocket.recv(), 0.3)
+                incoming_message = await asyncio.wait_for(websocket.recv(), 0.02)
                 await handle_incoming_message(path, incoming_message)
             except TimeoutError:
                 pass
@@ -53,7 +53,8 @@ async def websocket_server(websocket: WebSocketServerProtocol, path: str):
         except Exception as e:
             logger.exception("An error occurred in websocket_server", exc_info=e)
 
-    ws_connected.remove(path)
+    if path in ws_connected:
+        ws_connected.remove(path)
     await emit_disconnected(path)
 
 

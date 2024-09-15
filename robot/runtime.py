@@ -54,18 +54,18 @@ class Runtime:
         finally:
             startup_app.shutdown()
 
-        '''while True:
+        while True:
             app = DocumentsCheckApp()
             try:
                 app.run()
             except Exception as e:
                 self.__logger.exception("An error occured in DocumentsCheckApp", exc_info=e)
             finally:
-                app.shutdown()'''
+                app.shutdown()
 
-        CarriageMovingBehaviour().run()
+        '''CarriageMovingBehaviour().run()
         while True:
-            time.sleep(1)
+            time.sleep(1)'''
 
     def __initialize(self, status_log: Callable[[str, ], None]):
         status_log("Настройка камер...")

@@ -4,13 +4,21 @@ from utils.faces import FaceDescriptor
 from utils.docs_reader import PassportData
 from typing import Optional, Protocol, Any, Callable, Tuple
 from multiprocessing.connection import Connection
+import numpy as np
 import traceback
 import time
+import os
+import cv2
 
 
 @dataclass
 class ExceptionResponse:
     exception: Exception
+
+
+@dataclass
+class InitializedResponse:
+    pass
 
 
 @dataclass
@@ -58,29 +66,39 @@ class AsyncWorker:
     def __init__(self, parameters: ParametersProtocol):
         self.__parameters = parameters
 
-        import utils.faces as face_util
-        self.__face_util = face_util
-        self.__face_util.load_dependencies(parameters.resources_dir)
+        try:
+            t = time.time()
+            import utils.faces as face_util
+            self.__face_util = face_util
+            self.__face_util.load_dependencies(parameters.resources_dir)
 
-        import utils.docs_reader as scanner
-        self.__scanner = scanner
+            t = time.time()
+            img = cv2.imread(os.path.join(parameters.resources_dir, "face.jpg"))
+            self.__face_util.get_face_descriptor(img)
+
+            import utils.docs_reader as scanner
+            self.__scanner = scanner
+
+            self.__parameters.connection.send(InitializedResponse())
+        except Exception as e:
+            self.__parameters.connection.send(ExceptionResponse(e))
 
         self.run()
 
     def run(self):
         while self.__parameters.is_running:
             
-                if not self.__parameters.connection.poll(timeout=0.1):
-                    continue
-                request = self.__parameters.connection.recv()
+            if not self.__parameters.connection.poll(timeout=0.1):
+                continue
+            request = self.__parameters.connection.recv()
 
-                handler = None
-                if isinstance(request, GetFaceDescriptorRequest):
-                    handler = self.__process_get_face_descriptor
-                elif isinstance(request, ReadPassportRequest):
-                    handler = self.__process_read_passport
+            handler = None
+            if isinstance(request, GetFaceDescriptorRequest):
+                handler = self.__process_get_face_descriptor
+            elif isinstance(request, ReadPassportRequest):
+                handler = self.__process_read_passport
 
-                self.__process(request, handler)
+            self.__process(request, handler)
 
     def __send_exception(self, exception: Exception):
         response = ExceptionResponse(exception)

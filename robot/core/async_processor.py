@@ -1,12 +1,7 @@
 import multiprocessing
-from typing import Callable, Optional, Any
 from multiprocessing import Pipe, Process, Manager
-from multiprocessing.connection import Connection
 from threading import Thread
-from dataclasses import dataclass
-from utils.docs_reader import PassportData
-from utils.faces import FaceDescriptor
-from utils.cv import Image
+import logging
 from robot.core.async_worker import *
 import robot.config as config
 
@@ -15,7 +10,7 @@ class WorkerBusyError(Exception):
     pass
 
 
-class TimeoutError(Exception):
+class WorkerTimeoutError(Exception):
     pass
 
 
@@ -26,11 +21,14 @@ class AsyncProcessor:
     __worker_process: Process
     __manager: Manager
     __response_awaiter: Optional[Thread]
+    __logger: logging.Logger
 
     @classmethod
     def initialize(cls):
 
         cls.__response_awaiter = None
+
+        cls.__logger = logging.getLogger(cls.__name__)
 
         multiprocessing.set_start_method("spawn", force=True)
 
@@ -49,6 +47,8 @@ class AsyncProcessor:
         cls.__worker_process = Process(target=AsyncWorker, args=(cls.__worker_parameters, ))
         cls.__worker_process.daemon = True
         cls.__worker_process.start()
+
+        cls.__await_init()
 
     @classmethod
     def shutdown(cls):
@@ -102,7 +102,7 @@ class AsyncProcessor:
 
         if is_timeout:
             cls.__worker_parameters.operation_timeout = True
-            error_callback(TimeoutError())
+            error_callback(WorkerTimeoutError())
             return
 
         response = cls.__connection.recv()
@@ -110,7 +110,21 @@ class AsyncProcessor:
             error_callback(response.exception)
         else:
             success_callback(*response.get_callback_args())
-                
+
+    @classmethod
+    def __await_init(cls):
+        is_timeout = not cls.__connection.poll(30)
+        if is_timeout:
+            raise TimeoutError("Worker initialization timeout")
+
+        response = cls.__connection.recv()
+        if isinstance(response, ExceptionResponse):
+            raise RuntimeError from response.exception
+        elif isinstance(response, InitializedResponse):
+            cls.__logger.debug("AsyncWorker initialization received")
+            return
+        else:
+            raise TypeError("Invalid initialization message received")
 
             
 
