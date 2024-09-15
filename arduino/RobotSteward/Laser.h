@@ -26,11 +26,12 @@ class Laser {
     void begin() {
       int pin;
       servo->write(60);
-      lox->startRangeContinuous();
-      // if (!lox.begin()) {
+      // if (!lox->begin()) {
       //   Serial.println(F("Failed to boot VL53L0X"));
       //   while(1);
       // }
+      lox->startRangeContinuous();
+  
     }
     int getSide() {
       if (side != 0) {

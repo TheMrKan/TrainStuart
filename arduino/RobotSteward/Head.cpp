@@ -11,8 +11,9 @@
 #include <EncButton.h>
 EncButton enc(CLK, DT);
 
-Head::Head(Multiservo* _servo) {
+Head::Head(Multiservo* _servo, Multiservo* _brake) {
     servo = _servo;
+    brake = _brake;
 }
 
 static void Head::isr() {
@@ -25,12 +26,12 @@ void Head::begin() {
     pinMode(49, OUTPUT);
     pinMode(22, INPUT_PULLUP);
 
-//    servo.attach(7);
     attachInterrupt(0, isr, CHANGE);
     attachInterrupt(1, isr, CHANGE);
     enc.setEncISR(true);
 
     analogWrite(EN_Head, power);
+    brake->write(60);
 }
 
 // void Head::tick() {
@@ -87,21 +88,36 @@ void Head::tickX() {
 void Head::tickY() {
   if (!servoLoopRunning) return;
 
-  if (currentY+counterY == targetY) {
-    // Serial.println("STOP");
+  // if (currentY+counterY == targetY) {
+  if ((dirY && (currentY+counterY >= targetY)) || (!dirY && (currentY+counterY <= targetY))) {
     currentY = targetY;
     stateY = true;
     servoLoopRunning = false;
+
+    brake->write(60);
+    servo->detach();
     return;
   }
 
-  if (millis() - tmrY > 10) {
+  if (millis() - tmrY > 2) {
     tmrY = millis();
-    if (dirY) counterY++;
-    else counterY--;
+    int delta = abs(targetY - currentY+counterY);
+    int absStep;
+
+    // if (delta > 50) 
+    //     absStep = 10;
+    // else if (delta > 10 && delta <= 50) 
+    //     absStep = 2;
+    
+    if (delta > 10) absStep = 5;
+    else if (delta <= 10 && delta > 5) absStep = 2;
+    else absStep = 1;
+
+    if (dirY) counterY += absStep;
+    else counterY -= absStep;
 
     servo->write(currentY+counterY);
-    Serial.println(String(currentY+counterY));
+    // Serial.println(String(currentY+counterY) + " Step: " + String(absStep));
   }
   stateY = false;
 }
@@ -175,6 +191,8 @@ void Head::rotateY(int y) {
 
     tmrY = millis();
     servoLoopRunning = true;
+    servo->attach(7);
+    brake->write(80);
 }
 
 void Head::stop() {

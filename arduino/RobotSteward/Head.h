@@ -12,7 +12,7 @@
 
 class Head {
 public:
-    Head(Multiservo* _servo);
+    Head(Multiservo* _servo, Multiservo* _brake);
     void begin();
     void home();
     void tick();
@@ -27,6 +27,7 @@ private:
     void tickX();
     void tickY();
     Multiservo* servo;
+    Multiservo* brake;
     bool headLoopRunning = false, servoLoopRunning = false;
     bool stateX = false, stateY = false;
 
@@ -36,7 +37,7 @@ private:
     bool deltaSign = false;
 
     int targetTickX = 0, targetY = 0; // Будущее положение
-    int currentX = 0, currentY = 0;   // Текущие углы
+    int currentX = 0, currentY = 40;   // Текущие углы
     const float angleTicks = MAX_TICK / (float)(headInputRight + abs(headInputLeft));
     int counterY;
 

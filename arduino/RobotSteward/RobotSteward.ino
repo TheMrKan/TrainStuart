@@ -2,7 +2,7 @@
 
 #include <Multiservo.h>
 // Задаём количество сервоприводов
-constexpr uint8_t MULTI_SERVO_COUNT = 10;
+constexpr uint8_t MULTI_SERVO_COUNT = 11;
 // Создаём массив объектов для работы с сервомоторами
 Multiservo multiservo[MULTI_SERVO_COUNT];
 
@@ -29,7 +29,7 @@ VL53L0X_RangingMeasurementData_t measureHead;
 
 // Подключаем голову
 #include "Head.h"
-Head head(&multiservo[7]);
+Head head(&multiservo[7], &multiservo[8]);
 
 #include "Laser.h"
 Laser laserF(&multiservo[8], &lox2, FRONT);
@@ -108,8 +108,19 @@ void setID() {
 void setup() {
     Serial.begin(115200);
     IO = SerialIO();
-
-    // Перебираем значения моторов от 0 до 9
+ 
+    // Перебираем значения моторов от 0 до 11 (3 ящика, 2 лидара, 2 сервы в голове)
+    /*
+      * 2 - ящщик 1
+      * 3 - ящик 2
+      * 4 - ящик 3
+      * 5 - выдвижной ящик 1
+      * 6 - выдвижной ящик 2
+      * 7 - голова по Y
+      * 8 - тормооз для головы по Y
+      * 9 - лидар 1
+      * 10 - лидар 2
+    */
     for (int count = 2; count < MULTI_SERVO_COUNT; count++) {
         // Подключаем сервомотор
         multiservo[count].attach(count);
@@ -126,7 +137,7 @@ void setup() {
     head.begin();
 
     wheels.setSpeed(255, ALL);
-    // head.home();
+    head.home();
 
     getReady = false;
 }
@@ -213,6 +224,11 @@ void handleMessage(struct Message message) {
           wheels.go(Left);
           delay(5000);
           wheels.go(Stop);
+        }
+        else if (message.code == "SE") {
+          // 60 закрыто
+          // 80 открыто
+          multiservo[8].write(message.args[0]);
         }
         else if (message.code == "P") {
           wheels.setCurrentPosition(message.args[0], message.args[1]);
