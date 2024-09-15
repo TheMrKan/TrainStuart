@@ -60,6 +60,8 @@
 const byte CLK = 2;
 const byte DT = 3;
 #define END_CAP 22 // Коневик на голову
+#define FRONT_SENSOR A14 // Передний датчик
+#define BACK_SENSOR A15  // Задний датчик
 
 #define MAX_TICK 11090
 

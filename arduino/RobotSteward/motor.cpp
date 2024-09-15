@@ -39,6 +39,9 @@ void motor::begin() {
   pinMode(15, OUTPUT);
   digitalWrite(14, HIGH);
   digitalWrite(15, HIGH);
+
+  pinMode(A14, INPUT);
+  pinMode(A15, INPUT);
 }
 
 void motor::tick() {
@@ -47,7 +50,12 @@ void motor::tick() {
 }
 
 void motor::tickX() {
+  touch();
   if (!moveXLoopRunning) return;
+  if (pause) {
+    go(Stop);
+    return;
+  }
 
   int X = SPEED_X * (millis() - tmr)/1000;
   if (dir == Backward) {
@@ -65,8 +73,6 @@ void motor::tickX() {
     // Serial.println("STOP " + String(currentX));
     go(Stop);
     moveXLoopRunning = false;
-
-    // moveYLoopRunning = true;
 
     completeX = true;
     // completeY = true;
@@ -140,6 +146,24 @@ void motor::runY(int y) {
   tmr = millis();
   Serial.println("startY: " + String(startY) + " currentY: " + String(currentY) + " targetY: " + String(targetY));
   moveYLoopRunning = true;
+}
+
+void motor::touch() {
+  int front = digitalRead(FRONT_SENSOR);
+  int back = digitalRead(BACK_SENSOR);
+
+  if (front == 1 || back == 1) {
+   
+    pause = true;
+  } else {
+    if (pause) {
+      startX = currentX;
+      startY = currentY;
+
+      tmr = millis();
+    }
+    pause = false;
+  }
 }
 
 void motor::setCurrentPosition(int x, int y) {

@@ -31,8 +31,10 @@ class motor {
 
     void runX(int x);
     void runY(int y);
+
+    void touch();
     
-    bool moveXLoopRunning = false, moveYLoopRunning = false;
+    bool moveXLoopRunning = false, moveYLoopRunning = false, pause = false;
     unsigned long tmr;
     unsigned long targetTime;
 
