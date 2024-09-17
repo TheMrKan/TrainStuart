@@ -19,4 +19,4 @@ app.include_router(baskets.router)
 app.include_router(orders.router)
 app.include_router(delivery.router)
 
-#app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")

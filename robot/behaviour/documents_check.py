@@ -15,12 +15,13 @@ class DocumentsCheckBehaviour(BaseBehaviour):
         app = DocumentsCheckApp()
         try:
             app.run()
-
-            if app.success:
-                robot_interface.move_to(88, 0)
-                time.sleep(10)
-                robot_interface.move_to(0, 0)
         finally:
             app.shutdown()
+
+        if app.success:
+            robot_interface.move_to(88, 0)
+            time.sleep(10)
+            robot_interface.move_to(0, 0)
+
 
 

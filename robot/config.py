@@ -12,14 +12,6 @@ class HardwareConfig(Protocol):
     serial: str
 
 
-class PassportCheckAppConfig(Protocol):
-    show_dev_tools: bool
-
-
-class IdleAppConfig(Protocol):
-    show_dev_tools: bool
-
-
 class RouteConfig(Protocol):
     boarding_duration: int
     service_duration: int
@@ -28,6 +20,7 @@ class RouteConfig(Protocol):
 class ServerConfig(Protocol):
     host: str
     polling_interval: float
+    web_domain: str
 
 
 class GUIConfig(Protocol):
@@ -37,8 +30,6 @@ class GUIConfig(Protocol):
 class ConfigProtocol(Protocol):
     logging: dict
     hardware: HardwareConfig
-    passport_check: PassportCheckAppConfig
-    idle: IdleAppConfig
     route: RouteConfig
     resources_dir: str
     data_dir: str

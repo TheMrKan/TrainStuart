@@ -1,22 +1,22 @@
 import threading
 import numpy as np
-import webview
 import time
 import base64
 import cv2
 import random
-from typing import Callable, Optional
+from typing import Callable, Optional, Dict, Any
 from datetime import datetime
 
 from robot.hardware.cameras import CameraAccessor
 import robot.config as config
 from robot.gui.base.app import BaseApp
-from robot.gui.base import gui_server
+from robot.gui.base import gui_server, navigation as gui_navigation
 import utils.faces as face_util
 from robot.core.async_processor import AsyncProcessor
 from robot.core.tickets import TicketsRepository, TicketInfo
 from utils.docs_reader import PassportData
 import robot.core.route as route
+from robot.gui import external
 
 
 class PassportNotFoundError(Exception):
@@ -60,7 +60,12 @@ class DocumentsCheckApp(BaseApp):
         similarity = face_util.compare_faces(passport_data.face_descriptor, face)
         self.logger.debug(f"Similarity: {similarity}")
 
+        time.sleep(5)
+
+        self.show_preferences()
+
         self.success = True
+        self.logger.debug("DocumentsCheckApp run finished")
 
     def read_passport(self) -> PassportData:
         self.logger.debug("Reading passport...")
@@ -210,4 +215,32 @@ class DocumentsCheckApp(BaseApp):
         image = cv2.flip(image, 1)
         return image
 
+    def show_preferences(self):
+        self.send_page("preferences")
 
+        self.wait_connection()
+        self.logger.debug("Connected")
+        self.send("preferences", preferences=[
+            {
+                "callback_data": {"type": "product", "product_id": "water_still_05"},
+                "name": "Минеральная вода",
+                "image_url": gui_server.get_absolute_http_static_url("images/shop/water.png"),
+            }
+        ])
+        self.logger.debug("Sent preferences")
+        message = self.wait_message()
+        if message["code"] == "preference_callback":
+            self.logger.debug("Selected preference type: %s", message["type"])
+            self.process_preference(message)
+        else:
+            self.logger.debug("No preference selected")
+
+    def process_preference(self, callback_data: Dict[str, Any]):
+        if callback_data["type"] == "product":
+            url = external.get_product_url(callback_data["product_id"])
+            self.logger.debug("Redirecting to external URL: %s", url)
+            gui_navigation.set_current_url(url, self.server_path)
+            self.send_page("preferences")
+            self.logger.debug("Waiting...")
+            self.wait_connection()
+            self.logger.debug("Returned")

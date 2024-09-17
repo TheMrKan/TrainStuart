@@ -17,6 +17,7 @@ class BaseApp:
     _is_running: bool
     _wait_code: Optional[str]
     _wait_event: Optional[Event]
+    _wait_connected: Optional[Event]
     _last_message: Optional[dict]
     server_path: str
     logger: logging.Logger
@@ -29,6 +30,7 @@ class BaseApp:
 
         self._wait_code = None
         self._wait_event = None
+        self._wait_connected = None
 
     def run(self):
         self.subscribe()
@@ -50,14 +52,22 @@ class BaseApp:
     def subscribe(self):
 
         gui_server.on_message_received.on(self.server_path, self.__on_message)
+        gui_server.on_connected.on(self.server_path, self.on_connected)
         for subpath, listener in self.LISTENERS.items():
             gui_server.on_message_received.on(self.server_path + "/" + subpath, listener)
+
+    def on_connected(self):
+        gui_navigation.send_current_url(self.server_path)
+
+        if self._wait_connected:
+            self._wait_connected.set()
 
     def __on_message(self, message: dict):
         code: str = message.get("code", None) or ""
         self._last_message = message
 
-        if self._wait_code == code and self._wait_event is not None:
+        if (self._wait_code == "" or self._wait_code == code) \
+                and self._wait_event is not None:
             self._wait_event.set()
 
         handler = self.HANDLERS.get(code, None)
@@ -81,7 +91,7 @@ class BaseApp:
 
         gui_server.send(path, message)
 
-    def wait_message(self, code: str) -> dict:
+    def wait_message(self, code: str = "") -> dict:
         self._wait_code = code
         self._wait_event = Event()
 
@@ -90,8 +100,14 @@ class BaseApp:
         self._wait_code = None
         return self._last_message
 
+    def wait_connection(self):
+        self._wait_connected = Event()
+        self._wait_connected.wait()
+        self._wait_connected = None
+
     def unsubscribe(self):
         gui_server.on_message_received.off(self.server_path, self.__on_message)
+        gui_server.on_connected.off(self.server_path, self.on_connected)
         for subpath, listener in self.LISTENERS.items():
             gui_server.on_message_received.off(self.server_path + "/" + subpath, listener)
 

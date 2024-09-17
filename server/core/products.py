@@ -33,8 +33,8 @@ FAKE_PRODUCTS_DB = {
         "water_still_05",
         "Минеральная вода 0,5 л",
         "Пол литра минеральной воды без газа в пластиковой бутылке",
-        "/images/shop/water.png",
-        "/images/shop/water.png",
+        "/static/images/shop/water.png",
+        "/static/images/shop/water.png",
         50,
         5
     ),
@@ -43,8 +43,8 @@ FAKE_PRODUCTS_DB = {
         "cola",
         "CocaCola 0,33 л",
         "0,33 литра CocaCola в оригинальной жестяной банке",
-        "/images/shop/blackTea.png",
-        "/images/shop/blackTea.png",
+        "/static/images/shop/blackTea.png",
+        "/static/images/shop/blackTea.png",
         100,
         1
     ),

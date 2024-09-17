@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <script src="/static/js/gui_channel.js"></script>
+    <script src="/static/js/gui_navigation.js"></script>
+    <title>Предпочтения пассажира</title>
+</head>
+<body>
+<header class="header">
+    <div class="content">
+        <div class="main-text">
+            <h3 class="name">Робот-стюард</h3>
+            <div class="vert-line"></div>
+            <h3 class="number-wagon">Вагон: 1</h3>
+        </div>
+        <button class="call-person" type="button" onclick="window.dialog.showModal();">
+            Связь с человеком
+        </button>
+    </div>
+    <hr class="horiz-line">
+    <h2 class="title-header">На основе ваших предпочтений</h2>
+    <hr class="horiz-line">
+</header>
+<section class="section">
+
+    <div class="pref-place">
+
+    </div>
+
+    <div class="btns">
+        <button class="cancel" onclick="skip()">Ничего не нужно</button>
+    </div>
+</section>
+
+<dialog id="dialog">
+    <h2>Связь с человеком</h2>
+
+    <button onclick="window.dialog.close();" aria-label="close" class="x">❌</button>
+</dialog>
+<script>
+     window.addEventListener("channel_ready", function (event) {
+        event.detail.channel.addEventListener("code_preferences", function(event) {
+            console.log("Received preferences", event.detail.preferences)
+            for (let preference of event.detail.preferences) {
+                addPreference(preference);
+            }
+        });
+    });
+
+     function addPreference(preference) {
+         const html = `
+        <button class="pref-block">
+            <img src="${preference.image_url}" alt="${preference.name}">
+            <div class="pref-block-inner">
+                <p class="product-text">${preference.name}</p>
+            </div>
+        </button>`;
+
+         const container = document.querySelector(".pref-place");
+         container.insertAdjacentHTML("beforeend", html);
+
+         // обработка нажатий на только что добавленную карточку
+         console.log(container.children[container.children.length - 1]);
+         container.children[container.children.length - 1].onclick = () => choosePreference(preference.callback_data);
+     }
+
+     function choosePreference(callback_data) {
+         channel.send("preference_callback", callback_data)
+     }
+
+     function skip() {
+         channel.send("skip");
+     }
+</script>
+</body>
+</html>
