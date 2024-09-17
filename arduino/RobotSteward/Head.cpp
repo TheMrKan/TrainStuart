@@ -32,6 +32,7 @@ void Head::begin() {
 
     analogWrite(EN_Head, power);
     brake->write(60);
+    brake->detach();
 }
 
 // void Head::tick() {
@@ -94,8 +95,8 @@ void Head::tickY() {
     stateY = true;
     servoLoopRunning = false;
 
-    brake->write(60);
     servo->detach();
+    brakeF(true);
     return;
   }
 
@@ -142,6 +143,20 @@ void Head::zero() {
   endFlag = true;
 }
 
+void Head::brakeF(bool state) {
+  if (state) {
+    brake->attach(8);
+    brake->write(60);
+    delay(500);
+    brake->detach();
+  } else {
+    brake->attach(8);
+    brake->write(80);
+    delay(500);
+    brake->detach();
+  }
+}
+
 void Head::home() {
     zero();
     rotate(0, 0);
@@ -177,7 +192,7 @@ void Head::rotateX(int x) {
 
 void Head::rotateY(int y) {
     if (y > 20) y = 20;
-    if (y < -10) y = -10;
+    if (y < -20) y = -20;
     
     if (y == 0) targetY = HeadCenter;
     else targetY = map(y, headInputDown, headInputUp, HeadDown, HeadUp);
@@ -191,8 +206,8 @@ void Head::rotateY(int y) {
 
     tmrY = millis();
     servoLoopRunning = true;
+    brakeF(false);
     servo->attach(7);
-    brake->write(80);
 }
 
 void Head::stop() {

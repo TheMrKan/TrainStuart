@@ -24,6 +24,9 @@
 #define RELE_1 14
 #define RELE_2 15
 
+#define SENSOR_DRAVER_1  24   // Нулевая точка ящика у аккумулятора
+#define SENSOR_DRAVER_2  23   // Нулевая точко ящика у ардуино
+
 #define EN_Head 45        // ШИМ мотора головы
 #define PIN_IN1_head 49   // Вывод управления направлением вращения мотора головы
 #define PIN_IN2_head 47   // Вывод управления направлением вращения мотора головы
@@ -40,16 +43,30 @@
 #define SHT_LOXHead 8
 
 
+// Углы для сервоприводов
+#define UpFront_Right  165
+#define UpFront_Center 117
+#define UpFront_Left   65
+
+#define UpBack_Right   0
+#define UpBack_Center  62
+#define UpBack_Left    110
+
+#define Down_Right     40
+#define Down_Center    98
+#define Down_Left      150
+
+
 //  Бошка
 #define HeadCenter 60
 #define HeadUp     179
-#define HeadDown   30
+#define HeadDown   10
 // #define HeadCenter 90
 // #define HeadUp     169
 // #define HeadDown   60
 
 #define headInputUp   20
-#define headInputDown -10
+#define headInputDown -20
 
 #define headInputRight 160
 #define headInputLeft  -165
