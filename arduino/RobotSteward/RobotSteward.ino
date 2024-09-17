@@ -51,6 +51,27 @@ bool getReady = false;
 uint16_t dist;
 
 uint16_t headDistData[20];
+unsigned long tmr;
+
+enum Box {
+  DRAWER_1 = 5,
+  DRAWER_2 = 6,
+  UP_1 = 3, // Задний
+  UP_2 = 2, //Передний
+  DOWN = 4
+};
+
+enum State {
+  CLOSE = 0,
+  OPEN_LEFT = 1,
+  OPEN_RIGHT = 2
+};
+
+State drawer1 = CLOSE;
+State drawer2 = CLOSE;
+State up_1 = CLOSE;
+State up_2 = CLOSE;
+State down = CLOSE;
 
 void setID() {
   pinMode(SHT_LOX1, OUTPUT);
@@ -199,6 +220,9 @@ void handleMessage(struct Message message) {
           wheels.run(message.args[0], message.args[1]);
           // Serial.println(message.args[1]);
         }
+        else if (message.code == "C") {
+          BoxMove(message.args[0], message.args[1]);
+        }
         else if (message.code == "Mt") {
           wheels.go(Forward);
           delay(message.args[0]);
@@ -299,15 +323,145 @@ uint16_t getDistanse(int index) {
   return round(sum / 20);
 }
 
-// void scan() {
-//   if (dir && currentAngle < right) {
-//     ++currentAngle;
-//     // Считывание дистанции
-//   }
-//   else if (!dir && currentAngle > left) {
-//     --currentAngle;
-//     // Считывание дистанции
-//   }
-//   //Serial.println(currentAngle);
-//   multiservo[8].write(currentAngle);
-// }
+void BoxMove(int index, int side) {
+  Box box;
+  State state;
+  switch(index) {
+    case 0: box = UP_1; break;
+    case 1: box = UP_2; break;
+    case 2: box = DRAWER_1; break;
+    case 3: box = DRAWER_2; break;
+    case 4: box = DOWN; break;
+  }
+  switch(side) {
+    case 0: state = CLOSE; break;
+    case 1: state = OPEN_RIGHT; break;
+    case 2: state = OPEN_LEFT; break;
+  }
+
+  switch (box) {  // Выполнение запрашиваемой функции
+    case DRAWER_1 || DRAWER_2:
+      if (state == CLOSE) {
+        int sensor;
+        State drawer;
+        if (box == DRAWER_1) { sensor = SENSOR_DRAVER_1;  drawer = drawer1; }
+        else { sensor = SENSOR_DRAVER_2; drawer = drawer2; }
+
+        tmr = millis();
+        while (millis() - tmr <= 4000) {
+          if (digitalRead(sensor)) break;
+          if (drawer == OPEN_RIGHT)     multiservo[box].write(115);
+          else if (drawer == OPEN_LEFT) multiservo[box].write(75);
+        }
+        multiservo[box].write(95);
+
+        if (box == DRAWER_1) drawer1 = CLOSE;
+        else drawer2 = CLOSE;
+      } else if (state == OPEN_RIGHT) {
+
+        tmr = millis();
+        while (millis() - tmr <= 3000) multiservo[box].write(65);
+        multiservo[box].write(95);
+
+        if (box == DRAWER_1) drawer1 = OPEN_RIGHT;
+        else drawer2 = OPEN_RIGHT;
+      } else {
+
+        tmr = millis();
+        while (millis() - tmr <= 3000) multiservo[box].write(125);
+        multiservo[box].write(95);
+
+        if (box == DRAWER_1) drawer1 = OPEN_LEFT;
+        else drawer2 = OPEN_LEFT;
+      }
+      IO.sendCompletion();
+      break;
+    case UP_1:
+      if (state == CLOSE) {
+        if (up_1 == OPEN_RIGHT){
+          for (int i = UpFront_Right; i >= UpFront_Center; --i) {
+            multiservo[box].write(i);
+            delay(30);
+          }
+        } else if (up_1 == OPEN_LEFT){
+          for (int i = UpFront_Left; i <= UpFront_Center; ++i) {
+            multiservo[box].write(i);
+            delay(30);
+          }
+        } else multiservo[box].write(UpFront_Center);
+        up_1 = CLOSE;
+      } else if (state == OPEN_RIGHT) {
+        for (int i = UpFront_Center; i <= UpFront_Right; ++i) {
+          multiservo[box].write(i);
+          delay(30);
+        }
+        up_1 = OPEN_RIGHT;
+      } else {
+        for (int i = UpFront_Center; i >= UpFront_Left; --i) {
+          multiservo[box].write(i);
+          delay(30);
+        }
+        up_1 = OPEN_LEFT;
+      }
+      IO.sendCompletion();
+      break;
+    case UP_2:
+      if (state == CLOSE) {
+        if (up_2 == OPEN_RIGHT){
+          for (int i = UpBack_Right; i <= UpBack_Center; ++i) {
+            multiservo[box].write(i);
+            delay(30);
+          }
+        } else if (up_2 == OPEN_LEFT){
+          for (int i = UpBack_Left; i >= UpBack_Center; --i) {
+            multiservo[box].write(i);
+            delay(30);
+          }
+        } else multiservo[box].write(UpBack_Center);
+        up_2 = CLOSE;
+      } else if (state == OPEN_RIGHT) {
+        for (int i = UpBack_Center; i >= UpBack_Right; --i) {
+          multiservo[box].write(i);
+          delay(30);
+        }
+        up_2 = OPEN_RIGHT;
+      } else  {
+        for (int i = UpBack_Center; i <= UpBack_Left; ++i) {
+          multiservo[box].write(i);
+          delay(30);
+        }
+        up_2 = OPEN_LEFT;
+      }
+      IO.sendCompletion();
+      break;
+    case DOWN:
+      if (state == CLOSE) {
+        if (down == OPEN_RIGHT){ //multiservo[box].read() == Down_Right
+          for (int i = Down_Right; i <= Down_Center; ++i) {
+            multiservo[box].write(i);
+            delay(30);
+          }
+        } else if (down == OPEN_LEFT){
+          for (int i = Down_Left; i >= Down_Center; --i) {
+            multiservo[box].write(i);
+            delay(30);
+          }
+        } else multiservo[box].write(Down_Center);
+        down = CLOSE;
+      } else if (state == OPEN_RIGHT) {
+        for (int i = Down_Center; i >= Down_Right; --i) {
+          multiservo[box].write(i);
+          delay(30);
+        }
+        down = OPEN_RIGHT;
+      } else {
+        for (int i = Down_Center; i <= Down_Left; ++i) {
+          multiservo[box].write(i);
+          delay(40);
+        }
+        down = OPEN_LEFT;
+      }
+      IO.sendCompletion();
+      break;
+  }
+}

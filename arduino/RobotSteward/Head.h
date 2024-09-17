@@ -44,6 +44,7 @@ private:
     byte power = 255;
 
     void zero();
+    void brakeF(bool state);
     bool isEnd() {
         return !digitalRead(END_CAP);
     }
