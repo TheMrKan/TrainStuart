@@ -19,9 +19,9 @@ class DocumentsCheckBehaviour(BaseBehaviour):
             app.shutdown()
 
         if app.success:
-            robot_interface.move_to(88, 0)
-            time.sleep(10)
-            robot_interface.move_to(0, 0)
+            #robot_interface.move_to(88, 0)
+            time.sleep(5)
+            #robot_interface.move_to(0, 0)
 
 
 

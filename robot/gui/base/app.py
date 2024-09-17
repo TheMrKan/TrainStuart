@@ -57,10 +57,10 @@ class BaseApp:
             gui_server.on_message_received.on(self.server_path + "/" + subpath, listener)
 
     def on_connected(self):
-        gui_navigation.send_current_url(self.server_path)
-
         if self._wait_connected:
             self._wait_connected.set()
+
+        gui_navigation.send_current_url(self.server_path)
 
     def __on_message(self, message: dict):
         code: str = message.get("code", None) or ""

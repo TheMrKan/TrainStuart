@@ -60,7 +60,7 @@ class DocumentsCheckApp(BaseApp):
         similarity = face_util.compare_faces(passport_data.face_descriptor, face)
         self.logger.debug(f"Similarity: {similarity}")
 
-        time.sleep(5)
+        time.sleep(2)
 
         self.show_preferences()
 
@@ -219,6 +219,7 @@ class DocumentsCheckApp(BaseApp):
         self.send_page("preferences")
 
         self.wait_connection()
+        time.sleep(1)
         self.logger.debug("Connected")
         self.send("preferences", preferences=[
             {

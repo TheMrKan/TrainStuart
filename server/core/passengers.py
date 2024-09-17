@@ -23,6 +23,12 @@ passengers: dict = {
         uuid,
         "Petya Petrov",
         2
+    ),
+    "robot":
+    Passenger(
+        "robot",
+        "Robot",
+        3,
     )
 }
 

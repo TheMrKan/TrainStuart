@@ -28,7 +28,7 @@ hardware:
   main_camera: 0
   main_camera_resolution: 640x480
   documents_camera: 1
-  dummy_robot: True
+  dummy_robot: False
   serial: /dev/ttyTHS1
 
 
@@ -37,9 +37,9 @@ route:
   service_duration: 300
 
 server:
-  host: "http://127.0.0.1:8002/"
+  host: "http://server:8002/"
   polling_interval: 3
-  web_domain: "http://127.0.0.1:8002/static/"
+  web_domain: "http://server:8002/static/"
 
 gui:
   loading_page: "loading"

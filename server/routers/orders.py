@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
+import traceback
 
 from server.routers.models import OrderDetails, OrderPosition
 import server.core.orders as orders
@@ -29,4 +30,5 @@ def pay_order(order_id: str):
     try:
         orders.mark_payed(order)
     except orders.OrderCompletionError as e:
+        traceback.print_exc()
         raise HTTPException(500, f"Failed to complete the order. Reason: {e.reason}")

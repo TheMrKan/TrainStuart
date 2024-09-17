@@ -8,7 +8,7 @@ class Item:
 
 
 items: dict = {
-    "water_still_0,5": Item("water_still_0,5"),
+    "water_still_05": Item("water_still_05"),
     "cola": Item("cola")
 }
 
