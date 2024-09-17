@@ -22,6 +22,10 @@
             element.innerHTML = element.innerHTML + "<br>" + event.detail.message;
         });
     });
+
+    function sendAction(actionName) {
+        channel.send("action", {name: actionName})
+    }
 </script>
 <body>
 <header class="header">
@@ -47,22 +51,22 @@
         </button>
     </div>
     <div class="second-place">
-        <a class="btn btn-second" href="https://www.rzd.ru/ru/9300">
+        <a class="btn btn-second" onclick="sendAction('food')" href="https://www.rzd.ru/ru/9300">
             <div class="second-content">
                 <p class="second-text">Заказать еду</p>
             </div>
         </a>
-        <a class="btn btn-second" href="https://shopmuseumrzd.ru/souvenir-products">
+        <a class="btn btn-second" onclick="sendAction('souvenirs')">
             <div class="second-content">
                 <p class="second-text">Сувенирная продукция</p>
             </div>
         </a>
-        <a class="btn btn-second" href="https://taxi.yandex.ru/">
+        <a class="btn btn-second" onclick="sendAction('taxi')">
             <div class="second-content">
                 <p class="second-text">Заказ такси</p>
             </div>
         </a>
-        <a class="btn btn-second" href="https://ostrovok.ru">
+        <a class="btn btn-second" onclick="sendAction('hotels')">
             <div class="second-content">
                 <p class="second-text">Заказ отелей</p>
             </div>

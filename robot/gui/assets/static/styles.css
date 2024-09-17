@@ -64,6 +64,14 @@ html {
     align-content: center;
 }
 
+/*.title-header-complete {*/
+/*    font-weight: 300;*/
+/*    */
+/*    font-style: normal;*/
+/*    text-align: center;*/
+/*    align-content: center;*/
+/*}*/
+
 .horiz-line {
     padding: 0;
     margin-top: 25px;
@@ -197,10 +205,10 @@ html {
     border: none;
     color: var(--color-white);
     font-family: 'RussianRail', sans-serif;
-    font-size: 30px;
+    font-size: 35px;
 
-    width: 400px;
-    height: 180px;
+    width: 550px;
+    height: 160px;
 
     position: fixed;
     bottom: 50px;
@@ -398,6 +406,8 @@ dialog::backdrop {
 
 .pref-block {
     display: grid;
+    border: none;
+    background: none;
     align-items: center;
     grid-template-rows: 5fr 1fr;
 }

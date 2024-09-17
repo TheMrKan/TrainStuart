@@ -28,6 +28,16 @@ class OutOfStockError(CoreError):
 
 
 FAKE_PRODUCTS_DB = {
+    "glass": Product(
+        "glass",
+        "glass",
+        "Подстаканник РЖД",
+        "Традиционный мельхиоровый подстаканникс никелированным покрытием и дополнительным чернением под патинированное серебро.",
+        "/static/images/shop/glass.jpg",
+        "/static/images/shop/glass.jpg",
+        5900,
+        1
+    ),
     "water_still_05": Product(
         "water_still_05",
         "water_still_05",
@@ -43,11 +53,12 @@ FAKE_PRODUCTS_DB = {
         "cola",
         "CocaCola 0,33 л",
         "0,33 литра CocaCola в оригинальной жестяной банке",
-        "/static/images/shop/blackTea.png",
-        "/static/images/shop/blackTea.png",
+        "/static/images/shop/cola.jpg",
+        "/static/images/shop/cola.jpg",
         100,
         1
     ),
+
 }
 
 

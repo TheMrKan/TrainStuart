@@ -226,7 +226,12 @@ class DocumentsCheckApp(BaseApp):
                 "callback_data": {"type": "product", "product_id": "water_still_05"},
                 "name": "Минеральная вода",
                 "image_url": gui_server.get_absolute_http_static_url("images/shop/water.png"),
-            }
+            },
+            {
+                "callback_data": {"type": "product", "product_id": "cola"},
+                "name": "Добрый Cola 0,33л",
+                "image_url": gui_server.get_absolute_http_static_url("images/shop/cola.jpg"),
+            },
         ])
         self.logger.debug("Sent preferences")
         message = self.wait_message()
@@ -241,7 +246,9 @@ class DocumentsCheckApp(BaseApp):
             url = external.get_product_url(callback_data["product_id"])
             self.logger.debug("Redirecting to external URL: %s", url)
             gui_navigation.set_current_url(url, self.server_path)
-            self.send_page("preferences")
+            time.sleep(0.5)
+            self.send_page("complete")
             self.logger.debug("Waiting...")
             self.wait_connection()
+            time.sleep(3)
             self.logger.debug("Returned")
