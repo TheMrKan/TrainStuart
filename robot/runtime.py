@@ -55,10 +55,11 @@ class Runtime:
         finally:
             startup_app.shutdown()
 
-        #DocumentsCheckBehaviour().run()
-        # CarriageMovingBehaviour().run()
+        # StationIdleBehaviour().run()
+        # DocumentsCheckBehaviour().run()
+        CarriageMovingBehaviour().run()
 
-        InteractionApp().run()
+        #InteractionApp().run()
 
         while True:
             time.sleep(1)

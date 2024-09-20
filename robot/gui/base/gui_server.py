@@ -11,12 +11,11 @@ from pymitter import EventEmitter
 from utils.cv import Image
 import cv2
 import urllib.parse
-import multiprocessing
+import subprocess
 
 logger = logging.getLogger(__name__)
 
-http_stop_event: multiprocessing.Event
-http_process: multiprocessing.Process
+http_process: subprocess.Popen
 
 websocket_stop_event = threading.Event()
 websocket_thread: threading.Thread
@@ -98,15 +97,9 @@ def run_websocket():
 
 def run_http():
     global http_process
-    global http_stop_event
 
-    http_stop_event = multiprocessing.Event()
-    import robot.gui.base.http as http
-    http_process = multiprocessing.Process(target=http.run,
-                                           args=(http_stop_event, ),
-                                           name="robot.gui.base.gui_server.http",
-                                           daemon=True)
-    http_process.start()
+    #http_process = subprocess.Popen(["python3", "-c", "from robot.gui.base import http; http.run;"])
+    #http_process.start()
 
 
 def get_absolute_ws_url(rel_path: str) -> str:
@@ -123,7 +116,6 @@ def get_absolute_http_static_url(rel_path: str) -> str:
 
 def start():
     global websocket_thread
-    global http_thread
 
     logger.debug("Starting GUI server...")
 
@@ -159,7 +151,7 @@ def stop():
     logger.debug("Stopping GUI server...")
     websocket_stop_event.set()
     websocket_loop.call_soon_threadsafe(websocket_loop.stop)
-    http_stop_event.set()
+    http_process.kill()
 
     websocket_thread.join()
     logger.info("GUI server is stopped")

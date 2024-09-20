@@ -15,7 +15,7 @@ from robot.dev import control_panel
 
 
 logger = logging.getLogger(__name__)
-__face_detector = ContinuousFaceDetector(lambda: CameraAccessor.main_camera.image_bgr, 400)
+__face_detector = ContinuousFaceDetector(lambda: CameraAccessor.main_camera.image_bgr, 200)
 
 
 class InteractionTrigger:
@@ -126,6 +126,7 @@ def __get_distance_to_face(face_size: int) -> int:
 
 def rotate_to_face():
     logger.debug("Rotating to face...")
+    #cv2.imshow("Raw", __face_detector.image)
     if __face_detector.face is None:
         logger.debug("Face is None. Returning...")
         return
@@ -140,13 +141,13 @@ def rotate_to_face():
     head_angle_delta = 0
     distance = 0
 
-    ALLOWED_DELTA_REL = 0.2
-    OUT_DELTA_REL = 0.8
+    ALLOWED_DELTA_REL = 0.3
+    OUT_DELTA_REL = 0.9
     if delta_rel <= ALLOWED_DELTA_REL:
         logger.debug("Delta is in allowed range. Returning...")
     elif delta_rel <= OUT_DELTA_REL:
         distance = __get_distance_to_face(int((__face_detector.face[2] + __face_detector.face[3]) / 2))
-        head_angle_delta = int(round(DST_TO_ANGLE_MULTS[distance] * delta))
+        head_angle_delta = int(-math.copysign(3, delta))
         logger.debug(f"Head rotation delta: {head_angle_delta}")
         logger.debug(f"Face size: {__face_detector.face[2], __face_detector.face[3]}")
 
@@ -155,7 +156,7 @@ def rotate_to_face():
         logger.debug(f"Face is too far from center. Returning...")
 
     stream = control_panel.get_stream("rotate_to_face", "Наведение на лицо")
-    if stream.is_active:
+    if stream.is_active or True:
         image = __face_detector.image.copy()
 
         image = cv2.line(image,
@@ -190,6 +191,8 @@ def rotate_to_face():
         image = cv2.putText(image, f"Distance: {distance}", (5, 75),
                             cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
 
+        cv2.imshow("Face", image)
+        cv2.waitKey(1)
         stream.send_image(image)
 
 

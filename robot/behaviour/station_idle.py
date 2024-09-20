@@ -24,7 +24,7 @@ class StationIdleBehaviour(BaseBehaviour):
         self.__app.shutdown()
 
     def behave(self):
-        robot_interface.set_head_rotation(0, 20)
+        robot_interface.set_head_rotation(90, 20)
 
         self.logger.debug("Waiting for interaction...")
         trigger = interaction.wait_for_interaction_trigger()

@@ -12,12 +12,14 @@ COLOR_RANGES = [
 MIN_CODE_RECT_AREA = 1500
 CONTOURS_APPROX_EPSILON = 10
 BIT_CHECK_NEIGHBOURS = 5
-PADDING = 0.142
+PADDING = 0.2
 
 CODE_SIZE = 2
 
 Point = Tuple[int, int]
 Line = Tuple[Point, Point]
+
+DEBUG = False
 
 
 def _find_code_rect(hsv_image: cv.UMat,
@@ -27,8 +29,10 @@ def _find_code_rect(hsv_image: cv.UMat,
     mask = np.zeros(hsv_image.shape[:2], np.uint8)
     for crange in color_ranges:
         mask |= cv.inRange(hsv_image, crange[0], crange[1])
-    #cv2.imshow("Mask", cv2.resize(mask, (int(1024 / 2), int(576 / 2))))
-    #cv2.waitKey(1)
+
+    if DEBUG:
+        cv2.imshow("Mask", cv2.resize(mask, (int(1024 / 2), int(576 / 2))))
+        cv2.waitKey(1)
     contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
     biggest_area = 0
@@ -129,6 +133,9 @@ def read_code(image_hsv: cv.UMat) -> Tuple[Optional[List[bool]], Optional[Tuple[
 
 
 def test():
+    global DEBUG
+    DEBUG = True
+
     print("Debug 0")
     cap = cv2.VideoCapture(0)
     print("Debug 1")

@@ -5,22 +5,45 @@ var activeStream = null;
 window.addEventListener("channel_ready", function (event) {
 
     event.detail.channel.addEventListener("code_stream", function(event) {
-        addStream(event.detail.id, event.detail.url, event.detail.name);
+        if (event.detail.id in streams) {
+            updateStream(event.detail.id, event.detail.url, event.detail.name);
+        }
+        else {
+            addStream(event.detail.id, event.detail.url, event.detail.name);
+        }
     });
 
 });
 
 function addStream(id, url, name) {
+    const imageElement = document.getElementById("stream-image");
     console.log(`Adding stream ${name} (${url})`);
-    var imageElement = document.getElementById("stream-image");
+
     streams[id] = {"id": id, "url": url, "name": name, "stream": new WSVideoStream(url, imageElement)};
     var tabs = document.getElementById("streams-tabs");
     var tabsList = tabs.getElementsByTagName("ul")[0];
     tabsList.insertAdjacentHTML("beforeend", `<li id="stream-button-${id}"><a onclick="onStreamClicked('${id}')">${name}</a></li>`);
 }
 
+function updateStream(id, url, name) {
+    const stream = streams[id];
+    if (stream === undefined)
+    {
+        return;
+    }
+
+    const imageElement = document.getElementById("stream-image");
+    stream.url = url;
+    stream.stream.stop();
+    stream.stream = new WSVideoStream(url, imageElement);
+
+    stream.name = name;
+    const button = document.querySelector(`#stream-button-${id} a`);
+    button.innerText = name;
+}
+
 function onStreamClicked(id) {
-    if (activeStream?.id == id) {
+    if (activeStream?.id === id) {
         stopActiveStream();
     }
     else {
@@ -33,7 +56,7 @@ function setActiveStream(id) {
         stopActiveStream();
     }
 
-    var stream = streams[id];
+    const stream = streams[id];
     if (!stream) {
         console.log(`Unknown stream ${id}`);
         return;

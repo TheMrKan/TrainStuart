@@ -21,10 +21,14 @@ class InteractionApp(BaseApp):
             self.send("greetings", name=self.interaction.person.name)
         if not self.interaction.new_person:
             self.logger.debug("Send not a new person")
-            self.send("message", message="Хм... Я уже видел вас!")
+            self.send("message", message="Ваш поезд на 3 платформе")
+            self.send("greetings", name="Михаил")
 
     def on_message(self, message: dict):
-        if message["code"]== "action":
+        if message["code"] == "action":
+            if message["name"] == "none":
+                self.shutdown()
+                return
             self.handle_action(message["name"])
 
     def handle_action(self, action_name: str):

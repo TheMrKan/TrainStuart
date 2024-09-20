@@ -9,7 +9,7 @@ from robot.hardware import robot_interface
 class DocumentsCheckBehaviour(BaseBehaviour):
 
     def behave(self):
-        robot_interface.move_to(0, 0)
+        #robot_interface.move_to(0, 0)
         robot_interface.set_head_rotation(90, 20)
 
         app = DocumentsCheckApp()
@@ -19,9 +19,9 @@ class DocumentsCheckBehaviour(BaseBehaviour):
             app.shutdown()
 
         if app.success:
-            #robot_interface.move_to(88, 0)
-            time.sleep(5)
-            #robot_interface.move_to(0, 0)
+            robot_interface.move_to(68, 0)
+            time.sleep(3)
+            robot_interface.move_to(0, 0)
 
 
 

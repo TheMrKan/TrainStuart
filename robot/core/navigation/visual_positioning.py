@@ -8,7 +8,6 @@ from robot.core.navigation import reader, chart
 from robot.hardware.cameras import CameraAccessor
 #from utils.faces import ContinuousDetector
 
-DISTANCE = 90
 FOCAL = 900
 
 SPEED = 258.5 / 12
@@ -34,7 +33,10 @@ def camera_position(image_size: Tuple[int, int], marker: Tuple[int, int],
     return round(x_camera), round(y_camera), round(z_camera)
 
 
-def try_get_position(head_rotation: int) -> Optional[chart.Vector2]:
+def try_get_position(head_rotation_x: int, head_rotation_y: int, head_distance: int) \
+        -> Tuple[Optional[str], Optional[chart.Vector2]]:
+    distance = head_distance * math.cos(math.radians(head_rotation_y))
+
     data, points, bit_positions = reader.read_code(CameraAccessor.main_camera.image_hsv)
 
     side = ""
@@ -42,7 +44,7 @@ def try_get_position(head_rotation: int) -> Optional[chart.Vector2]:
     ax, ay = 0, 0
     try:
         if None in (data, points, bit_positions):
-            return None
+            return None, None
 
         num = int("".join((str(int(i))) for i in reversed(data)), 2)
         center = (round(sum([p[0] for p in points]) / len(points)),
@@ -50,15 +52,16 @@ def try_get_position(head_rotation: int) -> Optional[chart.Vector2]:
 
         rx, _, ry = camera_position((CameraAccessor.main_camera.image_hsv.shape[1],
                                     CameraAccessor.main_camera.image_hsv.shape[0]),
-                                    center, DISTANCE, FOCAL)
+                                    center, distance, FOCAL)
 
-        side = "left" if head_rotation <= 0 else "right"
+        side = "left" if head_rotation_x <= 0 else "right"
 
         ax, ay = chart.get_absolute_position(f"marker_{side}_{num}", (rx, ry))
-        return ax, ay
+        ay -= 10
+        return f"marker_{side}_{num}", (ax, ay)
     except KeyError:
         print(f"Unknown point {f'marker_{side}_{num}'}")
-        return None
+        return None, None
     finally:
         img = CameraAccessor.main_camera.image_bgr.copy()
         cv2.putText(img, f"{ax} {ay}", (30, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 1)

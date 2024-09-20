@@ -5,6 +5,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 WHEELS_SPEED_X = 215 / 12
+WHEELS_SPEED_Y_RIGHT = 44 / 5
+WHEELS_SPEED_Y_LEFT = 82 / 5
 
 
 class Side(enum.Enum):
@@ -14,10 +16,10 @@ class Side(enum.Enum):
 
 class RobotContainer(enum.Enum):
     BIG = 0
-    SMALL_0 = 1
-    SMALL_1 = 2
-    TABLET_0 = 3
-    TABLET_1 = 4
+    SMALL_BACK = 1
+    SMALL_FRONT = 2
+    TABLET_BACK = 3
+    TABLET_FRONT = 4
 
 
 head_horizontal = 0
@@ -52,6 +54,8 @@ def set_head_rotation(horiz: int, vert: int, completion=True):
     global head_vertical
 
     iserial.send_command("H", horiz, vert, completion=completion)
+    head_horizontal = horiz
+    head_vertical = vert
 
 
 def modify_head_rotation(horiz_delta: int, vert_delta: int, completion=True):

@@ -17,8 +17,8 @@ window.addEventListener("channel_ready", function (event) {
 svg = null;
 
 const MAP_WIDTH = 900;
-const MAP_HEIGHT = 260;
-const MAP_PADDING = 10;
+const MAP_HEIGHT = 200;
+const MAP_PADDING = 12;
 
 const ZERO_X = 150;
 const ZERO_Y = MAP_HEIGHT / 2;
@@ -212,6 +212,23 @@ function produceZone(zone) {
             "fill-opacity": "0",
         });
     }
+    else if (zone.id === "vending_zone") {
+        const p0 = toSVGPos(zone.p0[0], zone.p0[1]);
+        const p1 = toSVGPos(zone.p1[0], zone.p1[1]);
+        const width = p1[0] - p0[0];
+        const height = p1[1] - p0[1];
+        return createSVGElement("rect", {
+            id: "zone_vending",
+            x: p0[0],
+            y: p0[1],
+            width: width,
+            height: height,
+            rx: 2,
+            opacity: "undefined",
+            stroke: GRAY_SUB,
+            "fill-opacity": "0",
+        });
+    }
     return null;
 }
 
@@ -276,8 +293,7 @@ function produceMarker(point) {
     group.append(line);
 
     const bin = (Number(num) >>> 0).toString(2);
-    const valueCenter = y > 0 ? y - 10 : y + 10;
-
+    const valueCenter = y > 0 ? y + 10 : y - 10;
     group.append(createSVGElement("rect", {
         x: x - 9,
         y: valueCenter - 9,
@@ -384,4 +400,5 @@ function drawPath(points) {
     });
     pathGroup.append(stopCircle);
 }
+
 
