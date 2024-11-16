@@ -11,6 +11,8 @@
 #include <EncButton.h>
 EncButton enc(CLK, DT);
 
+const int INF = 1000;
+
 Head::Head(Multiservo* _servo, Multiservo* _brake) {
     servo = _servo;
     brake = _brake;
@@ -63,8 +65,13 @@ void Head::tick() {
   tickY();
 }
 
+/*
+  Если при вызове команды "Hi 1" голова поворачивается в крайний угол (158), 
+  то после повторного вызова этой же функции назад он не поедет (потому что текущий угол не перзаписывается)
+*/
 void Head::tickX() {
     enc.tick();
+    int _currentX = currentX + round(-enc.counter / angleTicks);
     if (isEnd()) {
       if (!endFlag) {
         currentX = headInputLeft;
@@ -74,8 +81,28 @@ void Head::tickX() {
 
     if (!headLoopRunning) return;
 
-    if ((-enc.counter - targetTickX > 0) != deltaSign) {
+    if ((!dir && isEnd()) || (dir && _currentX >= (headInputRight - 2))) {
+      Serial.println(currentX);
+      stop();
+      return;
+    }
+
+    int delta = -enc.counter - targetTickX;
+    int localPower = power;
+
+    if (abs(targetTickX) == INF) {
+      localPower = power / 2;
+    } 
+    else if (abs(delta) < 2 * angleTicks) {
+      localPower = power / 3;
+    }
+    else if (abs(delta) < 10 * angleTicks) {
+      localPower = power / 2;
+    }
+
+    if (abs(targetTickX) != INF && (delta > 0) != deltaSign) {
         stop();
+        Serial.println(currentX);
         return;
     }
     deltaSign = -enc.counter - targetTickX > 0;
@@ -83,7 +110,7 @@ void Head::tickX() {
     digitalWrite(PIN_IN2_head, dir ? LOW : HIGH);
 
     stateX = false;
-    analogWrite(EN_Head, power);
+    analogWrite(EN_Head, localPower);
 }
 
 void Head::tickY() {
@@ -171,7 +198,7 @@ void Head::rotateX(int x) {
     if (x > 160) x = 160;
     if (x < -165) x = -165;
 
-    if (currentX == x) {
+    if (abs(currentX - x) <= 2) {
       stateX = true;
       return;
     }
@@ -190,16 +217,32 @@ void Head::rotateX(int x) {
     headLoopRunning = true;
 }
 
+void Head::rotateXInf(int _dir) {
+    if (_dir == 0) {
+      stop();
+      return;
+    }
+    stateX = false;
+    stateY = true;
+
+    dir = _dir > 0;
+    enc.counter = 0;
+    targetTickX = INF;
+    headLoopRunning = true;
+}
+
 void Head::rotateY(int y) {
-    if (y > 20) y = 20;
-    if (y < -20) y = -20;
+    if (y > 30) y = headInputUp;
+    if (y < -10) y = headInputDown;
     
     if (y == 0) targetY = HeadCenter;
-    else targetY = map(y, headInputDown, headInputUp, HeadDown, HeadUp);
+    if ( y > 0) targetY = map(y, headInputCenter, headInputUp, HeadCenter, HeadUp);
+    else targetY = map(y, headInputCenter, headInputDown, HeadCenter, HeadDown);
 
-    if (targetY - currentY > 0) dirY = true;
+    if (targetY > currentY) dirY = true;
     else dirY = false;
     counterY = 0;
+    sendY = y;
 
     // Serial.println("ABS inputAngle: " + String(y) + " lastAngle " + String(currentY) + " outputAngle: " + String(targetY) + " dir " + String(dirY));
     // current = target;
@@ -221,18 +264,16 @@ void Head::stop() {
   enc.counter = 0;
 }
 
-bool Head::getState(char axis) {
-  if (axis == 'x') {
-    if (stateX) {
-      stateX = false;
-      return true;
-    }
-    return false;
-  } else {
-    if (stateY) {
-      stateY = false;
-      return true;
-    }
-    return false;
+bool Head::isCompleted() {
+  if (stateX || stateY) {
+    // Serial.print(stateX);
+    // Serial.println(stateY);
   }
+  
+  if (stateX && stateY) {
+    stateX = false;
+    stateY = false;
+    return true;
+  }
+  return false;
 }

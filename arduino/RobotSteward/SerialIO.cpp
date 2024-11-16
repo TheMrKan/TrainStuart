@@ -4,7 +4,7 @@
 #define IOSerial Serial
 
 SerialIO::SerialIO() {
-  IOSerial.begin(115200);
+  IOSerial.begin(9600);
 }
 
 const char REQUEST_PREFIX = '?';
@@ -15,7 +15,7 @@ struct Message SerialIO::readMessage() {
   String newMessage = readSerial();
   if (newMessage != "") {
     result = parseMessage(newMessage);
-    sendConfirmation();
+
   }
 
   return result;

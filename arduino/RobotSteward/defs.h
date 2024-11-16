@@ -58,15 +58,13 @@
 
 
 //  Бошка
-#define HeadCenter 60
+#define HeadCenter 90
 #define HeadUp     179
-#define HeadDown   10
-// #define HeadCenter 90
-// #define HeadUp     169
-// #define HeadDown   60
+#define HeadDown   20
 
-#define headInputUp   20
-#define headInputDown -20
+#define headInputUp   30
+#define headInputCenter 0
+#define headInputDown -10
 
 #define headInputRight 160
 #define headInputLeft  -165

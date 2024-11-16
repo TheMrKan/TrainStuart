@@ -62,11 +62,6 @@ void motor::tickX() {
     X = -X;
   }
   currentX = startX + X;
-
-  if (millis() - lastSendX > 500) {
-    // Serial.println(String("CX ") + String(currentX));
-    lastSendX = millis();
-  } 
   
 
   if ((dir == Forward && (currentX >= targetX)) || (dir == Backward && (currentX <= targetX))) {
@@ -75,10 +70,10 @@ void motor::tickX() {
     moveXLoopRunning = false;
 
     completeX = true;
-    // completeY = true;
+    completeY = true;
     return;
   }
-  setSpeed(150, ALL);
+  
   go(dir);
   completeX = false;
   // completeY = false;
@@ -87,39 +82,53 @@ void motor::tickX() {
 void motor::tickY() {
   if (!moveYLoopRunning) return;
 
-  int Y = SPEED_Y * (millis() - tmr)/1000;
-  if (dir == Left) {
+  float speed = dir == Right ? SPEED_Y_RIGHT : SPEED_Y_LEFT;
+  int Y = speed * (millis() - tmr) / 1000;
+  if (dir == Right) {
     Y = -Y;
   }
   currentY = startY + Y;  
-
+  // Serial.println("dir: " + String(dir) + " speed: " + String(speed) + " currentY: " + String(currentY) + " targetY: " + String(targetY));
   if ((dir == Left && (currentY >= targetY)) || (dir == Right && (currentY <= targetY))) {
-    Serial.println("STOP " + String(currentY));
+    Serial.println("STOP " + String(currentY) + String(" ") + String(((float)millis() - tmr) / 1000));
     go(Stop);
     moveYLoopRunning = false;
 
-    // completeX = true;
+    completeX = true;
     completeY = true;
     return;
   }
   go(dir);
-  setSpeed(178, BL);
-  setSpeed(178, BR);
-  setSpeed(181, FL);
-  setSpeed(181, FR);
+  
   // completeX = false;
   completeY = false;
 
-  Serial.println("Dir: " + String(dir) + " currentY: " + String(currentY));
+  // Serial.println("Dir: " + String(dir) + " currentY: " + String(currentY));
 }
 
 void motor::run(int x, int y) {
-  if (abs(currentX - x) >= abs(currentY - y)) runX(x);
-  else runY(y);
+  // if (abs(currentX - x) >= abs(currentY - y)) runX(x);
+  // else runY(y);
+  // runX(x);
+  if (abs(currentX - x) >= abs(currentY - y)) {
+    Serial.println("runX");
+    Serial.println("currentX: " + String(currentX) + " x: " + String(x));
+    Serial.println("currentY: " + String(currentY) + " y: " + String(y));
+    runX(x);
+  }
+  else {
+    Serial.println("runY");
+    Serial.println("currentX: " + String(currentX) + " x: " + String(x));
+    Serial.println("currentY: " + String(currentY) + " y: " + String(y));
+    runY(y);
+  }
 }
 
 void motor::runX(int x) {
-  if (x == currentX) completeX = true;
+  if (x == currentX) {
+    completeX = true;
+    return;
+  }
   else completeX = false;
 
   targetX = x;
@@ -131,10 +140,14 @@ void motor::runX(int x) {
 
   tmr = millis();
   moveXLoopRunning = true;
+  completeY = true;
 }
 
 void motor::runY(int y) {
-  if (y == currentY) completeY = true;
+  if (y == currentY) {
+    completeY = true;
+    return;
+  }
   else completeY = false;
 
   targetY = y;
@@ -146,6 +159,7 @@ void motor::runY(int y) {
   tmr = millis();
   Serial.println("startY: " + String(startY) + " currentY: " + String(currentY) + " targetY: " + String(targetY));
   moveYLoopRunning = true;
+  completeX = true;
 }
 
 void motor::touch() {
@@ -207,6 +221,7 @@ void motor::go(Move _move) {
       motor_run(FR, B);
       motor_run(BL, B);
       motor_run(BR, B);
+      setSpeed(150, ALL);
       break;
 
     case Backward:
@@ -214,6 +229,7 @@ void motor::go(Move _move) {
       motor_run(FR, F);
       motor_run(BL, F);
       motor_run(BR, F);
+      setSpeed(150, ALL);
       break;
 
     case Right:
@@ -221,6 +237,10 @@ void motor::go(Move _move) {
       motor_run(FR, F);
       motor_run(BL, F);
       motor_run(BR, B);
+      setSpeed(181, BL);
+      setSpeed(181, BR);
+      setSpeed(181, FL);
+      setSpeed(181, FR);
       break;
 
     case Left:
@@ -228,6 +248,10 @@ void motor::go(Move _move) {
       motor_run(FR, B);
       motor_run(BL, B);
       motor_run(BR, F);
+      setSpeed(181, BL);
+      setSpeed(181, BR);
+      setSpeed(181, FL);
+      setSpeed(181, FR);
       break;
 
     case Rotate:
@@ -287,16 +311,8 @@ void motor::motor_run(Type motor, Direction dir) {
   }
 }
 
-bool motor::getState(char axis) {
-  if (axis = 'x') {
-    if (completeX) {
-      return true;
-    } return false;
-  } else {
-    if (completeY) {
-      return true;
-    } return false;
-  }
+bool motor::isCompleted() {
+  return completeX && completeY;
 }
 
 void motor::clearState() {

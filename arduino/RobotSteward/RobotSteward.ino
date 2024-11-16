@@ -32,7 +32,7 @@ VL53L0X_RangingMeasurementData_t measureHead;
 Head head(&multiservo[7], &multiservo[8]);
 
 #include "Laser.h"
-Laser laserF(&multiservo[8], &lox2, FRONT);
+Laser laserF(&multiservo[9], &lox2, FRONT);
 // Laser laserB(&multiservo[9], &lox1, BACK);
 
 #include "motor.h"
@@ -50,7 +50,8 @@ bool getReady = false;
 
 uint16_t dist;
 
-uint16_t headDistData[20];
+// uint16_t headDistData[20];
+int lastHead;
 unsigned long tmr;
 
 enum Box {
@@ -99,10 +100,10 @@ void setID() {
   delay(10);
 
   // initing LOX1
-  // if(!lox1.begin(LOX1_ADDRESS)) {
-  //   Serial.println(F("Failed to boot first VL53L0X"));
-  //   while(1);
-  // }
+  if(!lox1.begin(LOX1_ADDRESS)) {
+    Serial.println(F("Failed to boot first VL53L0X"));
+    while(1);
+  }
   delay(10);
 
   // activating LOX2
@@ -110,24 +111,25 @@ void setID() {
   digitalWrite(SHT_LOXHead, LOW);
   delay(10);
 
-  //initing LOX2
-  // if(!lox2.begin(LOX2_ADDRESS)) {
-  //   Serial.println(F("Failed to boot second VL53L0X"));
-  //   while(1);
-  // }
+  // initing LOX2
+  if(!lox2.begin(LOX2_ADDRESS)) {
+    Serial.println(F("Failed to boot second VL53L0X"));
+    while(1);
+  }
   delay(10);
 
   digitalWrite(SHT_LOXHead, HIGH);
   delay(10);
 
-  if (!loxHead.begin()) {
+  // initing LOXHEAD
+  if (!loxHead.begin(LOXHead_ADDRESS)) {
     Serial.println(F("Failed to boot HEAD VL53L0X"));
     while(1);
   }
 }
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     IO = SerialIO();
  
     // Перебираем значения моторов от 0 до 11 (3 ящика, 2 лидара, 2 сервы в голове)
@@ -153,12 +155,16 @@ void setup() {
 
     Serial.println("Adafruit VL53L0X test");
     setID();
-    // laserF.begin();
+    loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
+    lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
+    lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
+
+    laserF.begin();
     // laserB.begin();
     head.begin();
 
     wheels.setSpeed(255, ALL);
-    head.home();
+    // head.home();
 
     getReady = false;
 }
@@ -168,24 +174,30 @@ unsigned long loopTime, totalLoopTime;
 void loop() {
     loopTime = millis();
     head.tick();
+    laserF.tick();
     wheels.tick();
     if (getReady)  {
-      // laserF.scan();
+      laserF.tick();
       // laserB.scan();
     }
     //scan();
-    dist = getDistanse(0);
+    // dist = getDistanse(0);
+    
+    // Serial.println(dist);
 
 
-    if (head.getState('x') && head.getState('y')) {
+    if (head.isCompleted()) {
       if (!getReady) {
         // Serial.println("READY");
         getReady = true;
       }
+      struct Message outgoingMessage = IO.produceMessage(COMMAND, "Ph", head.currentX, head.sendY);
+      IO.sendMessage(outgoingMessage);
       IO.sendCompletion();
     }
-    if (wheels.getState('x') && wheels.getState('y')) {
+    if (wheels.isCompleted()) {
       IO.sendCompletion();
+      Serial.println("OK WHEELS");
       wheels.clearState();
     }
 
@@ -204,33 +216,49 @@ void handleMessage(struct Message message) {
   // #if DEBUG_SERIAL
   //     echoMessageDebug(message);
   // #endif
-
     if (message.type == COMMAND) {
         Serial.println(message.code);
         if (message.code == "H") {
+          IO.sendConfirmation();
           head.rotate(message.args[0], message.args[1]);
         }
+        else if (message.code == "Hi") {
+          IO.sendConfirmation();
+          head.rotateXInf(message.args[0]);
+        }
         else if (message.code == "S") {
+          IO.sendConfirmation();
           head.stop();
         }
         else if (message.code == "Hd") {
+          IO.sendConfirmation();
           Serial.println(getDistanse(message.args[0]));
         }
+        else if (message.code == "L") {
+          IO.sendConfirmation();
+          if (message.args[0] == 0) laserF.scanStop();
+          else laserF.scanStart();
+        }
         else if (message.code == "M") {
+          IO.sendConfirmation();
           wheels.run(message.args[0], message.args[1]);
-          // Serial.println(message.args[1]);
         }
         else if (message.code == "C") {
+          IO.sendConfirmation();
           BoxMove(message.args[0], message.args[1]);
         }
         else if (message.code == "Mt") {
-          wheels.go(Forward);
-          delay(message.args[0]);
+          // R 89 / 10
+          // L 110 / 10
+          IO.sendConfirmation();
+          wheels.go(message.args[0]);
+          delay(message.args[1]);
           wheels.go(Stop);
         }
         else if (message.code == "Ml") {
           // 181 181 178 178 (FL, FR, BL, BR)
           // SpeedLeft 110/10 = 11 cm/c
+          IO.sendConfirmation();
           wheels.setSpeed(message.args[2], BL);
           wheels.setSpeed(message.args[3], BR);
           wheels.setSpeed(message.args[0], FL);
@@ -241,6 +269,7 @@ void handleMessage(struct Message message) {
           wheels.go(Stop);
         }
         else if (message.code == "Mr") {
+          IO.sendConfirmation();
           wheels.setSpeed(message.args[2], BL);
           wheels.setSpeed(message.args[3], BR);
           wheels.setSpeed(message.args[0], FL);
@@ -252,9 +281,11 @@ void handleMessage(struct Message message) {
         else if (message.code == "SE") {
           // 60 закрыто
           // 80 открыто
+          IO.sendConfirmation();
           multiservo[8].write(message.args[0]);
         }
         else if (message.code == "P") {
+          IO.sendConfirmation();
           wheels.setCurrentPosition(message.args[0], message.args[1]);
         }
         else {
@@ -262,10 +293,10 @@ void handleMessage(struct Message message) {
         }
     }
     else {
+        IO.sendConfirmation();
         struct Message outgoingMessage = IO.produceMessage(RESPONSE, "Hd", dist);
         IO.sendMessage(outgoingMessage);
     }
-
 }
 
 // #if DEBUG_SERIAL
@@ -282,56 +313,21 @@ void handleMessage(struct Message message) {
 // #endif
 
 uint16_t getDistanse(int index) {
-  // lox1.rangingTest(&measure1, false); // pass in 'true' to get debug data printout!
-  // lox2.rangingTest(&measure2, false); // pass in 'true' to get debug data printout!
-  loxHead.rangingTest(&measureHead, false); // pass in 'true' to get debug data printout!
-
-
-  // if (index == 1) {
-  //   if(measure1.RangeStatus != 4) {     // if not out of range
-  //     return measure1.RangeMilliMeter;
-  //   } else return 0;
-  // } else if (index == 2) {
-  //   if(measure2.RangeStatus != 4) {     // if not out of range
-  //     return measure2.RangeMilliMeter;
-  //   } else return 0;
-  // } else if (index == 0) {
-  //   if(measureHead.RangeStatus != 4) {  // if not out of range
-  //     return measureHead.RangeMilliMeter;
-  //   } else return 0;
-  // }
-  uint16_t newDist = 0;
-  if (index == 0) {
-    if(measureHead.RangeStatus != 4) {  // if not out of range
-      newDist = measureHead.RangeMilliMeter;
-    }
+  loxHead.rangingTest(&measureHead, false);
+  if(measureHead.RangeStatus != 4) {
+    return measureHead.RangeMilliMeter;
   }
-
-  if (newDist > 1500 || newDist < 150) {
-    newDist = 0;
-  }
-
-  uint16_t sum = newDist;
-  // Serial.println("Debug 0 "  + String(sum));
-  for (int i = 0; i < 19; i++) {
-    headDistData[i] = headDistData[i+1];
-    sum += headDistData[i];
-  }
-  //Serial.println("Debug 1 "  + String(sum));
-  headDistData[19] = newDist;
-
-  return round(sum / 20);
 }
 
 void BoxMove(int index, int side) {
   Box box;
   State state;
   switch(index) {
-    case 0: box = UP_1; break;
-    case 1: box = UP_2; break;
-    case 2: box = DRAWER_1; break;
-    case 3: box = DRAWER_2; break;
-    case 4: box = DOWN; break;
+    case 0: box = DOWN; break;
+    case 1: box = UP_1; break;
+    case 2: box = UP_2; break;
+    case 3: box = DRAWER_1; break;
+    case 4: box = DRAWER_2; break;
   }
   switch(side) {
     case 0: state = CLOSE; break;

@@ -18,7 +18,7 @@ class motor {
     void setSpeed(int speed, Type type);
     void run(int x, int y);
     void go(Move _move);
-    bool getState(char axis);
+    bool isCompleted();
 
     void clearState();
     void setCurrentPosition(int x, int y);
@@ -44,6 +44,8 @@ class motor {
 
     bool completeX = false, completeY = false;
 
-    float SPEED_X = 215 / 12;
-    float SPEED_Y = 110/10;
+    float SPEED_X = (float)215 / 12;
+    // делим на коэффиценты для корректировки. Если должен был проехать 75, а проехал 50 - коэффицент 1.5
+    float SPEED_Y_RIGHT = (float)44 / 5 / 0.9375;
+    float SPEED_Y_LEFT = (float)82 / 5 / 1.55;
 };

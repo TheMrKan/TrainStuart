@@ -19,10 +19,12 @@ public:
 
     void rotate(int x, int y);
     void rotateX(int x);
+    void rotateXInf(int _dir);
     void rotateY(int y);
     void stop();
 
-    bool getState(char axis);
+    bool isCompleted();
+    int currentX = 0, sendY = 0, currentY = 40;   // Текущие углы
 private:
     void tickX();
     void tickY();
@@ -37,7 +39,7 @@ private:
     bool deltaSign = false;
 
     int targetTickX = 0, targetY = 0; // Будущее положение
-    int currentX = 0, currentY = 40;   // Текущие углы
+    
     const float angleTicks = MAX_TICK / (float)(headInputRight + abs(headInputLeft));
     int counterY;
 
