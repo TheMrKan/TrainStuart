@@ -64,7 +64,7 @@ def begin(_shared: SharedProtocol, _on_state_changed, _on_confirmation_received,
     try:
         connection = serial.Serial(
             port=shared.serial_name,
-            baudrate=115200,
+            baudrate=9600,
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,

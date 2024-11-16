@@ -31,13 +31,9 @@ def initialize():
     #iserial.await_completion()
 
 
-def stop():
-    iserial.send_command("S")
-
-
 def move_to(x: int, y: int):
     logger.debug(f"Send move to {x} {y}")
-    iserial.send_command("M", x, y, completion=True)
+    iserial.send_command("M", x, y, completion=True, completion_timeout=30)
     logger.debug(f"Completed move to {x} {y}")
 
 
@@ -53,9 +49,27 @@ def set_head_rotation(horiz: int, vert: int, completion=True):
     global head_horizontal
     global head_vertical
 
-    iserial.send_command("H", horiz, vert, completion=completion)
+    iserial.send_command("H", horiz, vert, completion=completion, completion_timeout=15)
     head_horizontal = horiz
     head_vertical = vert
+
+
+def head_horizontal_stop():
+    iserial.send_command("S")
+
+
+class RotationDirection(enum.Enum):
+    LEFT = -1
+    STOP = 0
+    RIGHT = 1
+
+
+def head_horizontal_run(direction: RotationDirection):
+    """
+    Запускает бесконечное вращение головы. Обязательно должна быть вызвана функция остановки.
+    :param direction: >1 - вправо, <1 - влево, 0 - остановка
+    """
+    iserial.send_command("Hi", direction.value)
 
 
 def modify_head_rotation(horiz_delta: int, vert_delta: int, completion=True):
@@ -63,14 +77,14 @@ def modify_head_rotation(horiz_delta: int, vert_delta: int, completion=True):
 
 
 def open_container(container: RobotContainer, side: Side):
-    iserial.send_command("C", container.value, side.value, completion=True)
+    iserial.send_command("C", container.value, side.value, completion=True, completion_timeout=5)
 
 
 def close_container(container: RobotContainer):
-    iserial.send_command("C", container.value, 0, completion=True)
+    iserial.send_command("C", container.value, 0, completion=True, completion_timeout=5)
 
 
 def get_camera_distance() -> int:
-    return iserial.send_request("Hd")[0]
+    return iserial.send_request("Hd", timeout=1)[0]
 
 

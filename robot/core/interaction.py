@@ -15,7 +15,7 @@ from robot.dev import control_panel
 
 
 logger = logging.getLogger(__name__)
-__face_detector = ContinuousFaceDetector(lambda: CameraAccessor.main_camera.image_bgr, 200)
+__face_detector = ContinuousFaceDetector(lambda: CameraAccessor.main_camera.image_bgr, 200, 0.5, 1.5)
 
 
 class InteractionTrigger:
@@ -124,11 +124,15 @@ def __get_distance_to_face(face_size: int) -> int:
     return DISTANCES[key]
 
 
+is_moving = False
+
+
 def rotate_to_face():
-    logger.debug("Rotating to face...")
+    global is_moving
+    #logger.debug("Rotating to face...")
     #cv2.imshow("Raw", __face_detector.image)
     if __face_detector.face is None:
-        logger.debug("Face is None. Returning...")
+        # logger.debug("Face is None. Returning...")
         return
 
     face_center = (int(round(__face_detector.face[0] + __face_detector.face[2] / 2)), int(round(__face_detector.face[1] + __face_detector.face[3] / 2)))
@@ -136,24 +140,27 @@ def rotate_to_face():
 
     delta = camera_center[0] - face_center[0]
     delta_rel = abs(delta) / (__face_detector.image.shape[1] / 2)
-    logger.debug(f"Delta: {delta}; Rel: {delta_rel:.2f};")
+    # logger.debug(f"Delta: {delta}; Rel: {delta_rel:.2f};")
 
     head_angle_delta = 0
     distance = 0
 
-    ALLOWED_DELTA_REL = 0.3
+    ALLOWED_DELTA_REL = 0.25
     OUT_DELTA_REL = 0.9
-    if delta_rel <= ALLOWED_DELTA_REL:
-        logger.debug("Delta is in allowed range. Returning...")
+    if (delta_rel <= ALLOWED_DELTA_REL or delta == 0) and is_moving:
+        robot_interface.head_horizontal_run(robot_interface.RotationDirection.STOP)
+        is_moving = False
     elif delta_rel <= OUT_DELTA_REL:
         distance = __get_distance_to_face(int((__face_detector.face[2] + __face_detector.face[3]) / 2))
-        head_angle_delta = int(-math.copysign(3, delta))
-        logger.debug(f"Head rotation delta: {head_angle_delta}")
-        logger.debug(f"Face size: {__face_detector.face[2], __face_detector.face[3]}")
-
-        robot_interface.modify_head_rotation(head_angle_delta, 0)
+        # logger.debug(f"Head rotation delta: {head_angle_delta}")
+        # logger.debug(f"Face size: {__face_detector.face[2], __face_detector.face[3]}")
+        is_moving = True
+        direction = robot_interface.RotationDirection.LEFT if delta > 0 else robot_interface.RotationDirection.RIGHT
+        robot_interface.head_horizontal_run(direction)
+        time.sleep(0.1)
     else:
         logger.debug(f"Face is too far from center. Returning...")
+        robot_interface.head_horizontal_run(robot_interface.RotationDirection.STOP)
 
     stream = control_panel.get_stream("rotate_to_face", "Наведение на лицо")
     if stream.is_active or True:

@@ -57,8 +57,8 @@ class Runtime:
         finally:
             startup_app.shutdown()
 
-        # StationIdleBehaviour().run()
-        DocumentsCheckBehaviour().run()
+        StationIdleBehaviour().run()
+        # DocumentsCheckBehaviour().run()
         # CarriageMovingBehaviour().run()
 
         #InteractionApp().run()

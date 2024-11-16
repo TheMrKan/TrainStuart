@@ -183,16 +183,21 @@ class ContinuousFaceDetector:
     source: Callable[[], Image]
     face: Optional[FaceLocation]
     image: Optional[Image]
+    min_size: int
+    find_delay: float
+    lose_delay: float
 
     __face_detected: Optional[datetime]
     __face_lost: Optional[datetime]
     __is_tracking: bool
 
-    def __init__(self, source: Callable[[], Image], min_size: int = 500):
+    def __init__(self, source: Callable[[], Image], min_size: int = 500, find_delay: float = 1, lose_delay: float = 1):
         self.source = source
         self.min_size = min_size
         self.face = None
         self.image = None
+        self.find_delay = find_delay
+        self.lose_delay = lose_delay
         self.__face_detected = None
         self.__face_lost = None
         self.__is_tracking = False
@@ -215,7 +220,7 @@ class ContinuousFaceDetector:
                 self.__face_detected = None
                 return self.State.FOUND_GUESS_FAILED
             if self.__face_lost:
-                if (now - self.__face_lost).total_seconds() > 1:
+                if (now - self.__face_lost).total_seconds() > self.lose_delay:
                     self.reset()
                     return self.State.LOST
                 else:
@@ -233,7 +238,7 @@ class ContinuousFaceDetector:
             return self.State.FOUND_GUESS
         else:
             if not self.__is_tracking:
-                if (now - self.__face_detected).total_seconds() > 1:
+                if (now - self.__face_detected).total_seconds() > self.find_delay:
                     self.__is_tracking = True
                     return self.State.FOUND
                 else:

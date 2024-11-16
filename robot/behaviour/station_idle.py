@@ -6,6 +6,7 @@ from robot.gui.idle import IdleApp
 from robot.gui.interaction import InteractionApp
 from robot.core import route, interaction
 from robot.hardware import robot_interface
+from robot.hardware.audio import AudioOutput
 from robot.behaviour.base import BaseBehaviour
 
 
@@ -24,12 +25,13 @@ class StationIdleBehaviour(BaseBehaviour):
         self.__app.shutdown()
 
     def behave(self):
-        robot_interface.set_head_rotation(90, 20)
+        robot_interface.set_head_rotation(90, 30)
 
         self.logger.debug("Waiting for interaction...")
         trigger = interaction.wait_for_interaction_trigger()
         self.logger.debug("Interaction triggered")
 
+        AudioOutput.play_async("hello.wav")
         self.__app.shutdown()
         self.__app = InteractionApp()
         self.__app.run()
@@ -43,6 +45,7 @@ class StationIdleBehaviour(BaseBehaviour):
             while True:
                 state = interaction.update_face_state()
                 if state == state.LOST or state == state.WAITING:
+                    robot_interface.head_horizontal_stop()
                     self.logger.debug("Face lost. Stopping interaction...")
                     break
                 interaction.rotate_to_face()
@@ -52,5 +55,6 @@ class StationIdleBehaviour(BaseBehaviour):
             self.__app.shutdown()
             self.__app = IdleApp()
             self.__app.run()
+            AudioOutput.play_async("goodbye.wav")
 
             interaction.reset()

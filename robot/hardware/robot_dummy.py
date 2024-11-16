@@ -20,10 +20,6 @@ def initialize():
     time.sleep(5)
 
 
-def stop():
-    pass
-
-
 def move_to(x: int, y: int):
     global wheels_x, wheels_y
     dst = math.sqrt((wheels_x - x) ** 2 + (wheels_y - y) ** 2)
@@ -51,6 +47,19 @@ def set_head_rotation(horiz: int, vert: int, completion=True):
 
     if delay:
         time.sleep(delay)
+
+
+def head_horizontal_stop():
+    __logger.debug("[SIMULATE] Stop head rotation")
+
+
+def head_horizontal_run(direction: RotationDirection):
+    """
+    Запускает бесконечное вращение головы. Обязательно должна быть вызвана функция остановки.
+    :param direction: >1 - вправо, <1 - влево, 0 - остановка
+    """
+    dir_str = 'Left' if direction.value < 0 else 'Right' if direction.value > 0 else 'Stop'
+    __logger.debug(f"[SIMULATE] {dir_str} head rotation")
 
 
 def modify_head_rotation(horiz_delta: int, vert_delta: int, completion=True):
