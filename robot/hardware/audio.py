@@ -1,3 +1,4 @@
+import os.path
 import wave
 import sys
 import threading
@@ -8,6 +9,8 @@ from typing import Optional
 
 class AudioOutput:
 
+    FILES_DIR = None
+
     CHUNK = 1024
 
     _playing_thread: Optional[threading.Thread] = None
@@ -15,6 +18,7 @@ class AudioOutput:
 
     @classmethod
     def play(cls, filename: str, cancellation: CancellationToken = None):
+        filename = os.path.join(cls.FILES_DIR or os.getcwd(), filename)
         with wave.open(filename, 'rb') as wf:
             p = pyaudio.PyAudio()
             try:

@@ -18,7 +18,7 @@ class BaseApp:
     _wait_code: Optional[str]
     _wait_event: Optional[Event]
     _wait_connected: Optional[Event]
-    _last_message: Optional[dict]
+    last_message: Optional[dict]
     server_path: str
     logger: logging.Logger
 
@@ -64,7 +64,7 @@ class BaseApp:
 
     def __on_message(self, message: dict):
         code: str = message.get("code", None) or ""
-        self._last_message = message
+        self.last_message = message
 
         if (self._wait_code == "" or self._wait_code == code) \
                 and self._wait_event is not None:
@@ -92,13 +92,17 @@ class BaseApp:
         gui_server.send(path, message)
 
     def wait_message(self, code: str = "") -> dict:
-        self._wait_code = code
-        self._wait_event = Event()
+        self.wait_message_no_block(code)
 
         self._wait_event.wait()
         self._wait_event = None
         self._wait_code = None
-        return self._last_message
+        return self.last_message
+
+    def wait_message_no_block(self, code: str) -> Event:
+        self._wait_code = code
+        self._wait_event = Event()
+        return self._wait_event
 
     def wait_connection(self):
         self._wait_connected = Event()

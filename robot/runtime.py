@@ -3,6 +3,7 @@ from typing import Callable
 import logging
 
 from robot.hardware.cameras import CameraAccessor
+from robot.hardware.audio import AudioOutput
 from robot.core.async_processor import AsyncProcessor
 from robot.core.tickets import TicketsRepository
 import robot.core.route as route
@@ -17,6 +18,7 @@ from robot.behaviour.documents_check import DocumentsCheckBehaviour
 from robot.gui.interaction import InteractionApp
 from robot.dev import control_panel
 from robot.core.navigation import chart
+from robot.config import instance as config
 
 
 class Runtime:
@@ -89,6 +91,8 @@ class Runtime:
 
         status_log("Настройка панели управления...")
         control_panel.initialize()
+
+        AudioOutput.FILES_DIR = config.resources_dir
 
         if not AsyncProcessor.check_init():
             status_log("Загрузка обработчика...")

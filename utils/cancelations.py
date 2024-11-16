@@ -6,11 +6,18 @@ import time
 class CancellationToken:
     cancellation_event: Event
 
-    def __init__(self):
-        self.cancellation_event = Event()
+    def __init__(self, event: Optional[Event] = None):
+        self.cancellation_event = event or Event()
 
     def cancel(self):
         self.cancellation_event.set()
+
+    @property
+    def is_cancelled(self):
+        return self.cancellation_event.is_set()
+
+    def __bool__(self):
+        return self.is_cancelled
 
 
 def sleep(secs: float, cancellation: Optional[CancellationToken] = None):

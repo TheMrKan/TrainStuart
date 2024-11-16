@@ -1,3 +1,4 @@
+import os.path
 import threading
 import numpy as np
 import time
@@ -8,6 +9,7 @@ from typing import Callable, Optional, Dict, Any
 from datetime import datetime
 
 from robot.hardware.cameras import CameraAccessor
+from robot.hardware.audio import AudioOutput
 import robot.config as config
 from robot.gui.base.app import BaseApp
 from robot.gui.base import gui_server, navigation as gui_navigation
@@ -17,6 +19,7 @@ from robot.core.tickets import TicketsRepository, TicketInfo
 from utils.docs_reader import PassportData
 import robot.core.route as route
 from robot.gui import external
+from utils.cancelations import CancellationToken
 
 
 class PassportNotFoundError(Exception):
@@ -33,16 +36,19 @@ class DocumentsCheckApp(BaseApp):
     INITIAL_PAGE = "passport"
 
     success: bool
+    __face_detector: face_util.ContinuousFaceDetector
 
     def __init__(self):
         super().__init__()
         self.success = False
+        self.__face_detector = face_util.ContinuousFaceDetector(lambda: CameraAccessor.main_camera.image_bgr, 500)
 
     def run(self):
         super().run()
         self.logger.debug("Running DocumentsCheck app")
 
-        self.wait_message("read_passport")
+        cancellation = CancellationToken(self.wait_message_no_block("read_passport"))
+        self.play_audio_for_faces(cancellation)
 
         passport_data = self.read_passport()
 
@@ -53,6 +59,7 @@ class DocumentsCheckApp(BaseApp):
         self.logger.debug(f"Ticket found: {ticket}. Going to step 2...")
         self.send_page("face")
 
+        AudioOutput.play_async("face_check.wav")
         face = self.read_face()
 
         self.send_page("done")
@@ -63,9 +70,21 @@ class DocumentsCheckApp(BaseApp):
         time.sleep(2)
 
         self.show_preferences()
+        AudioOutput.play_async("goodbye.wav")
 
         self.success = True
         self.logger.debug("DocumentsCheckApp run finished")
+
+    def play_audio_for_faces(self, cancellation: CancellationToken):
+        self.__face_detector.reset()
+        while not cancellation:
+            state = self.__face_detector.tick()
+            if state == self.__face_detector.State.FOUND:
+                AudioOutput.play_async("document.wav")
+            elif state == self.__face_detector.State.WAITING:
+                time.sleep(0.25)
+            else:
+                time.sleep(0.1)
 
     def read_passport(self) -> PassportData:
         self.logger.debug("Reading passport...")
