@@ -69,6 +69,7 @@ class DocumentsCheckApp(BaseApp):
 
         time.sleep(2)
 
+        AudioOutput.play_async("preferences.wav")
         self.show_preferences()
         AudioOutput.play_async("goodbye.wav")
 
