@@ -146,8 +146,9 @@ def send(path: str, message: Union[dict, bytes], queue_limit: int = 0):
     queue.append(message)
 
 
-def send_image(path: str, image: Image):
-    _, img = cv2.imencode(".png", image)
+def send_image(path: str, image: Image, quality: int = 80):
+
+    _, img = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, quality])
     send(path, img.tobytes(), 1)
 
 

@@ -36,7 +36,7 @@ class Stream:
         self.image = image
         if not self.is_active:
             return
-        gui_server.send_image(self.path, self.image)
+        gui_server.send_image(self.path, self.image, 30)
 
     @property
     def is_active(self) -> bool:
@@ -46,7 +46,7 @@ class Stream:
     def is_active(self, value: bool):
         self.__is_active = value
         if value and self.image is not None:
-            gui_server.send_image(self.path, self.image)
+            gui_server.send_image(self.path, self.image, 30)
 
     def __on_connected(self):
         _set_active_stream(self)
@@ -80,7 +80,7 @@ class CameraStream(Stream):
 
     def __on_camera_image(self):
         t = time.time()
-        if t - self.__last_send > 0.05:
+        if t - self.__last_send > 0.2:
             self.send_image(self.camera_handler.image_bgr)
             self.__last_send = t
 
