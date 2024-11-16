@@ -56,8 +56,8 @@ class Runtime:
             startup_app.shutdown()
 
         # StationIdleBehaviour().run()
-        # DocumentsCheckBehaviour().run()
-        CarriageMovingBehaviour().run()
+        DocumentsCheckBehaviour().run()
+        # CarriageMovingBehaviour().run()
 
         #InteractionApp().run()
 
@@ -65,11 +65,10 @@ class Runtime:
             time.sleep(1)
 
     def __initialize(self, status_log: Callable[[str, ], None]):
+        AsyncProcessor.initialize(await_init=False, timeout=30)
+
         status_log("Настройка камер...")
         CameraAccessor.initialize()
-
-        status_log("Загрузка обработчика...")
-        AsyncProcessor.initialize()
 
         status_log("Получение билетов...")
         TicketsRepository.load()
@@ -90,6 +89,11 @@ class Runtime:
 
         status_log("Настройка панели управления...")
         control_panel.initialize()
+
+        if not AsyncProcessor.check_init():
+            status_log("Загрузка обработчика...")
+            while not AsyncProcessor.check_init():
+                time.sleep(0.5)
 
     def shutdown(self):
         server.stop_polling()

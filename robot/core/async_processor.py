@@ -1,3 +1,4 @@
+import datetime
 import multiprocessing
 from multiprocessing import Pipe, Process, Manager
 from threading import Thread
@@ -22,9 +23,11 @@ class AsyncProcessor:
     __manager: Manager
     __response_awaiter: Optional[Thread]
     __logger: logging.Logger
+    __init_started: datetime.datetime
+    __init_timeout: float
 
     @classmethod
-    def initialize(cls):
+    def initialize(cls, await_init: bool = False, timeout: float = 30):
 
         cls.__response_awaiter = None
 
@@ -47,8 +50,11 @@ class AsyncProcessor:
         cls.__worker_process = Process(target=AsyncWorker, args=(cls.__worker_parameters, ))
         cls.__worker_process.daemon = True
         cls.__worker_process.start()
+        cls.__init_started = datetime.datetime.now()
+        cls.__init_timeout = timeout
 
-        cls.__await_init()
+        if await_init:
+            cls.__await_init()
 
     @classmethod
     def shutdown(cls):
@@ -113,11 +119,15 @@ class AsyncProcessor:
 
     @classmethod
     def __await_init(cls):
-        is_timeout = not cls.__connection.poll(30)
+        is_timeout = not cls.__connection.poll(cls.__init_timeout)
         if is_timeout:
             raise TimeoutError("Worker initialization timeout")
 
         response = cls.__connection.recv()
+        cls.__handle_init_response(response)
+
+    @classmethod
+    def __handle_init_response(cls, response):
         if isinstance(response, ExceptionResponse):
             raise RuntimeError from response.exception
         elif isinstance(response, InitializedResponse):
@@ -125,6 +135,17 @@ class AsyncProcessor:
             return
         else:
             raise TypeError("Invalid initialization message received")
+
+    @classmethod
+    def check_init(cls) -> bool:
+        if cls.__connection.poll():
+            response = cls.__connection.recv()
+            cls.__handle_init_response(response)
+            return True
+        elif (datetime.datetime.now() - cls.__init_started).total_seconds() > cls.__init_timeout:
+            raise TimeoutError("Worker initialization timeout")
+        return False
+
 
             
 
