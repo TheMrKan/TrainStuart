@@ -24,12 +24,12 @@
 #define RELE_1 14
 #define RELE_2 15
 
-#define SENSOR_DRAVER_1  24   // Нулевая точка ящика у аккумулятора
-#define SENSOR_DRAVER_2  23   // Нулевая точко ящика у ардуино
+#define SENSOR_DRAVER_1 24  // Нулевая точка ящика у аккумулятора
+#define SENSOR_DRAVER_2 23  // Нулевая точко ящика у ардуино
 
-#define EN_Head 45        // ШИМ мотора головы
-#define PIN_IN1_head 49   // Вывод управления направлением вращения мотора головы
-#define PIN_IN2_head 47   // Вывод управления направлением вращения мотора головы
+#define EN_Head 45       // ШИМ мотора головы
+#define PIN_IN1_head 49  // Вывод управления направлением вращения мотора головы
+#define PIN_IN2_head 47  // Вывод управления направлением вращения мотора головы
 
 
 // I2C адресса для переднего и заднего дальномеров
@@ -44,40 +44,40 @@
 
 
 // Углы для сервоприводов
-#define UpFront_Right  165
+#define UpFront_Right 165
 #define UpFront_Center 117
-#define UpFront_Left   65
+#define UpFront_Left 65
 
-#define UpBack_Right   0
-#define UpBack_Center  62
-#define UpBack_Left    110
+#define UpBack_Right 0
+#define UpBack_Center 62
+#define UpBack_Left 110
 
-#define Down_Right     40
-#define Down_Center    98
-#define Down_Left      150
+#define Down_Right 40
+#define Down_Center 98
+#define Down_Left 150
 
 
 //  Бошка
 #define HeadCenter 90
-#define HeadUp     179
-#define HeadDown   20
+#define HeadUp 179
+#define HeadDown 20
 
-#define headInputUp   30
+#define headInputUp 30
 #define headInputCenter 0
 #define headInputDown -10
 
 #define headInputRight 160
-#define headInputLeft  -165
+#define headInputLeft -165
 
 // Подключаем энкодер
 // #define CLK 2
 // #define DT  3
 const byte CLK = 2;
 const byte DT = 3;
-#define END_CAP 22 // Коневик на голову
-#define FRONT_SENSOR A14 // Передний датчик
-#define BACK_SENSOR A15  // Задний датчик
+#define END_CAP 22        // Коневик на голову
+#define FRONT_SENSOR A14  // Передний датчик
+#define BACK_SENSOR A15   // Задний датчик
 
 #define MAX_TICK 11090
 
-#endif //ADUINO_DEFS_H
+#endif  //ADUINO_DEFS_H

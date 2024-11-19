@@ -12,47 +12,47 @@
 
 class Head {
 public:
-    Head(Multiservo* _servo, Multiservo* _brake);
-    void begin();
-    void home();
-    void tick();
+  Head(Multiservo* _servo, Multiservo* _brake);
+  void begin();
+  void home();
+  void tick();
 
-    void rotate(int x, int y);
-    void rotateX(int x);
-    void rotateXInf(int _dir);
-    void rotateY(int y);
-    void stop();
+  void rotate(int x, int y);
+  void rotateX(int x);
+  void rotateXInf(int _dir);
+  void rotateY(int y);
+  void stop();
 
-    bool isCompleted();
-    int currentX = 0, sendY = 0, currentY = 40;   // Текущие углы
+  bool isCompleted();
+  int currentX = 0, sendY = 0, currentY = 40;  // Текущие углы
 private:
-    void tickX();
-    void tickY();
-    Multiservo* servo;
-    Multiservo* brake;
-    bool headLoopRunning = false, servoLoopRunning = false;
-    bool stateX = false, stateY = false;
+  void tickX();
+  void tickY();
+  Multiservo* servo;
+  Multiservo* brake;
+  bool headLoopRunning = false, servoLoopRunning = false;
+  bool stateX = false, stateY = false;
 
-    unsigned long tmrY;
+  unsigned long tmrY;
 
-    bool endFlag = false, dir, dirY, awaitFlag = false;
-    bool deltaSign = false;
+  bool endFlag = false, dir, dirY, awaitFlag = false;
+  bool deltaSign = false;
 
-    int targetTickX = 0, targetY = 0; // Будущее положение
-    
-    const float angleTicks = MAX_TICK / (float)(headInputRight + abs(headInputLeft));
-    int counterY;
+  int targetTickX = 0, targetY = 0;  // Будущее положение
 
-    byte power = 255;
+  const float angleTicks = MAX_TICK / (float)(headInputRight + abs(headInputLeft));
+  int counterY;
 
-    void zero();
-    void brakeF(bool state);
-    bool isEnd() {
-        return !digitalRead(END_CAP);
-    }
+  byte power = 255;
 
-    static void isr();
+  void zero();
+  void brakeF(bool state);
+  bool isEnd() {
+    return !digitalRead(END_CAP);
+  }
+
+  static void isr();
 };
 
 
-#endif //ADUINO_HEAD_H
+#endif  //ADUINO_HEAD_H

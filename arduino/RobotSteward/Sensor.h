@@ -6,9 +6,9 @@
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 class Sensor {
-  public:
-    Sensor();
-  private:
+public:
+  Sensor();
+private:
 };
 
-#endif
+#endif //ADUINO_SENSOR_H

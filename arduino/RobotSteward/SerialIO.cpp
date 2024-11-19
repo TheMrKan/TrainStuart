@@ -15,7 +15,6 @@ struct Message SerialIO::readMessage() {
   String newMessage = readSerial();
   if (newMessage != "") {
     result = parseMessage(newMessage);
-
   }
 
   return result;
@@ -25,8 +24,16 @@ struct Message SerialIO::produceMessage(byte type, String code, int a0, int a1, 
   struct Message result;
   result.type = type;
   result.code = code;
-  result.args[0] = a0; result.args[1] = a1; result.args[2] = a2; result.args[3] = a3; result.args[4] = a4;
-  result.args[5] = a5; result.args[6] = a6; result.args[7] = a7; result.args[8] = a8; result.args[9] = a9;
+  result.args[0] = a0;
+  result.args[1] = a1;
+  result.args[2] = a2;
+  result.args[3] = a3;
+  result.args[4] = a4;
+  result.args[5] = a5;
+  result.args[6] = a6;
+  result.args[7] = a7;
+  result.args[8] = a8;
+  result.args[9] = a9;
   return result;
 }
 
@@ -99,17 +106,14 @@ struct Message SerialIO::parseMessage(String message) {
     if (isSpace(c)) {
       if (!isWritingArgs) {
         isWritingArgs = true;
-      }
-      else {
+      } else {
         output.args[argIndex++] = argStr.toInt();
         argStr = "";
       }
-    }
-    else {
+    } else {
       if (isWritingArgs && (c == '-' || isDigit(c))) {
         argStr += c;
-      }
-      else {
+      } else {
         output.code += c;
       }
     }

@@ -2,31 +2,13 @@
 #include "motor.h"
 #include "defs.h"
 
-motor::motor() {
-  // switch(type) {
-  //   case FL:
-  //     pinMode(ENA_1, OUTPUT);
-  //     pinMode(PIN_IN1_1, OUTPUT);
-  //     pinMode(PIN_IN2_1, OUTPUT);
-  //     break;
-  //   case FR:
-  //     pinMode(ENB_1, OUTPUT);
-  //     pinMode(PIN_IN3_1, OUTPUT);
-  //     pinMode(PIN_IN4_1, OUTPUT);
-  //     break;
-  //   case BL:
-  //     pinMode(ENA_2, OUTPUT);
-  //     pinMode(PIN_IN1_2, OUTPUT);
-  //     pinMode(PIN_IN2_2, OUTPUT);
-  //     break;
-  //   case BR:
-  //     pinMode(ENB_2, OUTPUT);
-  //     pinMode(PIN_IN3_2, OUTPUT);
-  //     pinMode(PIN_IN4_2, OUTPUT);
-  //     break;
-  // }
-  
+motor::motor(Laser* _laserF, Laser* _laserB) {
+  laserF = _laserF;
+  laserB = _laserB;
 }
+// motor::motor() {
+
+// }
 
 unsigned long lastSendX = 0;
 
@@ -57,12 +39,12 @@ void motor::tickX() {
     return;
   }
 
-  int X = SPEED_X * (millis() - tmr)/1000;
+  int X = SPEED_X * (millis() - tmr) / 1000;
   if (dir == Backward) {
     X = -X;
   }
   currentX = startX + X;
-  
+
 
   if ((dir == Forward && (currentX >= targetX)) || (dir == Backward && (currentX <= targetX))) {
     // Serial.println("STOP " + String(currentX));
@@ -73,7 +55,7 @@ void motor::tickX() {
     completeY = true;
     return;
   }
-  
+
   go(dir);
   completeX = false;
   // completeY = false;
@@ -87,7 +69,7 @@ void motor::tickY() {
   if (dir == Right) {
     Y = -Y;
   }
-  currentY = startY + Y;  
+  currentY = startY + Y;
   // Serial.println("dir: " + String(dir) + " speed: " + String(speed) + " currentY: " + String(currentY) + " targetY: " + String(targetY));
   if ((dir == Left && (currentY >= targetY)) || (dir == Right && (currentY <= targetY))) {
     Serial.println("STOP " + String(currentY) + String(" ") + String(((float)millis() - tmr) / 1000));
@@ -99,7 +81,7 @@ void motor::tickY() {
     return;
   }
   go(dir);
-  
+
   // completeX = false;
   completeY = false;
 
@@ -115,8 +97,7 @@ void motor::run(int x, int y) {
     Serial.println("currentX: " + String(currentX) + " x: " + String(x));
     Serial.println("currentY: " + String(currentY) + " y: " + String(y));
     runX(x);
-  }
-  else {
+  } else {
     Serial.println("runY");
     Serial.println("currentX: " + String(currentX) + " x: " + String(x));
     Serial.println("currentY: " + String(currentY) + " y: " + String(y));
@@ -128,8 +109,7 @@ void motor::runX(int x) {
   if (x == currentX) {
     completeX = true;
     return;
-  }
-  else completeX = false;
+  } else completeX = false;
 
   targetX = x;
 
@@ -147,8 +127,7 @@ void motor::runY(int y) {
   if (y == currentY) {
     completeY = true;
     return;
-  }
-  else completeY = false;
+  } else completeY = false;
 
   targetY = y;
 
@@ -166,8 +145,8 @@ void motor::touch() {
   int front = digitalRead(FRONT_SENSOR);
   int back = digitalRead(BACK_SENSOR);
 
-  if (front == 1 || back == 1) {
-   
+  if (front == 1 || back == 1 || !laserF->status || !laserB->status) {
+
     pause = true;
   } else {
     if (pause) {
@@ -191,7 +170,7 @@ void motor::setCurrentPosition(int x, int y) {
 }
 
 void motor::setSpeed(int speed, Type type) {
-  switch(type) {
+  switch (type) {
     case FL:
       analogWrite(ENA_1, speed);
       break;
@@ -215,7 +194,7 @@ void motor::setSpeed(int speed, Type type) {
 
 void motor::go(Move _move) {
   move = _move;
-  switch(move) {
+  switch (move) {
     case Forward:
       motor_run(FL, B);
       motor_run(FR, B);
@@ -272,7 +251,7 @@ void motor::go(Move _move) {
 
 void motor::motor_run(Type motor, Direction dir) {
   int dir1, dir2;
-  switch(dir) {
+  switch (dir) {
     case F:
       dir1 = HIGH;
       dir2 = LOW;
@@ -287,7 +266,7 @@ void motor::motor_run(Type motor, Direction dir) {
       break;
   }
 
-  switch(motor) {
+  switch (motor) {
     case FL:
       // Serial.println("FL");
       digitalWrite(PIN_IN1_1, dir1);
