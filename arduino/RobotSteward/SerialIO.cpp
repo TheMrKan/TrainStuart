@@ -1,10 +1,12 @@
 #include "Arduino.h"
 #include "SerialIO.h"
 
-#define IOSerial Serial
+#define IOSerial Serial1
+#define DebugSerial Serial
 
 SerialIO::SerialIO() {
   IOSerial.begin(9600);
+  DebugSerial.begin(9600);
 }
 
 const char REQUEST_PREFIX = '?';
@@ -40,22 +42,27 @@ struct Message SerialIO::produceMessage(byte type, String code, int a0, int a1, 
 void SerialIO::sendMessage(struct Message message) {
   if (message.type == RESPONSE) {
     IOSerial.print('!');
+    DebugSerial.print('!');
   }
   IOSerial.print(message.code);
   for (int i = 0; i < countArgs(message.args); i++) {
     IOSerial.print(" ");
     IOSerial.print(String(message.args[i]));
+    DebugSerial.print(" ");
+    DebugSerial.print(String(message.args[i]));
   }
   IOSerial.println();
+  DebugSerial.println();
 }
 
 void SerialIO::sendConfirmation() {
-  Serial.println("+");
   IOSerial.println("+");
+  DebugSerial.println("+");
 }
 
 void SerialIO::sendCompletion() {
   IOSerial.println("OK");
+  DebugSerial.println("OK");
 }
 
 int SerialIO::countArgs(int args[]) {
@@ -80,6 +87,19 @@ String SerialIO::readSerial() {
 
     buffer += symbol;
   }
+
+  while (DebugSerial.available()) {
+    char symbol = char(DebugSerial.read());
+
+    if (symbol == '\n') {
+      String _buffer = debugBuffer;
+      debugBuffer = "";
+      return _buffer;
+    }
+
+    debugBuffer += symbol;
+  }
+
 
   return "";
 }

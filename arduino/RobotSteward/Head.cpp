@@ -125,7 +125,7 @@ void Head::tickY() {
     return;
   }
 
-  if (millis() - tmrY > 2) {
+  if (millis() - tmrY > 75) {
     tmrY = millis();
     int delta = abs(targetY - currentY + counterY);
     int absStep;
@@ -143,7 +143,7 @@ void Head::tickY() {
     else counterY -= absStep;
 
     servo->write(currentY + counterY);
-    // Serial.println(String(currentY+counterY) + " Step: " + String(absStep));
+    Serial.println(String(currentY+counterY) + " Step: " + String(absStep));
   }
   stateY = false;
 }
@@ -248,7 +248,7 @@ void Head::rotateY(int y) {
   tmrY = millis();
   servoLoopRunning = true;
   brakeF(false);
-  servo->attach(7);
+  servo->attach(11); // 7
 }
 
 void Head::stop() {

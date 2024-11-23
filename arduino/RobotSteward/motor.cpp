@@ -136,7 +136,7 @@ void motor::runY(int y) {
 
   startY = currentY;
   tmr = millis();
-  Serial.println("startY: " + String(startY) + " currentY: " + String(currentY) + " targetY: " + String(targetY));
+  // Serial.println("startY: " + String(startY) + " currentY: " + String(currentY) + " targetY: " + String(targetY));
   moveYLoopRunning = true;
   completeX = true;
 }

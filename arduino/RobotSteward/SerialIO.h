@@ -19,6 +19,7 @@ public:
 
 private:
   String buffer = "";
+  String debugBuffer = "";
   String readSerial();
   struct Message parseMessage(String newMessage);
 };

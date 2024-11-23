@@ -2,7 +2,7 @@
 
 #include <Multiservo.h>
 // Задаём количество сервоприводов
-constexpr uint8_t MULTI_SERVO_COUNT = 11;
+constexpr uint8_t MULTI_SERVO_COUNT = 12;
 // Создаём массив объектов для работы с сервомоторами
 Multiservo multiservo[MULTI_SERVO_COUNT];
 
@@ -32,8 +32,8 @@ Head head(&multiservo[7], &multiservo[8]);
 #include "Laser.h"
 // Laser laserF(&multiservo[9], &lox2, FRONT);
 // Laser laserB(&multiservo[10], &lox1, BACK);
-Laser laserF(&multiservo[9], &lox2);
-Laser laserB(&multiservo[10], &lox1);
+Laser laserF(&multiservo[10], &lox1);
+Laser laserB(&multiservo[9], &lox2);
 
 #include "motor.h"
 motor wheels(&laserF, &laserB);
@@ -151,7 +151,7 @@ void setup() {
     // Подключаем сервомотор
     multiservo[count].attach(count);
   }
-  multiservo[7].detach();
+  multiservo[11].detach(); // 7
   // multiservo[8].write(left);
 
   wheels.begin();
@@ -161,13 +161,16 @@ void setup() {
   loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
   lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
   lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
+  Serial.println("Adafruit VL53L0X OK");
 
   laserF.begin();
   laserB.begin();
   head.begin();
+  Serial.println("laser, head ok");
 
   wheels.setSpeed(255, ALL);
-  // head.home();
+  head.home();
+  
 
   getReady = false;
 }
@@ -211,7 +214,7 @@ void handleMessage(struct Message message) {
   // #endif
   if (message.type == COMMAND) {
     Serial.println(message.code);
-    if (message.code != "M") {
+    if (message.code != "M" && message.code != "Mt") {
       laserF.scanStop();
       laserB.scanStop();
     } else {
@@ -233,8 +236,14 @@ void handleMessage(struct Message message) {
     } 
     else if (message.code == "L") {     // Лидары вкл./выкл.
       IO.sendConfirmation();
-      if (message.args[0] == 0) laserF.scanStop();
-      else laserF.scanStart();
+      if (message.args[0] == 0) {
+        laserF.scanStop();
+        laserB.scanStop();
+      }
+      else {
+        laserF.scanStart();
+        laserB.scanStart();
+      }
     } 
     else if (message.code == "M") {     // Движение робота на (x, y)
       IO.sendConfirmation();
@@ -252,6 +261,24 @@ void handleMessage(struct Message message) {
       delay(message.args[1]);
       wheels.go(Stop);
     } 
+    else if (message.code == "Te") {
+      IO.sendConfirmation();
+      multiservo[11].attach(11);
+
+      multiservo[8].attach(8);
+      multiservo[8].write(60);
+      delay(500);
+      multiservo[8].detach();
+
+      multiservo[11].write(message.args[0]);
+
+      multiservo[8].attach(8);
+      multiservo[8].write(80);
+      delay(500);
+      multiservo[8].detach();
+
+      multiservo[11].detach();
+    }
     else if (message.code == "Ml") {
       // 181 181 178 178 (FL, FR, BL, BR)
       // SpeedLeft 110/10 = 11 cm/c

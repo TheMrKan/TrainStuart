@@ -25,7 +25,7 @@ public:
   }
   void begin() {
     int pin;
-    servo->attach(9);
+    // servo->attach(9);
     servo->write(60);
   }
   void scanStart() {
@@ -34,13 +34,13 @@ public:
     if (currentAngle >= right) dir = -1;
   }
   void scanStop() {
-    Serial.println("Debug 2");
+    // Serial.println("Debug 2");
     lox->stopRangeContinuous();
     dir = 0;
   }
   void tick() {
     if (dir == 0) return;
-    Serial.println(millis() - lastTick);
+    // Serial.println(millis() - lastTick);
     if (millis() - lastTick < 20) return;
     lastTick = millis();
 
@@ -49,15 +49,15 @@ public:
     }
 
     // Остановка на цели с задержкой
-    if (dist < 250 && isObject) { status = false; return; }
-    if (dist >= 250 && isObject) { isObject = false; delayStop = 0; release = true; }
-    if (dist < 250 && !isObject && delayStop == 0) { delayStop = millis(); isObject = false; }
-    if (dist < 250 && !isObject && delayStop >= 500) isObject = true;
+    if (dist < 250 && !isObject) { status = true; return; }
+    // if (dist >= 250 && isObject) { isObject = false; delayStop = 0; release = true; }
+    // if (dist < 250 && !isObject && delayStop == 0) { delayStop = millis(); isObject = false; }
+    // if (dist < 250 && !isObject && delayStop >= 500) isObject = true;
 
     // Возобновление движения с задержкой
-    if (release && delayRelease == 0) delayRelease = millis();
-    if (release && delayRelease >= 500) { delayRelease = 0; release = false; }
-    if (release) { status = false; return; }
+    // if (release && delayRelease == 0) delayRelease = millis();
+    // if (release && delayRelease >= 500) { delayRelease = 0; release = false; }
+    // if (release) { status = false; return; }
 
     if (dir == 1) {
       currentAngle += 5;
@@ -68,7 +68,8 @@ public:
     }
 
     servo->write(currentAngle);
-    status = true;
+    // status = true;
+    Serial.println(dist);
   }
 
   bool status = true;
