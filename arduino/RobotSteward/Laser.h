@@ -41,7 +41,7 @@ public:
   void tick() {
     if (dir == 0) return;
     // Serial.println(millis() - lastTick);
-    if (millis() - lastTick < 20) return;
+    if (millis() - lastTick < 40) return;
     lastTick = millis();
 
     if (lox->isRangeComplete()) {
@@ -49,7 +49,7 @@ public:
     }
 
     // Остановка на цели с задержкой
-    if (dist < 250 && !isObject) { status = true; return; }
+    // if (dist < 250 && !isObject) { status = true; return; }
     // if (dist >= 250 && isObject) { isObject = false; delayStop = 0; release = true; }
     // if (dist < 250 && !isObject && delayStop == 0) { delayStop = millis(); isObject = false; }
     // if (dist < 250 && !isObject && delayStop >= 500) isObject = true;
@@ -58,6 +58,8 @@ public:
     // if (release && delayRelease == 0) delayRelease = millis();
     // if (release && delayRelease >= 500) { delayRelease = 0; release = false; }
     // if (release) { status = false; return; }
+
+    // if (dist < 250) return;
 
     if (dir == 1) {
       currentAngle += 5;
@@ -69,7 +71,8 @@ public:
 
     servo->write(currentAngle);
     // status = true;
-    Serial.println(dist);
+    if (dist < 1100 && dist > 50)
+      Serial.println(dist);
   }
 
   bool status = true;
@@ -78,8 +81,8 @@ private:
   Multiservo* servo;
   Adafruit_VL53L0X* lox;
   VL53L0X_RangingMeasurementData_t measure;
-  static const int left = 30;
-  static const int right = 90;
+  static const int left = 15;
+  static const int right = 105;
 
   unsigned long lastTick = 0, delayStop = 0, delayRelease = 0;
   bool isObject = false, release = false;
