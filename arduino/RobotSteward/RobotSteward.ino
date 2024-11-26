@@ -32,8 +32,8 @@ Head head(&multiservo[7], &multiservo[8]);
 #include "Laser.h"
 // Laser laserF(&multiservo[9], &lox2, FRONT);
 // Laser laserB(&multiservo[10], &lox1, BACK);
-Laser laserF(&multiservo[10], &lox1);
-Laser laserB(&multiservo[9], &lox2);
+Laser laserF(&multiservo[10], &lox1, 10);
+Laser laserB(&multiservo[9], &lox2, 9);
 
 #include "motor.h"
 motor wheels(&laserF, &laserB);
@@ -149,6 +149,9 @@ void setup() {
   */
   for (int count = 2; count < MULTI_SERVO_COUNT; count++) {
     // Подключаем сервомотор
+    if (count == 5 || count == 6) {
+      continue;
+    }
     multiservo[count].attach(count);
   }
   multiservo[11].detach(); // 7
@@ -158,9 +161,9 @@ void setup() {
 
   Serial.println("Adafruit VL53L0X test");
   setID();
-  loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
-  lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
-  lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_ACCURACY);
+  loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
+  lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
+  lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
   Serial.println("Adafruit VL53L0X OK");
 
   laserF.begin();
@@ -238,11 +241,11 @@ void handleMessage(struct Message message) {
       IO.sendConfirmation();
       if (message.args[0] == 0) {
         laserF.scanStop();
-        laserB.scanStop();
+        // laserB.scanStop();
       }
       else {
         laserF.scanStart();
-        laserB.scanStart();
+        // laserB.scanStart();
       }
     } 
     else if (message.code == "M") {     // Движение робота на (x, y)
