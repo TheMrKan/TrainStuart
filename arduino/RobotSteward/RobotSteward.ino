@@ -55,8 +55,8 @@ int lastHead;
 unsigned long tmr;
 
 enum Box {
-  DRAWER_1 = 5,
-  DRAWER_2 = 6,
+  DRAWER_1 = 5,    // задний
+  DRAWER_2 = 6,    // передний
   UP_1 = 3,  // Задний
   UP_2 = 2,  //Передний
   DOWN = 4
@@ -140,22 +140,24 @@ void setup() {
     * 2 - ящщик 1
     * 3 - ящик 2
     * 4 - ящик 3
-    * 5 - выдвижной ящик 1
-    * 6 - выдвижной ящик 2
+    * 5 - выдвижной ящик зад
+    * 6 - выдвижной ящик перед
     * 7 - голова по Y
     * 8 - тормооз для головы по Y
     * 9 - лидар 1
     * 10 - лидар 2
   */
   for (int count = 2; count < MULTI_SERVO_COUNT; count++) {
-    // Подключаем сервомотор
-    if (count == 5 || count == 6) {
+    // Отключить задний выдвижной
+    if (count == 5) {
       continue;
     }
     multiservo[count].attach(count);
   }
   multiservo[11].detach(); // 7
-  // multiservo[8].write(left);
+
+  multiservo[6].write(95);    // остановка переднего выдвижного
+
   Serial.println("[SETUP] Servo attach OK");
 
   wheels.begin();
@@ -370,12 +372,15 @@ void BoxMove(int index, int side) {
   }
   switch (side) {
     case 0: state = CLOSE; break;
-    case 1: state = OPEN_RIGHT; break;
-    case 2: state = OPEN_LEFT; break;
+    case 1: state = OPEN_LEFT; break;
+    case 2: state = OPEN_RIGHT; break;
   }
+  // Serial.println("Box mapped: " + String(box) + " " + String(state));
+
 
   switch (box) {  // Выполнение запрашиваемой функции
-    case DRAWER_1 || DRAWER_2:
+    case DRAWER_1:
+    case DRAWER_2:
       if (state == CLOSE) {
         int sensor;
         State drawer;
@@ -390,17 +395,17 @@ void BoxMove(int index, int side) {
         tmr = millis();
         while (millis() - tmr <= 4000) {
           if (digitalRead(sensor)) break;
-          if (drawer == OPEN_RIGHT) multiservo[box].write(115);
-          else if (drawer == OPEN_LEFT) multiservo[box].write(75);
+          if (drawer == OPEN_RIGHT) multiservo[box].write(120);
+          else if (drawer == OPEN_LEFT) multiservo[box].write(60);
         }
         multiservo[box].write(95);
 
         if (box == DRAWER_1) drawer1 = CLOSE;
         else drawer2 = CLOSE;
       } else if (state == OPEN_RIGHT) {
-
+        
         tmr = millis();
-        while (millis() - tmr <= 3000) multiservo[box].write(65);
+        while (millis() - tmr <= 3000) multiservo[box].write(60);
         multiservo[box].write(95);
 
         if (box == DRAWER_1) drawer1 = OPEN_RIGHT;
@@ -408,7 +413,7 @@ void BoxMove(int index, int side) {
       } else {
 
         tmr = millis();
-        while (millis() - tmr <= 3000) multiservo[box].write(125);
+        while (millis() - tmr <= 3000) multiservo[box].write(120);
         multiservo[box].write(95);
 
         if (box == DRAWER_1) drawer1 = OPEN_LEFT;
@@ -416,6 +421,8 @@ void BoxMove(int index, int side) {
       }
       IO.sendCompletion();
       break;
+
+
     case UP_1:
       if (state == CLOSE) {
         if (up_1 == OPEN_RIGHT) {
@@ -445,6 +452,8 @@ void BoxMove(int index, int side) {
       }
       IO.sendCompletion();
       break;
+
+
     case UP_2:
       if (state == CLOSE) {
         if (up_2 == OPEN_RIGHT) {
@@ -474,6 +483,8 @@ void BoxMove(int index, int side) {
       }
       IO.sendCompletion();
       break;
+
+
     case DOWN:
       if (state == CLOSE) {
         if (down == OPEN_RIGHT) {  //multiservo[box].read() == Down_Right
