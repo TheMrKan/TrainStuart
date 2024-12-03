@@ -143,7 +143,7 @@ void Head::tickY() {
     else counterY -= absStep;
 
     servo->write(currentY + counterY);
-    Serial.println(String(currentY+counterY) + " Step: " + String(absStep));
+    // Serial.println(String(currentY+counterY) + " Step: " + String(absStep));
   }
   stateY = false;
 }

@@ -156,26 +156,38 @@ void setup() {
   }
   multiservo[11].detach(); // 7
   // multiservo[8].write(left);
+  Serial.println("[SETUP] Servo attach OK");
 
   wheels.begin();
+  Serial.println("[SETUP] wheels.begin() OK");
 
-  Serial.println("Adafruit VL53L0X test");
+  Serial.println("[SETUP] Adafruit VL53L0X ID setup");
   setID();
-  loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
-  lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
-  lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
-  Serial.println("Adafruit VL53L0X OK");
+  Serial.println("[SETUP] Adafruit VL53L0X ID OK");
 
-  laserF.begin();
-  laserB.begin();
+  loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
+  Serial.println("[SETUP] L0X HEAD config OK");
+
+  lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
+  Serial.println("[SETUP] L0X FORWARD config OK");
+
+  lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
+  Serial.println("[SETUP] L0X BACKWARD config OK");
+
+  // laserF.begin();
+  // laserB.begin();
+  // Serial.println("[SETUP] Laser.begin() OK");
+
   head.begin();
-  Serial.println("laser, head ok");
+  Serial.println("[SETUP] Head.begin() OK");
 
   wheels.setSpeed(255, ALL);
-  head.home();
-  
 
+  Serial.println("[SETUP] Going home...");
+  head.home();
   getReady = false;
+
+  Serial.println("[SETUP] Setup OK");
 }
 
 unsigned long loopTime, totalLoopTime;
@@ -217,13 +229,13 @@ void handleMessage(struct Message message) {
   // #endif
   if (message.type == COMMAND) {
     Serial.println(message.code);
-    if (message.code != "M" && message.code != "Mt") {
+    /*if (message.code != "M" && message.code != "Mt") {
       laserF.scanStop();
       laserB.scanStop();
     } else {
       laserF.scanStart();
       laserB.scanStart();
-    }
+    }*/
 
     if (message.code == "H") {          // Движение головой на (x, y)
       IO.sendConfirmation();

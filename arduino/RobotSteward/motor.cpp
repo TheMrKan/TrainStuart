@@ -145,7 +145,7 @@ void motor::touch() {
   int front = digitalRead(FRONT_SENSOR);
   int back = digitalRead(BACK_SENSOR);
 
-  if (front == 1 || back == 1 || !laserF->status || !laserB->status) {
+  if (front == 1 || back == 1/* || !laserF->status || !laserB->status*/) {
 
     pause = true;
   } else {
