@@ -55,10 +55,10 @@ int lastHead;
 unsigned long tmr;
 
 enum Box {
-  DRAWER_1 = 5,    // задний
-  DRAWER_2 = 6,    // передний
-  UP_1 = 3,  // Задний
-  UP_2 = 2,  //Передний
+  DRAWER_BACK = 5,    // задний
+  DRAWER_FRONT = 6,    // передний
+  UP_BACK = 3,  // Задний
+  UP_FRONT = 2,  //Передний
   DOWN = 4
 };
 
@@ -148,15 +148,19 @@ void setup() {
     * 10 - лидар 2
   */
   for (int count = 2; count < MULTI_SERVO_COUNT; count++) {
-    // Отключить задний выдвижной
-    if (count == 5) {
+    // Не подключаем задний выдвижной
+    if (count == DRAWER_BACK) {
       continue;
     }
     multiservo[count].attach(count);
   }
-  multiservo[11].detach(); // 7
+  multiservo[11].detach(); // 7 ???
 
-  multiservo[6].write(95);    // остановка переднего выдвижного
+  multiservo[DRAWER_FRONT].write(95);    // остановка переднего выдвижного
+
+  // Маленькие ящики в закрытое положение
+  multiservo[UP_FRONT].write(UpBack_Center);    // UpFront и UpBack перепутаны !!!
+  multiservo[UP_BACK].write(UpFront_Center);
 
   Serial.println("[SETUP] Servo attach OK");
 
@@ -270,6 +274,10 @@ void handleMessage(struct Message message) {
       IO.sendConfirmation();
       BoxMove(message.args[0], message.args[1]);
     } 
+    else if (message.code == "Srv") {     // Ручная отправка углов на сервы
+      IO.sendConfirmation();
+      multiservo[message.args[0]].write(message.args[1]);
+    } 
     else if (message.code == "Mt") {    // Движение робота по времени
       // R 89 / 10
       // L 110 / 10
@@ -365,10 +373,10 @@ void BoxMove(int index, int side) {
   State state;
   switch (index) {
     case 0: box = DOWN; break;
-    case 1: box = UP_1; break;
-    case 2: box = UP_2; break;
-    case 3: box = DRAWER_1; break;
-    case 4: box = DRAWER_2; break;
+    case 1: box = UP_BACK; break;
+    case 2: box = UP_FRONT; break;
+    case 3: box = DRAWER_BACK; break;
+    case 4: box = DRAWER_FRONT; break;
   }
   switch (side) {
     case 0: state = CLOSE; break;
@@ -379,12 +387,12 @@ void BoxMove(int index, int side) {
 
 
   switch (box) {  // Выполнение запрашиваемой функции
-    case DRAWER_1:
-    case DRAWER_2:
+    case DRAWER_BACK:
+    case DRAWER_FRONT:
       if (state == CLOSE) {
         int sensor;
         State drawer;
-        if (box == DRAWER_1) {
+        if (box == DRAWER_BACK) {
           sensor = SENSOR_DRAVER_1;
           drawer = drawer1;
         } else {
@@ -400,7 +408,7 @@ void BoxMove(int index, int side) {
         }
         multiservo[box].write(95);
 
-        if (box == DRAWER_1) drawer1 = CLOSE;
+        if (box == DRAWER_BACK) drawer1 = CLOSE;
         else drawer2 = CLOSE;
       } else if (state == OPEN_RIGHT) {
         
@@ -408,7 +416,7 @@ void BoxMove(int index, int side) {
         while (millis() - tmr <= 3000) multiservo[box].write(60);
         multiservo[box].write(95);
 
-        if (box == DRAWER_1) drawer1 = OPEN_RIGHT;
+        if (box == DRAWER_BACK) drawer1 = OPEN_RIGHT;
         else drawer2 = OPEN_RIGHT;
       } else {
 
@@ -416,14 +424,14 @@ void BoxMove(int index, int side) {
         while (millis() - tmr <= 3000) multiservo[box].write(120);
         multiservo[box].write(95);
 
-        if (box == DRAWER_1) drawer1 = OPEN_LEFT;
+        if (box == DRAWER_BACK) drawer1 = OPEN_LEFT;
         else drawer2 = OPEN_LEFT;
       }
       IO.sendCompletion();
       break;
 
 
-    case UP_1:
+    case UP_BACK:
       if (state == CLOSE) {
         if (up_1 == OPEN_RIGHT) {
           for (int i = UpFront_Right; i >= UpFront_Center; --i) {
@@ -454,7 +462,7 @@ void BoxMove(int index, int side) {
       break;
 
 
-    case UP_2:
+    case UP_FRONT:
       if (state == CLOSE) {
         if (up_2 == OPEN_RIGHT) {
           for (int i = UpBack_Right; i <= UpBack_Center; ++i) {
