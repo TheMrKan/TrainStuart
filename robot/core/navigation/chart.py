@@ -59,7 +59,7 @@ def get_points() -> List[Point]:
 
 def get_position_for_seat(seat: int) -> Vector2:
     seat_pos = get_point_position(f"seat_{seat}")
-    return seat_pos[0] - 40, 12
+    return seat_pos[0] - 20, 12
 
 
 

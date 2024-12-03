@@ -31,7 +31,6 @@ class StationIdleBehaviour(BaseBehaviour):
         trigger = interaction.wait_for_interaction_trigger()
         self.logger.debug("Interaction triggered")
 
-        AudioOutput.play_async("hello.wav")
         self.__app.shutdown()
         self.__app = InteractionApp()
         self.__app.run()
@@ -55,6 +54,5 @@ class StationIdleBehaviour(BaseBehaviour):
             self.__app.shutdown()
             self.__app = IdleApp()
             self.__app.run()
-            AudioOutput.play_async("goodbye.wav")
 
             interaction.reset()

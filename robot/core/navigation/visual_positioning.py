@@ -74,7 +74,7 @@ def try_get_position(head_rotation_x: int, head_rotation_y: int, head_distance: 
                 color = (0, 255, 0) if data[i] else (0, 0, 255)
                 #cv2.putText(img, str(i), (p[0], p[1] - 15), cv2.FONT_HERSHEY_COMPLEX, 0.9, (60, 80, 255), 2)
                 cv2.circle(img, p, 2, color, 3)
-        cv2.imshow("Pos", img)
+        # cv2.imshow("Pos", img)
         cv2.waitKey(1)
 
 
