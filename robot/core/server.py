@@ -30,7 +30,7 @@ def start_polling():
     global __poller_thread
     global __is_polling
 
-    url = urljoin(config.server.host, "/stuart/polling")
+    url = urljoin(config.server.host, "/robot/polling")
 
     __is_polling = True
     __poller_thread = Thread(target=__poller,
