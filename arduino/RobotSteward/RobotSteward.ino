@@ -380,8 +380,8 @@ void BoxMove(int index, int side) {
   }
   switch (side) {
     case 0: state = CLOSE; break;
-    case 1: state = OPEN_LEFT; break;
-    case 2: state = OPEN_RIGHT; break;
+    case 1: state = OPEN_RIGHT; break;
+    case 2: state = OPEN_LEFT; break;
   }
   // Serial.println("Box mapped: " + String(box) + " " + String(state));
 
@@ -426,37 +426,6 @@ void BoxMove(int index, int side) {
 
         if (box == DRAWER_BACK) drawer1 = OPEN_LEFT;
         else drawer2 = OPEN_LEFT;
-      }
-      IO.sendCompletion();
-      break;
-
-
-    case UP_BACK:
-      if (state == CLOSE) {
-        if (up_1 == OPEN_RIGHT) {
-          for (int i = UpFront_Right; i >= UpFront_Center; --i) {
-            multiservo[box].write(i);
-            delay(30);
-          }
-        } else if (up_1 == OPEN_LEFT) {
-          for (int i = UpFront_Left; i <= UpFront_Center; ++i) {
-            multiservo[box].write(i);
-            delay(30);
-          }
-        } else multiservo[box].write(UpFront_Center);
-        up_1 = CLOSE;
-      } else if (state == OPEN_RIGHT) {
-        for (int i = UpFront_Center; i <= UpFront_Right; ++i) {
-          multiservo[box].write(i);
-          delay(30);
-        }
-        up_1 = OPEN_RIGHT;
-      } else {
-        for (int i = UpFront_Center; i >= UpFront_Left; --i) {
-          multiservo[box].write(i);
-          delay(30);
-        }
-        up_1 = OPEN_LEFT;
       }
       IO.sendCompletion();
       break;
