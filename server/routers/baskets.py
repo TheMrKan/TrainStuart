@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
 
 from server.routers.models import PassengerBasket, BasketPosition, BasketPositionUpdate, BasketUpdated, \
     BasketPositionRemove, OrderDetails, OrderPosition
+from server.routers.auth import get_passenger
 import server.core.products as products
 from server.core.products import OutOfStockError
 import server.core.baskets as baskets
@@ -12,8 +14,8 @@ import server.core.passengers as passengers
 router = APIRouter(prefix="/baskets")
 
 
-@router.get("/{passenger_id}/")
-def get_basket(passenger_id: str) -> PassengerBasket:
+@router.get("/")
+def get_basket(passenger_id=Depends(get_passenger)) -> PassengerBasket:
     basket = PassengerBasket([], 0)
 
     products = baskets.get_basket(passenger_id)
@@ -28,8 +30,8 @@ def get_basket(passenger_id: str) -> PassengerBasket:
     return basket
 
 
-@router.post("/{passenger_id}/update/")
-def update_basket(passenger_id: str, req: BasketPositionUpdate) -> BasketUpdated:
+@router.post("/update/")
+def update_basket(req: BasketPositionUpdate, passenger_id=Depends(get_passenger)) -> BasketUpdated:
     product = products.by_id(req.product_id)
     if not product:
         raise HTTPException(404, "Product not found")
@@ -42,8 +44,8 @@ def update_basket(passenger_id: str, req: BasketPositionUpdate) -> BasketUpdated
         raise HTTPException(409, "Out of stock")
 
 
-@router.post("/{passenger_id}/remove/")
-def remove_from_basket(passenger_id: str, req: BasketPositionRemove):
+@router.post("/remove/")
+def remove_from_basket(req: BasketPositionRemove, passenger_id=Depends(get_passenger)):
     product = products.by_id(req.product_id)
     if not product:
         raise HTTPException(404, "Product not found")
@@ -51,8 +53,8 @@ def remove_from_basket(passenger_id: str, req: BasketPositionRemove):
     baskets.remove_from_basket(passenger_id, product)
 
 
-@router.post("/{passenger_id}/checkout/")
-def checkout_basket(passenger_id: str) -> OrderDetails:
+@router.post("/checkout/")
+def checkout_basket(passenger_id=Depends(get_passenger)) -> OrderDetails:
     passenger = passengers.by_id(passenger_id)
     if not passenger:
         raise HTTPException(401, "Passenger not found")

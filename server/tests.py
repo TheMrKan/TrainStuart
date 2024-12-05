@@ -5,7 +5,13 @@ import server.core.passengers as passengers
 from typing import Callable
 from functools import wraps
 
-client = TestClient(app)
+import signal
+
+# Отключаем signal.set_wakeup_fd для тестирования
+signal.set_wakeup_fd = lambda fd: None
+
+ticket = "1"
+client = TestClient(app, cookies={"Ticket": ticket})
 
 response = None
 
@@ -24,25 +30,25 @@ def print_failed_assertations(func: Callable):
 @print_failed_assertations
 def test_basket():
     global response
-    passenger = passengers.by_seat(1)
+    passenger = passengers.by_ticket(ticket)
 
-    response = client.post(f"/baskets/{passenger.id}/update/", json={"product_id": "water_still_0,5", "amount": 2})
+    response = client.post(f"/baskets/update/", json={"product_id": "water_still_05", "amount": 2})
     assert response.status_code == 200
 
-    response = client.post(f"/baskets/{passenger.id}/update/", json={"product_id": "unknown_product", "amount": 1})
+    response = client.post(f"/baskets/update/", json={"product_id": "unknown_product", "amount": 1})
     assert response.status_code == 404
 
-    response = client.post(f"/baskets/{passenger.id}/update/", json={"product_id": "cola", "amount": 5})
+    response = client.post(f"/baskets/update/", json={"product_id": "cola", "amount": 5})
     assert response.status_code == 409
 
-    response = client.post(f"/baskets/{passenger.id}/update/", json={"product_id": "cola", "amount": 1})
+    response = client.post(f"/baskets/update/", json={"product_id": "cola", "amount": 1})
     assert response.status_code == 200
 
-    response = client.get(f"/baskets/{passenger.id}/")
+    response = client.get(f"/baskets/")
 
     assert response.json() == {
         'positions': [{
-            'product_id': 'water_still_0,5', 
+            'product_id': 'water_still_05',
             'amount': 2, 
             'total_price': 100.0
             },
@@ -54,13 +60,13 @@ def test_basket():
         'total_price': 200.0
         }
 
-    response = client.post(f"/baskets/{passenger.id}/update/", json={"product_id": "cola", "amount": 0})
+    response = client.post(f"/baskets/update/", json={"product_id": "cola", "amount": 0})
     assert response.status_code == 200
 
-    response = client.post(f"/baskets/{passenger.id}/remove/", json={"product_id": "water_still_0,5"})
+    response = client.post(f"/baskets/remove/", json={"product_id": "water_still_05"})
     assert response.status_code == 200
 
-    response = client.get(f"/baskets/{passenger.id}/")
+    response = client.get(f"/baskets/")
     assert response.json() == {
         'positions': [], 
         'total_price': 0.0
@@ -70,18 +76,18 @@ def test_basket():
 @print_failed_assertations
 def test_basket_checkout():
     global response
-    passenger = passengers.by_seat(2)
+    passenger = passengers.by_ticket(ticket)
 
-    response = client.post(f"/baskets/{passenger.id}/checkout/")
+    response = client.post(f"/baskets/checkout/")
     assert response.status_code == 409
 
-    response = client.post(f"/baskets/{passenger.id}/update/", json={"product_id": "water_still_0,5", "amount": 2})
+    response = client.post(f"/baskets/update/", json={"product_id": "water_still_05", "amount": 2})
     assert response.status_code == 200
 
-    response = client.post(f"/baskets/{passenger.id}/update/", json={"product_id": "cola", "amount": 1})
+    response = client.post(f"/baskets/update/", json={"product_id": "cola", "amount": 1})
     assert response.status_code == 200
 
-    response = client.post(f"/baskets/{passenger.id}/checkout/")
+    response = client.post(f"/baskets/checkout/")
     assert response.status_code == 200
     assert response.json()["passenger_id"] == passenger.id
     assert response.json()["total_price"] == 200
@@ -95,15 +101,15 @@ def test_basket_checkout():
     for d in deliveries:
         del d["id"]
     assert deliveries == [
-        {'item_id': 'water_still_0,5', 
-         'seat': 2, 
+        {'item_id': 'water_still_05',
+         'seat': 1,
          'priority': 1
          }, 
-         {'item_id': 'water_still_0,5', 
-          'seat': 2, 
+         {'item_id': 'water_still_05',
+          'seat': 1,
           'priority': 1}, 
           {'item_id': 'cola', 
-           'seat': 2, 
+           'seat': 1,
            'priority': 1}
     ]
 

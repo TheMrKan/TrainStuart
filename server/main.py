@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+
+from core import passengers
 from routers import products, baskets, orders, delivery, carriage, robot
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
