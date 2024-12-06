@@ -84,11 +84,21 @@
 
     <button onclick="window.dialog.close();" aria-label="close" class="x">❌</button>
 </dialog>
+<!--<dialog id="tablet">-->
+<!--    <h2>Аренда планшета</h2>-->
+
+<!--    <p class="dialog-text" id="tablet-info">Здесь будет какая-нибудь информация о взятом планшете</p>-->
+<!--    <button class="btn btn-tablet" id="tablet-btn" type="button" onclick="sendAction('tablet'); window.tablet.close();">Взять планшет</button>-->
+<!--    <button onclick="window.tablet.close();" aria-label="close" class="x">❌</button>-->
+<!--</dialog>-->
 <dialog id="tablet">
     <h2>Аренда планшета</h2>
 
-    <p class="dialog-text" id="tablet-info">Здесь будет какая-нибудь информация о взятом планшете</p>
-    <button class="btn btn-tablet" id="tablet-btn" type="button" onclick="sendAction('tablet')">Взять планшет</button>
+    <h3 class="dialog-heading-text">Спасибо за ваш выбор!</h3>
+    <img src="/static/images/tablet.png" alt="tablet"
+         width="400" height="200" class="tablet-image">
+    <p class="dialog-text" id="tablet-info">ID платншета: 0001</p>
+    <button  onclick="window.tablet.close(); sendAction('tablet');" class="btn btn-tablet" id="tablet-btn" type="button">Взять планшет</button>
     <button onclick="window.tablet.close();" aria-label="close" class="x">❌</button>
 </dialog>
 <dialog id="rug">

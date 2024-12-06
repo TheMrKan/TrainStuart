@@ -38,9 +38,8 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
         passenger_zone.start()
 
-        passenger_zone.go_to_seat(2)
-
-        robot_interface.set_head_rotation(-90, -10, completion=False)
+        passenger_zone.go_to_seat(4)
+        robot_interface.set_head_rotation(-70, -10, completion=False)
         app.shutdown()
         app = InteractionApp()
 
@@ -50,8 +49,9 @@ class CarriageMovingBehaviour(BaseBehaviour):
         app = IdleApp()
         app.run()
 
-        passenger_zone.go_to_seat(4)
-        robot_interface.set_head_rotation(-90, -10, completion=False)
+        passenger_zone.go_to_seat(2)
+
+        robot_interface.set_head_rotation(-70, -10, completion=False)
         app.shutdown()
         app = InteractionApp()
 
@@ -66,21 +66,59 @@ class CarriageMovingBehaviour(BaseBehaviour):
         robot_interface.set_head_rotation(-90, 0)
         robot_interface.move_to(vending[0], 0)
 
+        robot_interface.open_container(RobotContainer.SMALL_FRONT, Side.LEFT)
+        robot_interface.open_container(RobotContainer.BIG, Side.LEFT)
+
+        time.sleep(4)
+
+        robot_interface.close_container(RobotContainer.SMALL_FRONT)
+        robot_interface.close_container(RobotContainer.BIG)
+
+        robot_interface.move_to(0, 0)
+        passenger_zone.start()
+        passenger_zone.go_to_seat(2)
+
+        AudioOutput.play_async("order_completed_eat.wav")
+        robot_interface.set_head_rotation(-70, -10, completion=False)
+        robot_interface.open_container(RobotContainer.SMALL_FRONT, Side.LEFT)
+        time.sleep(3)
+        robot_interface.close_container(RobotContainer.SMALL_FRONT)
+
+        app.shutdown()
+        app = InteractionApp(contin=True)
+
+        app.run()
+        while app.is_running:
+            time.sleep(1)
+        app = IdleApp()
+        app.run()
+
+        passenger_zone.go_to_seat(4)
+
+        AudioOutput.play_async("order_completed_souvenir.wav")
+        robot_interface.set_head_rotation(-70, -10, completion=False)
+        robot_interface.open_container(RobotContainer.SMALL_FRONT, Side.LEFT)
+        time.sleep(3)
+        robot_interface.close_container(RobotContainer.SMALL_FRONT)
+
+        app.shutdown()
+        app = InteractionApp(contin=True)
+
+        app.run()
+        while app.is_running:
+            time.sleep(1)
+        app = IdleApp()
+        app.run()
+
+        passenger_zone.go_to_base()
+        robot_interface.set_head_rotation(-90, 0)
+        robot_interface.move_to(vending[0], 0)
+
         robot_interface.on_command.off("Tch", self.on_touch_received)
 
         while True:
             time.sleep(1)
 
-        #robot_interface.open_container(RobotContainer.SMALL_FRONT, Side.LEFT)
-
-        time.sleep(1)
-
-        robot_interface.close_container(RobotContainer.SMALL_FRONT)
-        time.sleep(2)
-        passenger_zone.go_to_base()
-
-        while True:
-            time.sleep(1)
 
     def on_touch_received(self, state: int, *args):
         if state:

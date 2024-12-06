@@ -80,12 +80,12 @@ def modify_head_rotation(horiz_delta: int, vert_delta: int, completion=True):
     set_head_rotation(head_horizontal + horiz_delta, head_vertical + vert_delta, completion)
 
 
-def open_container(container: RobotContainer, side: Side):
-    iserial.send_command("C", container.value, side.value, completion=True, completion_timeout=5)
+def open_container(container: RobotContainer, side: Side, completion=True):
+    iserial.send_command("C", container.value, side.value, completion=completion, completion_timeout=5)
 
 
-def close_container(container: RobotContainer):
-    iserial.send_command("C", container.value, 0, completion=True, completion_timeout=5)
+def close_container(container: RobotContainer, completion=True):
+    iserial.send_command("C", container.value, 0, completion=completion, completion_timeout=5)
 
 
 def get_camera_distance() -> int:

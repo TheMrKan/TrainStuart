@@ -15,7 +15,7 @@ class Touch {
     int pin;
   private:
     const int FIND_DELAY = 50;
-    const int LOSE_DELAY = 500;
+    const int LOSE_DELAY = 1000;
     ContinuousDetector detector = ContinuousDetector(FIND_DELAY, LOSE_DELAY);
 };
 #endif

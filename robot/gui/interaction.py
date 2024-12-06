@@ -14,13 +14,18 @@ class InteractionApp(BaseApp):
     INITIAL_PAGE = "interaction"
 
     interaction: Interaction
+    contin: bool
 
-    def __init__(self):
+    def __init__(self, contin=False):
         super().__init__()
+        self.contin = contin
 
     def run(self):
         super().run()
-        AudioOutput.play_async("hello.wav")
+        if self.contin:
+            AudioOutput.play_async("other_help.wav")
+        else:
+            AudioOutput.play_async("hello.wav")
 
     def set_interaction(self, interaction: Interaction):
         self.interaction = interaction
@@ -67,7 +72,7 @@ class InteractionApp(BaseApp):
         robot_interface.open_container(RobotContainer.TABLET_FRONT, Side.LEFT)    # Side инвертирован из-за ошибки в прошивке
         time.sleep(4)
         robot_interface.close_container(RobotContainer.TABLET_FRONT)
-        self.shutdown()
+        AudioOutput.play_async("other_help.wav")
 
     def shutdown(self):
         AudioOutput.play_async("goodbye.wav")
