@@ -45,6 +45,7 @@ void SerialIO::sendMessage(struct Message message) {
     DebugSerial.print('!');
   }
   IOSerial.print(message.code);
+  DebugSerial.print(message.code);
   for (int i = 0; i < countArgs(message.args); i++) {
     IOSerial.print(" ");
     IOSerial.print(String(message.args[i]));

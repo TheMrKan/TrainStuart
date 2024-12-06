@@ -32,7 +32,6 @@ void motor::tick() {
 }
 
 void motor::tickX() {
-  touch();
   if (!moveXLoopRunning) return;
   if (pause) {
     go(Stop);
@@ -141,14 +140,12 @@ void motor::runY(int y) {
   completeX = true;
 }
 
-void motor::touch() {
-  int front = digitalRead(FRONT_SENSOR);
-  int back = digitalRead(BACK_SENSOR);
-
-  if (front == 1 || back == 1/* || !laserF->status || !laserB->status*/) {
-
+void motor::setBlocked(bool isBlocked) {
+  if (isBlocked) {
     pause = true;
-  } else {
+    
+  }
+  else {
     if (pause) {
       startX = currentX;
       startY = currentY;

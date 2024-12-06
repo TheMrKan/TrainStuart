@@ -1,3 +1,6 @@
+#ifndef DETECTOR_H
+#define DETECTOR_H
+
 enum DetectorState {
   WAITING,
   FOUND,
@@ -18,3 +21,4 @@ class ContinuousDetector {
     unsigned long found, lost;
     bool isTracking;
 };
+#endif

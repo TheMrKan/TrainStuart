@@ -1,3 +1,6 @@
+#ifndef SERIALIO_H
+#define SERIALIO_H
+
 #include "Arduino.h"
 
 const byte COMMAND = 0;
@@ -29,3 +32,4 @@ struct Message {
   String code;
   int args[10];
 };
+#endif

@@ -39,6 +39,7 @@ public:
 
   void clearState();
   void setCurrentPosition(int x, int y);
+  void setBlocked(bool isBlocked);
 private:
   Laser *laserF, *laserB;
   Move move, dir;
@@ -49,8 +50,6 @@ private:
 
   void runX(int x);
   void runY(int y);
-
-  void touch();
 
   bool moveXLoopRunning = false, moveYLoopRunning = false, pause = false;
   unsigned long tmr;

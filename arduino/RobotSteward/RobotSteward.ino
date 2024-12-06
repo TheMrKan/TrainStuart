@@ -39,10 +39,10 @@ Laser laserB(&multiservo[9], &lox2, 9);
 motor wheels(&laserF, &laserB);
 // motor wheels;
 
-#include "SerialIO.h"
 
 #define DEBUG_SERIAL true
 
+#include "SerialIO.h"
 SerialIO IO;
 
 struct Message currentMessage;
@@ -73,6 +73,10 @@ State drawer2 = CLOSE;
 State up_1 = CLOSE;
 State up_2 = CLOSE;
 State down = CLOSE;
+
+#include "Touch.h"
+Touch touchFront = Touch(FRONT_SENSOR);
+Touch touchBack = Touch(BACK_SENSOR);
 
 void setID() {
   pinMode(SHT_LOX1, OUTPUT);
@@ -203,6 +207,11 @@ void loop() {
   head.tick();
   laserF.tick();
   laserB.tick();
+  
+  touchFront.tick();
+  touchBack.tick();
+
+  wheels.setBlocked(touchFront.isTouched() || touchBack.isTouched());
   wheels.tick();
 
   if (head.isCompleted()) {
