@@ -1,6 +1,7 @@
 import robot.hardware.serial_interface as iserial
 import enum
 import logging
+from pymitter import EventEmitter
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +25,14 @@ class RobotContainer(enum.Enum):
 
 head_horizontal = 0
 head_vertical = 0
+on_command: EventEmitter
 
 
 def initialize():
     iserial.setup()
-    #iserial.await_completion()
+
+    global on_command
+    on_command = iserial.on_command
 
 
 def move_to(x: int, y: int):

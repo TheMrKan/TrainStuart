@@ -22,6 +22,8 @@ class CarriageMovingBehaviour(BaseBehaviour):
         app = IdleApp()
         app.run()
 
+        robot_interface.on_command.on("Tch", self.on_touch_received)
+
         vending = chart.get_point_position("vending")
         self.logger.debug("Going to vending")
         time.sleep(1)
@@ -64,13 +66,12 @@ class CarriageMovingBehaviour(BaseBehaviour):
         robot_interface.set_head_rotation(-90, 0)
         robot_interface.move_to(vending[0], 0)
 
+        robot_interface.on_command.off("Tch", self.on_touch_received)
+
         while True:
             time.sleep(1)
 
         #robot_interface.open_container(RobotContainer.SMALL_FRONT, Side.LEFT)
-
-
-
 
         time.sleep(1)
 
@@ -80,5 +81,9 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
         while True:
             time.sleep(1)
+
+    def on_touch_received(self, state: int, *args):
+        if state:
+            AudioOutput.play_async("blocked.wav")
 
 

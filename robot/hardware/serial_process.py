@@ -32,6 +32,7 @@ class SharedProtocol(Protocol):
     response_code: Optional[str]
     response_args: Optional[list]
     outgoing_message: Optional[Command]
+    command: Optional[Command]
 
 
 shared: SharedProtocol
@@ -40,23 +41,27 @@ on_state_changed: Event
 on_confirmation_received: Event
 on_completion_received: Event
 on_response_received: Event
+on_command_received: Event
 on_message_sent: Event
 sending: float = 0
 
 
-def begin(_shared: SharedProtocol, _on_state_changed, _on_confirmation_received, _on_completion_received, _on_response_received, _on_message_sent):
+def begin(_shared: SharedProtocol, _on_state_changed, _on_confirmation_received, _on_completion_received,
+          _on_response_received, _on_command_received, _on_message_sent):
     global shared
     global connection
     global on_state_changed
     global on_confirmation_received
     global on_completion_received
     global on_response_received
+    global on_command_received
     global on_message_sent
 
     on_state_changed = _on_state_changed
     on_confirmation_received = _on_confirmation_received
     on_completion_received = _on_completion_received
     on_response_received = _on_response_received
+    on_command_received = _on_command_received
     on_message_sent = _on_message_sent
 
     shared = _shared
@@ -126,7 +131,10 @@ def handle_line(line: str):
     if try_handle_completion(line):
         return
 
-    try_handle_response(line)
+    if try_handle_response(line):
+        return
+
+    try_handle_command(line);
 
 
 def try_handle_confirmation(line: str) -> bool:
@@ -150,11 +158,7 @@ def try_handle_completion(line: str) -> bool:
     return True
 
 
-def try_handle_response(line: str) -> bool:
-    if not line.startswith("!"):
-        return False
-
-    line = line[1:]    # убираем !
+def parse_code_and_args(line: str) -> Tuple[str, List[int]]:
     splitted = line.split(" ")
 
     code = splitted[0]
@@ -162,11 +166,23 @@ def try_handle_response(line: str) -> bool:
         args = list(map(int, splitted[1:]))
     else:
         args = []
+    return code, args
 
-    shared.response_code = code
-    shared.response_args = args
+
+def try_handle_response(line: str) -> bool:
+    if not line.startswith("!"):
+        return False
+
+    line = line[1:]    # убираем !
+    shared.response_code, shared.response_args = parse_code_and_args(line)
     on_response_received.set()
 
+
+def try_handle_command(line: str) -> bool:
+    code, args = parse_code_and_args(line)
+    shared.command = Command(code, *args)
+    on_command_received.set()
+    return True
 
 def send_outgoing_message():
     global sending
