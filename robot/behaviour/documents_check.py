@@ -10,7 +10,7 @@ class DocumentsCheckBehaviour(BaseBehaviour):
 
     def behave(self):
         #robot_interface.move_to(0, 0)
-        robot_interface.set_head_rotation(90, 20)
+        robot_interface.set_head_rotation(90, 25)
 
         app = DocumentsCheckApp()
         try:

@@ -150,7 +150,7 @@ def rotate_to_face():
     if (delta_rel <= ALLOWED_DELTA_REL or delta == 0) and is_moving:
         robot_interface.head_horizontal_run(robot_interface.RotationDirection.STOP)
         is_moving = False
-    elif delta_rel <= OUT_DELTA_REL:
+    elif ALLOWED_DELTA_REL <= delta_rel <= OUT_DELTA_REL:
         distance = __get_distance_to_face(int((__face_detector.face[2] + __face_detector.face[3]) / 2))
         # logger.debug(f"Head rotation delta: {head_angle_delta}")
         # logger.debug(f"Face size: {__face_detector.face[2], __face_detector.face[3]}")
@@ -198,7 +198,7 @@ def rotate_to_face():
         image = cv2.putText(image, f"Distance: {distance}", (5, 75),
                             cv2.FONT_HERSHEY_COMPLEX, 1, (20, 220, 20), 1)
 
-        cv2.imshow("Face", image)
+        # cv2.imshow("Face", image)
         cv2.waitKey(1)
         stream.send_image(image)
 

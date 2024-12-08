@@ -103,10 +103,10 @@ def prepare_movement(destination: Vector2, head_y_override: Optional[int] = None
         line_y = 0
 
     movement.intermediate_points = []
-    '''if not __are_nearly_equal(current_y, line_y):
+    if not __are_nearly_equal(current_y, line_y):
         movement.intermediate_points.append((current_x, line_y))
     if not __are_nearly_equal(line_y, destination[1]):
-        movement.intermediate_points.append((destination[0], line_y))'''
+        movement.intermediate_points.append((destination[0], line_y))
 
     return movement
 
@@ -166,7 +166,7 @@ def process_movement(movement: Movement):
                         continue
 
                 if last_send_pos is None or abs(last_send_pos[0] - pos[0]) > 1:
-                    if last_send_pos is None or abs(last_send_pos[0] - pos[0]) < (time.time() - last_send_time) * robot_interface.WHEELS_SPEED_X * 2.5:
+                    if last_send_pos is None or abs(last_send_pos[0] - pos[0]) < (time.time() - last_send_time) * robot_interface.WHEELS_SPEED_X * 3:
                         logger.debug(pos)
                         robot_interface.set_actual_pos(pos[0], 0)
                         control_panel.update_robot_pos(pos[0], current_y)

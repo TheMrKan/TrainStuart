@@ -44,6 +44,7 @@ private:
   int counterY;
 
   byte power = 255;
+  int servoHeadPin = 11;
 
   void zero();
   void brakeF(bool state);

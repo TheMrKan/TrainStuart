@@ -213,10 +213,10 @@ void motor::go(Move _move) {
       motor_run(FR, F);
       motor_run(BL, F);
       motor_run(BR, B);
-      setSpeed(181, BL);
-      setSpeed(181, BR);
-      setSpeed(181, FL);
-      setSpeed(181, FR);
+      setSpeed(150, BL);
+      setSpeed(150, BR);
+      setSpeed(162, FL);
+      setSpeed(162, FR);
       break;
 
     case Left:
@@ -224,10 +224,10 @@ void motor::go(Move _move) {
       motor_run(FR, B);
       motor_run(BL, B);
       motor_run(BR, F);
-      setSpeed(181, BL);
-      setSpeed(181, BR);
-      setSpeed(181, FL);
-      setSpeed(181, FR);
+      setSpeed(150, BL);
+      setSpeed(150, BR);
+      setSpeed(162, FL);
+      setSpeed(162, FR);
       break;
 
     case Rotate:

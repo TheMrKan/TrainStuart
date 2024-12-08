@@ -63,8 +63,8 @@ private:
 
   float SPEED_X = (float)215 / 12;
   // делим на коэффиценты для корректировки. Если должен был проехать 75, а проехал 50 - коэффицент 1.5
-  float SPEED_Y_RIGHT = (float)44 / 5 / 0.9375;
-  float SPEED_Y_LEFT = (float)82 / 5 / 1.55;
+  float SPEED_Y_RIGHT = (float)55.5 / 5 / 1.1953125;
+  float SPEED_Y_LEFT = (float)57.5 / 5 / 1.195;
 };
 
 #endif //ADUINO_MOTOR_H

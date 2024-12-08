@@ -165,6 +165,7 @@ void setup() {
   // Маленькие ящики в закрытое положение
   multiservo[UP_FRONT].write(UpBack_Center);    // UpFront и UpBack перепутаны !!!
   multiservo[UP_BACK].write(UpFront_Center);
+  multiservo[DOWN].write(Down_Center);
 
   Serial.println("[SETUP] Servo attach OK");
 
@@ -205,8 +206,8 @@ unsigned long loopTime, totalLoopTime;
 void loop() {
   loopTime = millis();
   head.tick();
-  laserF.tick();
-  laserB.tick();
+  // laserF.tick();
+  // laserB.tick();
   
   touchFront.tick();
   touchBack.tick();
@@ -267,11 +268,11 @@ void handleMessage(struct Message message) {
     else if (message.code == "L") {     // Лидары вкл./выкл.
       IO.sendConfirmation();
       if (message.args[0] == 0) {
-        laserF.scanStop();
+        // laserF.scanStop();
         // laserB.scanStop();
       }
       else {
-        laserF.scanStart();
+        // laserF.scanStart();
         // laserB.scanStart();
       }
     } 
@@ -313,7 +314,7 @@ void handleMessage(struct Message message) {
 
       multiservo[11].detach();
     }
-    else if (message.code == "Ml") {
+    else if (message.code == "Mr") {
       // 181 181 178 178 (FL, FR, BL, BR)
       // SpeedLeft 110/10 = 11 cm/c
       IO.sendConfirmation();
@@ -326,7 +327,7 @@ void handleMessage(struct Message message) {
       delay(5000);
       wheels.go(Stop);
     } 
-    else if (message.code == "Mr") {
+    else if (message.code == "Ml") {
       IO.sendConfirmation();
       wheels.setSpeed(message.args[2], BL);
       wheels.setSpeed(message.args[3], BR);
@@ -371,10 +372,7 @@ void handleMessage(struct Message message) {
 // #endif
 
 uint16_t getDistanse() {
-  loxHead.rangingTest(&measureHead, false);
-  if (measureHead.RangeStatus != 4) {
-    return measureHead.RangeMilliMeter;
-  }
+  return 0;
 }
 
 void BoxMove(int index, int side) {

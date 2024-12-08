@@ -22,24 +22,25 @@ class CarriageMovingBehaviour(BaseBehaviour):
         app = IdleApp()
         app.run()
 
-        robot_interface.on_command.on("Tch", self.on_touch_received)
 
         vending = chart.get_point_position("vending")
         self.logger.debug("Going to vending")
-        time.sleep(1)
+        input("Press any key to start...")
         # robot_interface.set_actual_pos(vending[0], 60)
 
-        robot_interface.set_actual_pos(vending[0], 0)
-        robot_interface.set_head_rotation(-90, 0)
+        VENDING_Y = 50
+        robot_interface.set_actual_pos(vending[0], VENDING_Y)
+        robot_interface.set_head_rotation(-90, 0, completion=True)
 
         # robot_interface.move_to(vending[0], 0)
 
+        robot_interface.move_to(vending[0], 0)
         robot_interface.move_to(0, 0)
 
         passenger_zone.start()
 
         passenger_zone.go_to_seat(4)
-        robot_interface.set_head_rotation(-70, -10, completion=False)
+        robot_interface.set_head_rotation(-80, -10, completion=False)
         app.shutdown()
         app = InteractionApp()
 
@@ -51,7 +52,7 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
         passenger_zone.go_to_seat(2)
 
-        robot_interface.set_head_rotation(-70, -10, completion=False)
+        robot_interface.set_head_rotation(-80, -10, completion=False)
         app.shutdown()
         app = InteractionApp()
 
@@ -63,8 +64,9 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
         passenger_zone.go_to_base()
 
-        robot_interface.set_head_rotation(-90, 0)
+        robot_interface.set_head_rotation(-90, 0, completion=True)
         robot_interface.move_to(vending[0], 0)
+        robot_interface.move_to(vending[0], VENDING_Y)
 
         robot_interface.open_container(RobotContainer.SMALL_FRONT, Side.LEFT)
         robot_interface.open_container(RobotContainer.BIG, Side.LEFT)
@@ -74,12 +76,13 @@ class CarriageMovingBehaviour(BaseBehaviour):
         robot_interface.close_container(RobotContainer.SMALL_FRONT)
         robot_interface.close_container(RobotContainer.BIG)
 
+        robot_interface.move_to(vending[0], 0)
         robot_interface.move_to(0, 0)
         passenger_zone.start()
         passenger_zone.go_to_seat(2)
 
         AudioOutput.play_async("order_completed_eat.wav")
-        robot_interface.set_head_rotation(-70, -10, completion=False)
+        robot_interface.set_head_rotation(-80, -10, completion=False)
         robot_interface.open_container(RobotContainer.SMALL_FRONT, Side.LEFT)
         time.sleep(3)
         robot_interface.close_container(RobotContainer.SMALL_FRONT)
@@ -96,10 +99,10 @@ class CarriageMovingBehaviour(BaseBehaviour):
         passenger_zone.go_to_seat(4)
 
         AudioOutput.play_async("order_completed_souvenir.wav")
-        robot_interface.set_head_rotation(-70, -10, completion=False)
-        robot_interface.open_container(RobotContainer.SMALL_FRONT, Side.LEFT)
+        robot_interface.set_head_rotation(-80, -10, completion=False)
+        robot_interface.open_container(RobotContainer.BIG, Side.LEFT)
         time.sleep(3)
-        robot_interface.close_container(RobotContainer.SMALL_FRONT)
+        robot_interface.close_container(RobotContainer.BIG)
 
         app.shutdown()
         app = InteractionApp(contin=True)
@@ -110,9 +113,12 @@ class CarriageMovingBehaviour(BaseBehaviour):
         app = IdleApp()
         app.run()
 
+        robot_interface.on_command.on("Tch", self.on_touch_received)
+
         passenger_zone.go_to_base()
-        robot_interface.set_head_rotation(-90, 0)
+        robot_interface.set_head_rotation(-90, 0, completion=True)
         robot_interface.move_to(vending[0], 0)
+        robot_interface.move_to(vending[0], VENDING_Y)
 
         robot_interface.on_command.off("Tch", self.on_touch_received)
 

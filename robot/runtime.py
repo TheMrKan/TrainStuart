@@ -15,6 +15,7 @@ from robot.gui.startup import StartupApp
 from robot.behaviour.station_idle import StationIdleBehaviour
 from robot.behaviour.carriage_moving import CarriageMovingBehaviour
 from robot.behaviour.documents_check import DocumentsCheckBehaviour
+from robot.behaviour.video import VideoBehaviour
 from robot.gui.interaction import InteractionApp
 from robot.dev import control_panel
 from robot.core.navigation import chart
@@ -57,9 +58,10 @@ class Runtime:
         finally:
             startup_app.shutdown()
 
-        StationIdleBehaviour().run()
+        # VideoBehaviour().run()
+        # StationIdleBehaviour().run()
         # DocumentsCheckBehaviour().run()
-        # CarriageMovingBehaviour().run()
+        CarriageMovingBehaviour().run()
 
         #InteractionApp().run()
 

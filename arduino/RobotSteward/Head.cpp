@@ -248,7 +248,7 @@ void Head::rotateY(int y) {
   tmrY = millis();
   servoLoopRunning = true;
   brakeF(false);
-  servo->attach(11); // 7
+  servo->attach(servoHeadPin); // 7
 }
 
 void Head::stop() {
