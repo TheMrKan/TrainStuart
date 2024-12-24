@@ -35,41 +35,138 @@ class Movement:
     head_rotation_y: int
 
 
-current_x = current_y = 0
 current_movement: Optional[Movement]
 passage: Zone
+zone: Zone
 
 
 def start():
-    global current_x, current_y, passage
+    global passage, zone
+
+    zone = chart.zones["passenger_zone"]
     pos = find_start_position()
     if pos is None:
         logger.warning("Failed to calculate start position via visual positioning")
-        current_x, current_y = chart.get_point_position("start")
+        robot_interface.set_actual_pos(*chart.get_point_position("start"))
     else:
-        current_x, current_y = pos
-        logger.info(f"Start position: {current_x} {current_y}")
-
-    robot_interface.set_actual_pos(current_x, current_y)
-    control_panel.update_robot_pos(current_x, current_y)
+        robot_interface.set_actual_pos(*pos)
+        logger.info(f"Start position: {robot_interface.current_x} {robot_interface.current_y}")
 
     passage = chart.zones["passage"]
 
 
 def find_start_position() -> Optional[chart.Vector2]:
     robot_interface.set_head_rotation(-90, MOVING_HEAD_Y)
-    head_distance = int(86 / math.cos(math.radians(robot_interface.head_vertical)))
+
+    while True:
+        head_distance = robot_interface.get_camera_distance()
+        wall_distance = visual_positioning.head_distance_to_wall_distance(head_distance, robot_interface.head_vertical)
+
+        y = zone.p0[1] - wall_distance
+
+        robot_interface.set_actual_pos(robot_interface.current_x, y)
+
+        logger.debug(f"Distance to wall: {wall_distance}; "
+                     f"Current position: {robot_interface.current_x, robot_interface.current_y}")
+
+        if wall_distance < visual_positioning.MIN_WALL_DISTANCE:
+            logger.debug("Distance is too small")
+            # -5 см для запаса
+            robot_interface.move_to(robot_interface.current_x, zone.p0[1] - visual_positioning.MIN_WALL_DISTANCE - 5)
+        elif wall_distance > visual_positioning.MAX_WALL_DISTANCE:
+            logger.debug("Distance is too big")
+            # +5 см для запаса
+            robot_interface.move_to(robot_interface.current_x, zone.p0[1] - visual_positioning.MAX_WALL_DISTANCE + 5)
+        else:
+            break
+    logger.debug("Wall distance calibration completed")
+
+    time.sleep(0.5)
     marker_name, pos = visual_positioning.try_get_position(robot_interface.head_horizontal,
                                               robot_interface.head_vertical,
                                               head_distance)
+
     if pos is not None:
+        logger.debug(f"Got pos {pos} from marker {marker_name}")
         return pos
 
-    robot_interface.set_head_rotation(90, MOVING_HEAD_Y)
-    marker_name, pos = visual_positioning.try_get_position(robot_interface.head_horizontal,
-                                              robot_interface.head_vertical,
-                                              head_distance)
-    return pos
+    logger.info("Failed to find a marker in front of the camera. Going right...")
+    pos = try_find_marker(True)
+    if pos:
+        return pos
+
+    time.sleep(0.5)
+    robot_interface.set_head_rotation(-90, MOVING_HEAD_Y)   # возвращаем голову прямо после поворота направо
+    logger.info("Failed to find a marker on the right. Going left...")
+    return try_find_marker(False)
+
+
+def try_find_marker(direction: bool) -> Optional[Vector2]:
+    if visual_find_marker_horiz(direction):
+        time.sleep(0.5)
+        robot_interface.set_head_rotation(-90, MOVING_HEAD_Y)
+
+        logger.info(f"Found marker {'right' if direction else 'left'}")
+        if not go_until_marker(direction):
+            logger.error(f"Failed to go until marker on the {'right' if direction else 'left'}")
+            return None
+
+        head_distance = robot_interface.get_camera_distance()
+        marker_name, pos = visual_positioning.try_get_position(robot_interface.head_horizontal,
+                                                               robot_interface.head_vertical,
+                                                               head_distance)
+        if pos is None:
+            logger.error(f"Failed to get visual position ({'right' if direction else 'left'})")
+            return None
+
+        logger.debug(f"Got pos {pos} from marker {marker_name} ({'right' if direction else 'left'} side)")
+        return pos
+
+
+def go_until_marker(direction: bool, timeout: float = 8, delay: float = 0.5) -> bool:
+    t = time.time()
+    delta = 40 * (1 if direction else -1)
+
+    while time.time() - t < timeout:
+        robot_interface.move_to(robot_interface.current_x + delta, robot_interface.current_y)
+        time.sleep(1.5)
+        # current_x не обновляется в move_to. !!! Убрать после добавления передачи координат с робота !!!
+        robot_interface.current_x += delta
+
+        is_visible = visual_positioning.is_marker_visible()
+        if is_visible:
+            return True
+        time.sleep(0.5)
+
+    return False
+
+
+def visual_find_marker_horiz(direction: bool, timeout: float = 3, delay: float = 0.2) -> bool:
+    logger.debug(f"Rotating {'right' if direction else 'left'}...")
+    t = time.time()
+    robot_interface.head_horizontal_run(
+        robot_interface.RotationDirection.RIGHT if direction else robot_interface.RotationDirection.LEFT)
+
+    found = False
+    try:
+        visible_since = 0
+
+        while time.time() - t < timeout:
+            is_visible = visual_positioning.is_marker_visible()
+            if not is_visible:
+                visible_since = 0
+            else:
+                if visible_since == 0:
+                    visible_since = time.time()
+                else:
+                    if time.time() - visible_since > delay:
+                        found = True
+                        break
+    finally:
+        robot_interface.head_horizontal_run(robot_interface.RotationDirection.STOP)
+
+    return found
+
 
 
 def go_to_seat(seat: int):
@@ -135,9 +232,9 @@ def process_movement(movement: Movement):
             marker_name = None
             marker_counter = 0
             while thread.is_alive():
-                # head_distance = robot_interface.get_camera_distance()
+                head_distance = robot_interface.get_camera_distance()
                 time.sleep(0.01)
-                head_distance = int(86 / math.cos(math.radians(robot_interface.head_vertical)))
+
                 #print(head_distance, current_y, 86, robot_interface.head_vertical)
                 _marker_name, pos = visual_positioning.try_get_position(
                     robot_interface.head_horizontal,
@@ -168,8 +265,8 @@ def process_movement(movement: Movement):
                 if last_send_pos is None or abs(last_send_pos[0] - pos[0]) > 1:
                     if last_send_pos is None or abs(last_send_pos[0] - pos[0]) < (time.time() - last_send_time) * robot_interface.WHEELS_SPEED_X * 3:
                         logger.debug(pos)
-                        robot_interface.set_actual_pos(pos[0], 0)
-                        control_panel.update_robot_pos(pos[0], current_y)
+                        robot_interface.set_actual_pos(*pos)
+                        control_panel.update_robot_pos(*pos)
                         last_send_pos = pos
                         last_send_time = time.time()
                     else:

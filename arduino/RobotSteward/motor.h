@@ -39,6 +39,9 @@ public:
 
   void clearState();
   void setCurrentPosition(int x, int y);
+  int getCurrentX();
+  int getCurrentY();
+
   void setBlocked(bool isBlocked);
 private:
   Laser *laserF, *laserB;

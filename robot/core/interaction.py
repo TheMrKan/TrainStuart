@@ -163,7 +163,7 @@ def rotate_to_face():
         robot_interface.head_horizontal_run(robot_interface.RotationDirection.STOP)
 
     stream = control_panel.get_stream("rotate_to_face", "Наведение на лицо")
-    if stream.is_active or True:
+    if stream.is_active:
         image = __face_detector.image.copy()
 
         image = cv2.line(image,

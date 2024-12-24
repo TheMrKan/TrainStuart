@@ -166,6 +166,14 @@ void motor::setCurrentPosition(int x, int y) {
   Serial.println("SET POS " + String(x) + String(" ") + String(y));
 }
 
+int motor::getCurrentX() {
+  return currentX;
+}
+
+int motor::getCurrentY() {
+  return currentY;
+}
+
 void motor::setSpeed(int speed, Type type) {
   switch (type) {
     case FL:

@@ -6,6 +6,7 @@ from utils.cv import Image
 from robot.gui.base import gui_server
 from robot.hardware.cameras import CameraAccessor, CameraHandler
 from robot.core.navigation import chart
+from robot.hardware import robot_interface
 
 __logger = logging.getLogger(__name__)
 
@@ -94,6 +95,7 @@ def initialize():
     gui_server.on_connected.on(PATH, __on_connected)
     gui_server.on_message_received.on(PATH, __on_message_received)
     gui_server.on_disconnected.on(PATH, __on_disconnected)
+    robot_interface.on_event.on("pos_updated", __on_robot_pos_updated)
 
     __create_stream("main_camera", "Камера", CameraAccessor.main_camera)
     __create_stream("documents_camera", "Документы", CameraAccessor.documents_camera)
@@ -184,6 +186,10 @@ def __send_chart():
         "zones": zones,
         "points": points
     })
+
+
+def __on_robot_pos_updated(x: int, y: int):
+    update_robot_pos(x, y)
 
 
 def __on_disconnected():

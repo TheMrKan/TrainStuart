@@ -2,6 +2,7 @@ import robot.hardware.serial_interface as iserial
 import enum
 import logging
 from pymitter import EventEmitter
+from typing import Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,9 @@ class RobotContainer(enum.Enum):
 
 head_horizontal = 0
 head_vertical = 0
+current_x, current_y = 0, 0
 on_command: EventEmitter
+on_event = EventEmitter()
 
 
 def initialize():
@@ -34,8 +37,11 @@ def initialize():
     global on_command
     on_command = iserial.on_command
 
+    global current_x, current_y
+    current_x, current_y = get_current_position()
 
-def move_to(x: int, y: int):
+
+def move_to(x: int, y: int, completion: bool = True):
     logger.debug(f"Send move to {x} {y}")
     iserial.send_command("M", x, y, completion=True, completion_timeout=30)
     logger.debug(f"Completed move to {x} {y}")
@@ -46,6 +52,9 @@ def rotate_to(angle: int):
 
 
 def set_actual_pos(x: int, y: int):
+    global current_x, current_y
+    current_x, current_y = x, y
+    on_event.emit("pos_updated", current_x, current_y)
     iserial.send_command("P", x, y, completion=False)
 
 
@@ -89,6 +98,13 @@ def close_container(container: RobotContainer, completion=True):
 
 
 def get_camera_distance() -> int:
-    return iserial.send_request("Hd", timeout=1)[0]
+    return round(iserial.send_request("Hd", timeout=1)[0] / 10)
+
+
+def get_current_position() -> Tuple[int, int]:
+    global current_x, current_y
+    current_x, current_y = iserial.send_request("P", timeout=1)[:2]
+    on_event.emit("pos_updated", current_x, current_y)
+    return current_x, current_y
 
 

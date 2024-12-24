@@ -44,17 +44,24 @@
 
 
 // Углы для сервоприводов
-#define UpFront_Right 165
-#define UpFront_Center 117
-#define UpFront_Left 65
+// #define UpFront_Right 165
+// #define UpFront_Center 117
+// #define UpFront_Left 65
 
-#define UpBack_Right 0
+// #define UpBack_Right 0
+// #define UpBack_Center 62
+// #define UpBack_Left 110
+#define UpFront_Right 35
+#define UpFront_Center 100
+#define UpFront_Left 165
+
+#define UpBack_Right 125
 #define UpBack_Center 62
-#define UpBack_Left 110
+#define UpBack_Left 0
 
-#define Down_Right 40
+#define Down_Right 150
 #define Down_Center 98
-#define Down_Left 150
+#define Down_Left 40
 
 
 //  Бошка

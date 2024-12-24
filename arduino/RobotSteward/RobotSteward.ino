@@ -12,13 +12,15 @@ Multiservo multiservo[MULTI_SERVO_COUNT];
 #define LOX2_ADDRESS 0x31
 #define LOXHead_ADDRESS 0x32
 
+#include "Adafruit_VL53L1X.h"
+
 #define SHT_LOX1 7
 #define SHT_LOX2 6
 #define SHT_LOXHead 8
 
 Adafruit_VL53L0X lox1 = Adafruit_VL53L0X();
 Adafruit_VL53L0X lox2 = Adafruit_VL53L0X();
-Adafruit_VL53L0X loxHead = Adafruit_VL53L0X();
+Adafruit_VL53L1X loxHead = Adafruit_VL53L1X(SHT_LOXHead);
 
 // this holds the measurement
 VL53L0X_RangingMeasurementData_t measure1;
@@ -81,26 +83,26 @@ Touch touchBack = Touch(BACK_SENSOR);
 void setID() {
   pinMode(SHT_LOX1, OUTPUT);
   pinMode(SHT_LOX2, OUTPUT);
-  pinMode(SHT_LOXHead, OUTPUT);
+  // pinMode(SHT_LOXHead, OUTPUT);
   digitalWrite(SHT_LOX1, LOW);
   digitalWrite(SHT_LOX2, LOW);
-  digitalWrite(SHT_LOXHead, LOW);
+  // digitalWrite(SHT_LOXHead, LOW);
 
   // all reset
   digitalWrite(SHT_LOX1, LOW);
   digitalWrite(SHT_LOX2, LOW);
-  digitalWrite(SHT_LOXHead, LOW);
+  // digitalWrite(SHT_LOXHead, LOW);
   delay(10);
   // all unreset
   digitalWrite(SHT_LOX1, HIGH);
   digitalWrite(SHT_LOX2, HIGH);
-  digitalWrite(SHT_LOXHead, HIGH);
+  // digitalWrite(SHT_LOXHead, HIGH);
   delay(10);
 
   // activating LOX1 and resetting LOX2
   digitalWrite(SHT_LOX1, HIGH);
   digitalWrite(SHT_LOX2, LOW);
-  digitalWrite(SHT_LOXHead, LOW);
+  // digitalWrite(SHT_LOXHead, LOW);
   delay(10);
 
   // initing LOX1
@@ -113,7 +115,7 @@ void setID() {
 
   // activating LOX2
   digitalWrite(SHT_LOX2, HIGH);
-  digitalWrite(SHT_LOXHead, LOW);
+  // digitalWrite(SHT_LOXHead, LOW);
   delay(10);
 
   // initing LOX2
@@ -124,15 +126,30 @@ void setID() {
   }
   delay(10);
 
-  digitalWrite(SHT_LOXHead, HIGH);
+  // digitalWrite(SHT_LOXHead, HIGH);
   delay(10);
 
   // initing LOXHEAD
-  if (!loxHead.begin(LOXHead_ADDRESS)) {
-    Serial.println(F("Failed to boot HEAD VL53L0X"));
-    while (1)
-      ;
+  // if (!loxHead.begin(LOXHead_ADDRESS)) {
+  //   Serial.println(F("Failed to boot HEAD VL53L0X"));
+  //   while (1)
+  //     ;
+  // }
+
+  Wire.begin();
+  if (!loxHead.begin(LOXHead_ADDRESS, &Wire)) {
+    Serial.print("Couldn't start ranging: ");
+    Serial.println(loxHead.vl_status);
+    while (1)       delay(10);
   }
+  Serial.println("[SET ID] LOX Head OK");
+
+  if (! loxHead.startRanging()) {
+    Serial.print("[SET ID] Couldn't start ranging: ");
+    Serial.println(loxHead.vl_status);
+    while (1)       delay(10);
+  }
+  Serial.println("[SET ID] Ranging started");
 }
 
 void setup() {
@@ -158,7 +175,7 @@ void setup() {
     }
     multiservo[count].attach(count);
   }
-  multiservo[11].detach(); // 7 ???
+  multiservo[11].detach(); // детач Y головы
 
   multiservo[DRAWER_FRONT].write(95);    // остановка переднего выдвижного
 
@@ -176,8 +193,8 @@ void setup() {
   setID();
   Serial.println("[SETUP] Adafruit VL53L0X ID OK");
 
-  loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
-  Serial.println("[SETUP] L0X HEAD config OK");
+  // loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
+  // Serial.println("[SETUP] L0X HEAD config OK");
 
   lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
   Serial.println("[SETUP] L0X FORWARD config OK");
@@ -351,9 +368,20 @@ void handleMessage(struct Message message) {
       Serial.println("Unknown code: " + message.code);
     }
   } else {
-    IO.sendConfirmation();
-    dist = getDistanse();
-    struct Message outgoingMessage = IO.produceMessage(RESPONSE, "Hd", dist);
+    struct Message outgoingMessage;
+    if (message.code == "Hd") {
+      IO.sendConfirmation();
+      dist = getDistanse();
+      outgoingMessage = IO.produceMessage(RESPONSE, "Hd", dist);
+    }
+    else if (message.code == "P") {
+      IO.sendConfirmation();
+      outgoingMessage = IO.produceMessage(RESPONSE, "P", wheels.getCurrentX(), wheels.getCurrentY());
+    }
+    else {
+      return;
+    }
+    
     IO.sendMessage(outgoingMessage);
   }
 }
@@ -372,10 +400,25 @@ void handleMessage(struct Message message) {
 // #endif
 
 uint16_t getDistanse() {
-  return 0;
+  if (loxHead.dataReady()) {
+    int16_t distance = loxHead.distance();
+    if (distance == -1) {
+      // something went wrong!
+      Serial.print(F("Couldn't get distance: "));
+      Serial.println(loxHead.vl_status);
+      return 0;
+    }
+
+    loxHead.clearInterrupt();
+    return distance;
+  }
+  else {
+    Serial.println("Distance data is not ready");
+    return 0;
+  }
 }
 
-void BoxMove(int index, int side) {
+void BoxMove(int index, int side) { // Переписать полностью
   Box box;
   State state;
   switch (index) {
@@ -441,29 +484,58 @@ void BoxMove(int index, int side) {
     case UP_FRONT:
       if (state == CLOSE) {
         if (up_2 == OPEN_RIGHT) {
-          for (int i = UpBack_Right; i <= UpBack_Center; ++i) {
+          for (int i = UpFront_Right; i <= UpFront_Center; ++i) {
             multiservo[box].write(i);
             delay(30);
           }
         } else if (up_2 == OPEN_LEFT) {
-          for (int i = UpBack_Left; i >= UpBack_Center; --i) {
+          for (int i = UpFront_Left; i >= UpFront_Center; --i) {
             multiservo[box].write(i);
             delay(30);
           }
-        } else multiservo[box].write(UpBack_Center);
+        } else multiservo[box].write(UpFront_Center);
         up_2 = CLOSE;
       } else if (state == OPEN_RIGHT) {
-        for (int i = UpBack_Center; i >= UpBack_Right; --i) {
+        for (int i = UpFront_Center; i >= UpFront_Right; --i) {
           multiservo[box].write(i);
           delay(30);
         }
         up_2 = OPEN_RIGHT;
       } else {
-        for (int i = UpBack_Center; i <= UpBack_Left; ++i) {
+        for (int i = UpFront_Center; i <= UpFront_Left; ++i) {
           multiservo[box].write(i);
           delay(30);
         }
         up_2 = OPEN_LEFT;
+      }
+      IO.sendCompletion();
+      break;
+    case UP_BACK:
+      if (state == CLOSE) {
+        if (up_1 == OPEN_RIGHT) {
+          for (int i = UpBack_Right; i <= UpBack_Center; ++i) {
+            multiservo[box].write(i);
+            delay(30);
+          }
+        } else if (up_1 == OPEN_LEFT) {
+          for (int i = UpBack_Left; i >= UpBack_Center; --i) {
+            multiservo[box].write(i);
+            delay(30);
+          }
+        } else multiservo[box].write(UpBack_Center);
+        up_1 = CLOSE;
+      } else if (state == OPEN_RIGHT) {
+        for (int i = UpBack_Center; i >= UpBack_Right; --i) {
+          multiservo[box].write(i);
+          delay(30);
+        }
+        up_1 = OPEN_RIGHT;
+      } else {
+        for (int i = UpBack_Center; i <= UpBack_Left; ++i) {
+          multiservo[box].write(i);
+          delay(30);
+        }
+        up_1 = OPEN_LEFT;
       }
       IO.sendCompletion();
       break;

@@ -124,7 +124,7 @@ def read_serial(buffer: List[str]) -> Optional[str]:
 
 
 def handle_line(line: str):
-    print(f"SERIAL <<< {line}")
+    # print(f"SERIAL <<< {line}")
     if try_handle_confirmation(line):
         return
 
@@ -153,7 +153,7 @@ def try_handle_confirmation(line: str) -> bool:
 def try_handle_completion(line: str) -> bool:
     if line != "OK":
         return False
-    print("Completion received")
+    # print("Completion received")
     on_completion_received.set()
     return True
 
@@ -191,7 +191,7 @@ def send_outgoing_message():
 
     command_str = str(shared.outgoing_message)
     connection.write(command_str.encode("ascii"))
-    print(f"SERIAL >>> {command_str}")
+    # print(f"SERIAL >>> {command_str}")
     sending = time.time()
     on_message_sent.set()
 
