@@ -6,15 +6,6 @@
 #include <Multiservo.h>
 #include "ContinuousDetector.h"
 
-// enum L {
-//   FRONT,
-//   BACK
-// };
-/* side
- * 1 - left
- * 2 - center
- * 3 - right
-*/
 
 class Laser {
 public:
@@ -73,7 +64,6 @@ public:
 
   bool status = true;
 private:
-  // L type;
   Multiservo* servo;
   Adafruit_VL53L0X* lox;
   int pin;

@@ -33,16 +33,12 @@ public:
   void begin();
   void tick();
   void setSpeed(int speed, Type type);
-  void setSpeed4(int s1, int s2, int s3, int s4);
   void run(int x, int y);
   void go(Move _move);
   bool isCompleted();
 
   void clearState();
   void setCurrentPosition(int x, int y);
-  int getCurrentX();
-  int getCurrentY();
-
   void setBlocked(bool isBlocked);
 private:
   Laser *laserF, *laserB;

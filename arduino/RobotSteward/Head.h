@@ -30,21 +30,21 @@ private:
   void tickY();
   Multiservo* servo;
   Multiservo* brake;
+  int servoHeadPin = 11;
+
   bool headLoopRunning = false, servoLoopRunning = false;
   bool stateX = false, stateY = false;
-
-  unsigned long tmrY;
-
   bool endFlag = false, dir, dirY, awaitFlag = false;
   bool deltaSign = false;
 
-  int targetTickX = 0, targetY = 0;  // Будущее положение
+  unsigned long tmrY;
+
+  int targetX = 0, targetY = 0;  // Будущее положение
+  int counterY;
+  byte power = 255;
 
   const float angleTicks = MAX_TICK / (float)(headInputRight + abs(headInputLeft));
-  int counterY;
-
-  byte power = 255;
-  int servoHeadPin = 11;
+  const int step_marker = 90;
 
   void zero();
   void brakeF(bool state);

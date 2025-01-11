@@ -27,6 +27,7 @@ void Head::begin() {
   pinMode(47, OUTPUT);
   pinMode(49, OUTPUT);
   pinMode(22, INPUT_PULLUP);
+  pinMode(HEAD_MARKER, INPUT_PULLUP);
 
   attachInterrupt(0, isr, CHANGE);
   attachInterrupt(1, isr, CHANGE);
@@ -37,29 +38,6 @@ void Head::begin() {
   brake->detach();
 }
 
-// void Head::tick() {
-//     enc.tick();
-//     if (isEnd()) {
-//       if (!endFlag) {
-//         currentX = headInputLeft;
-//         endFlag = true;
-//       } else endFlag = false;
-//     }
-
-//     if (!headLoopRunning) return;
-
-//     if ((-enc.counter - targetTickX > 0) != deltaSign) {
-//         stop();
-//         return;
-//     }
-//     deltaSign = -enc.counter - targetTickX > 0;
-
-//     digitalWrite(PIN_IN1_head, dir ? HIGH : LOW);
-//     digitalWrite(PIN_IN2_head, dir ? LOW : HIGH);
-
-//     stateX = false;
-//     analogWrite(EN_Head, power);
-// }
 void Head::tick() {
   tickX();
   tickY();
@@ -72,6 +50,13 @@ void Head::tick() {
 void Head::tickX() {
   enc.tick();
   int _currentX = currentX + round(-enc.counter / angleTicks);
+
+  if (!digitalRead(HEAD_MARKER)) {
+    enc.counter = 0;
+    _currentX = -90;
+    currentX = -90;
+  }
+
   if (isEnd()) {
     if (!endFlag) {
       currentX = headInputLeft;
@@ -87,28 +72,30 @@ void Head::tickX() {
     return;
   }
 
-  int delta = -enc.counter - targetTickX;
+  int delta = targetX - _currentX;
   int localPower = power;
 
-  if (abs(targetTickX) == INF) {
+  if (abs(targetX) == INF) {
     localPower = power / 2;
-  } else if (abs(delta) < 2 * angleTicks) {
+  } else if (abs(delta) < 2) {
     localPower = power / 3;
-  } else if (abs(delta) < 10 * angleTicks) {
+  } else if (abs(delta) < 10) {
     localPower = power / 2;
   }
 
-  if (abs(targetTickX) != INF && (delta > 0) != deltaSign) {
+  if (abs(targetX) != INF && ((delta > 0) != deltaSign || delta == 0)) {
     stop();
     Serial.println(currentX);
     return;
   }
-  deltaSign = -enc.counter - targetTickX > 0;
+  // Serial.println(deltaSign);
+  deltaSign = targetX - _currentX > 0;
   digitalWrite(PIN_IN1_head, dir ? HIGH : LOW);
   digitalWrite(PIN_IN2_head, dir ? LOW : HIGH);
 
   stateX = false;
   analogWrite(EN_Head, localPower);
+  Serial.println(_currentX);
 }
 
 void Head::tickY() {
@@ -202,14 +189,11 @@ void Head::rotateX(int x) {
   }
 
   currentX += round(-enc.counter / angleTicks);
-  int targetAngle = x - currentX;
+  targetX = x;
   enc.counter = 0;
-  targetTickX = round(targetAngle * angleTicks);
-  deltaSign = -enc.counter - targetTickX > 0;
+  deltaSign = targetX - currentX > 0;
 
-
-  if (targetTickX < 0) dir = false;
-  else dir = true;
+  dir = deltaSign;
 
   // awaitFlag = false;
   headLoopRunning = true;
@@ -225,7 +209,7 @@ void Head::rotateXInf(int _dir) {
 
   dir = _dir > 0;
   enc.counter = 0;
-  targetTickX = INF;
+  targetX = INF;
   headLoopRunning = true;
 }
 
@@ -244,7 +228,6 @@ void Head::rotateY(int y) {
 
   // Serial.println("ABS inputAngle: " + String(y) + " lastAngle " + String(currentY) + " outputAngle: " + String(targetY) + " dir " + String(dirY));
   // current = target;
-
   tmrY = millis();
   servoLoopRunning = true;
   brakeF(false);

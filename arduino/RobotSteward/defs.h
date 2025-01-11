@@ -51,17 +51,35 @@
 // #define UpBack_Right 0
 // #define UpBack_Center 62
 // #define UpBack_Left 110
-#define UpFront_Right 35
-#define UpFront_Center 100
-#define UpFront_Left 165
 
-#define UpBack_Right 125
-#define UpBack_Center 62
-#define UpBack_Left 0
+//#define UpFront_Right 35
+//#define UpFront_Center 100
+//#define UpFront_Left 165
+//
+//#define UpBack_Right 125
+//#define UpBack_Center 62
+//#define UpBack_Left 0
+//
+//#define Down_Right 150
+//#define Down_Center 98
+//#define Down_Left 40
+namespace UpFront {
+    const int Right = 35;
+    const int Center = 100;
+    const int Left = 165;
+}
 
-#define Down_Right 150
-#define Down_Center 98
-#define Down_Left 40
+namespace UpBack {
+    const int Right = 125;
+    const int Center = 62;
+    const int Left = 0;
+}
+
+namespace Down {
+    const int Right = 150;
+    const int Center = 98;
+    const int Left = 40;
+}
 
 
 //  Бошка
@@ -77,13 +95,12 @@
 #define headInputLeft -165
 
 // Подключаем энкодер
-// #define CLK 2
-// #define DT  3
 const byte CLK = 2;
 const byte DT = 3;
 #define END_CAP 22        // Коневик на голову
 #define FRONT_SENSOR A14  // Передний датчик
 #define BACK_SENSOR A15   // Задний датчик
+#define HEAD_MARKER 17    // Маркер на углы для головы
 
 #define MAX_TICK 11090
 
