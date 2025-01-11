@@ -42,6 +42,28 @@ motor wheels(&laserF, &laserB);
 // motor wheels;
 
 
+// Библиотека для работы с модулями IMU
+#include <TroykaIMU.h>
+
+#include "RotationPID.h"
+RotationPID pid;
+
+// Создаём объект для работы с магнитометром/компасом
+Compass compass;
+
+// Калибровочные данные для работы магнитометра в режиме компаса
+// Подробности читайте в документации про калибровку модуля
+// http://wiki.amperka.ru/articles:troyka-magnetometer-compass-calibrate 
+const float compassCalibrationBias[3] = { 567.893, -825.35, 1061.436 };
+
+const float compassCalibrationMatrix[3][3] = { { 1.909, 0.082, 0.004 },
+                                               { 0.049, 1.942, -0.235 },
+                                               { -0.003, 0.008, 1.944} };
+
+float start_z, z;
+float filter, delta;
+
+
 #define DEBUG_SERIAL true
 
 #include "SerialIO.h"
@@ -212,8 +234,22 @@ void setup() {
   wheels.setSpeed(255, ALL);
 
   Serial.println("[SETUP] Going home...");
-  head.home();
+  // head.home();
   getReady = false;
+
+  // Выводим сообщение о начале инициализации
+    Serial.println("[SETUP] Compass begin");
+    // Инициализируем компас
+    compass.begin();
+    // Устанавливаем калибровочные данные
+    compass.setCalibrateMatrix(compassCalibrationMatrix,
+                               compassCalibrationBias);
+    
+    // Выводим сообщение об удачной инициализации
+    Serial.println("[SETUP] Initialization completed");
+    readDeltaAngle(&start_z);
+    pid.setConfig(start_z, 150, PID::L);
+    Serial.println("[SETUP] setConfig ok");
 
   Serial.println("[SETUP] Setup OK");
 }
@@ -231,6 +267,11 @@ void loop() {
 
   wheels.setBlocked(touchFront.isTouched() || touchBack.isTouched());
   wheels.tick();
+
+  readDeltaAngle(&z);
+  pid.setAngle(z);
+  pid.setSpeed();
+  wheels.setSpeed4(pid.FR, pid.FL, pid.BR, pid.BL);
 
   if (head.isCompleted()) {
     if (!getReady) {
@@ -252,6 +293,11 @@ void loop() {
     handleMessage(newMessage);
   }
   totalLoopTime = millis() - loopTime;
+  // Serial.println(totalLoopTime);
+}
+
+void readDeltaAngle(float *angle) {
+  *angle = compass.readAzimut();
 }
 
 void handleMessage(struct Message message) {

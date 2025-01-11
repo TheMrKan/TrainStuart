@@ -174,6 +174,13 @@ int motor::getCurrentY() {
   return currentY;
 }
 
+void motor::setSpeed4(int s1, int s2, int s3, int s4) {
+  analogWrite(ENB_1, s1); // FR
+  analogWrite(ENA_1, s2); // FL
+  analogWrite(ENB_2, s3); // BR
+  analogWrite(ENA_2, s4); // BL
+}
+
 void motor::setSpeed(int speed, Type type) {
   switch (type) {
     case FL:
@@ -221,10 +228,10 @@ void motor::go(Move _move) {
       motor_run(FR, F);
       motor_run(BL, F);
       motor_run(BR, B);
-      setSpeed(150, BL);
-      setSpeed(150, BR);
-      setSpeed(162, FL);
-      setSpeed(162, FR);
+      // setSpeed(150, BL);
+      // setSpeed(150, BR);
+      // setSpeed(162, FL);
+      // setSpeed(162, FR);
       break;
 
     case Left:
@@ -232,10 +239,10 @@ void motor::go(Move _move) {
       motor_run(FR, B);
       motor_run(BL, B);
       motor_run(BR, F);
-      setSpeed(150, BL);
-      setSpeed(150, BR);
-      setSpeed(162, FL);
-      setSpeed(162, FR);
+      // setSpeed(150, BL);
+      // setSpeed(150, BR);
+      // setSpeed(162, FL);
+      // setSpeed(162, FR);
       break;
 
     case Rotate:
