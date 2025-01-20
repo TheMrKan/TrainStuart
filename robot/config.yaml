@@ -20,6 +20,8 @@ logging:
       handlers:
         - console
       level: "ERROR"
+    urllib3.connectionpool:
+      level: WARNING
 
 resources_dir: "../resources"
 data_dir: "data"
@@ -28,7 +30,7 @@ hardware:
   main_camera: 0
   main_camera_resolution: 640x480
   documents_camera: 1
-  dummy_robot: True
+  dummy_robot: False
   serial: /dev/ttyTHS1
 
 
@@ -38,7 +40,7 @@ route:
 
 server:
   host: "http://server:8002/"
-  polling_interval: 3
+  polling_interval: 5
   web_domain: "http://server:8002/static/"
 
 gui:

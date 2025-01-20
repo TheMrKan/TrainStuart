@@ -10,7 +10,7 @@ from pymitter import EventEmitter
 
 from robot.config import instance as config
 
-__logger = logging.Logger(__name__)
+__logger = logging.getLogger(__name__)
 
 __is_polling: bool
 __poller_thread: Thread
@@ -30,8 +30,7 @@ def start_polling():
     global __poller_thread
     global __is_polling
 
-    url = urljoin(config.server.host, "/robot/polling")
-
+    url = urljoin(config.server.host, "/robot/polling/")
     __is_polling = True
     __poller_thread = Thread(target=__poller,
                              args=(url, ),
@@ -63,24 +62,24 @@ def __poller(url: str):
             __logger.exception("An error occured in robot.core.server.__poller.", exc_info=e)
 
     __poller_thread = None
+    print("Poller terminated")
 
 
 def __poll(url):
     global server_poll_response
 
-    '''response = requests.get(url)
+    response = requests.get(url)
     response.raise_for_status()
-    json: dict = response.json()'''
-    json = {"updated": {}}
+    json: dict = response.json()
 
-    server_poll_response = ServerPollResponse(datetime.now(), json.get("updated", {}))
+    server_poll_response = ServerPollResponse(datetime.now(), json)
 
 
 def __notify_updated():
     if not server_poll_response:
         raise AssertionError("server_poll_response is None")
-
     for updated_name, updated_info in server_poll_response.updated.items():
+        __logger.debug("Broadcasting update: %s (%s)", updated_name, updated_info)
         try:
             Thread(target=events.emit,
                    args=(f"updated_{updated_name}", ),

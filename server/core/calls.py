@@ -27,6 +27,7 @@ def call_to_seat(seat: int):
         return
 
     active_calls.append(seat)
+    print(f"Registered new call to seat {seat}")
 
 
 def mark_call_completed(seat: int):
