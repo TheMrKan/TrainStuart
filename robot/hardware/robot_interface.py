@@ -98,7 +98,16 @@ def close_container(container: RobotContainer, completion=True):
 
 
 def get_camera_distance() -> int:
-    return round(iserial.send_request("Hd", timeout=1)[0] / 10)
+    """
+    :return: 0, если не удалось получить значение, иначе дистанцию в сантиметрах
+    """
+    response = iserial.send_request("Hd", timeout=1)
+    if not response:
+        return 0
+    dst = round(response[0] / 10)
+    if 10 <= dst <= 200:
+        return dst
+    return 0
 
 
 def get_current_position() -> Tuple[int, int]:

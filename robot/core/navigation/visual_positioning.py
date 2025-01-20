@@ -37,10 +37,15 @@ def camera_position(image_size: Tuple[int, int], marker: Tuple[int, int],
     return round(x_camera), round(y_camera), round(z_camera)
 
 
-def head_distance_to_wall_distance(head_distance: float, head_rotation_y: float):
+def head_distance_to_wall_distance(head_distance: float, head_rotation_y: float) -> int:
     # 10 - расстояние от камеры до центра робота. Работает только для поворота головы на -90
     # 6 - относителньно постоянная ошибка из-за несоответствия угла вертикального поворота
     return round(head_distance * math.cos(math.radians(head_rotation_y)) + 10 + 6)
+
+
+WALL_Y = 100
+def distance_to_wall_to_y(distance_to_wall: int) -> int:
+    return WALL_Y - distance_to_wall
 
 
 def is_marker_visible() -> bool:
@@ -48,7 +53,7 @@ def is_marker_visible() -> bool:
     return None not in (data, points, bit_positions)
 
 
-def try_get_position(head_rotation_x: int, head_rotation_y: int, head_distance: int) \
+def try_get_position(head_rotation_x: int, head_distance: int, distance_to_wall: int) \
         -> Tuple[Optional[str], Optional[chart.Vector2]]:
     data, points, bit_positions = reader.read_code(CameraAccessor.main_camera.image_hsv)
 
@@ -69,10 +74,8 @@ def try_get_position(head_rotation_x: int, head_rotation_y: int, head_distance: 
 
         side = "left" if head_rotation_x <= 0 else "right"
 
-        distance = head_distance_to_wall_distance(head_distance, head_rotation_y)
-
-        ax, ay = chart.get_absolute_position(f"marker_{side}_{num}", (rx, -distance))
-        print(f"Distance: {distance}, X: {ax}, Y: {ay}")
+        ax, ay = chart.get_absolute_position(f"marker_{side}_{num}", (rx, -distance_to_wall))
+        # print(f"Distance: {distance}, X: {ax}, Y: {ay}")
         return f"marker_{side}_{num}", (ax, ay)
     except KeyError:
         print(f"Unknown point {f'marker_{side}_{num}'}")

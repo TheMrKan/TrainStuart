@@ -28,24 +28,25 @@ def sleep(secs: float, cancellation: Optional[CancellationToken] = None):
         time.sleep(secs)
 
 
-def await_event(event: Event, timeout: Optional[float] = None, cancellation: Optional[CancellationToken] = None, step: float = 0.1):
+def await_event(event: Event, timeout: Optional[float] = None, cancellation: Optional[CancellationToken] = None, step: float = 0.1) -> bool:
     if cancellation is None:
-        event.wait(timeout)
-        return
+        return event.wait(timeout)
     
     start = time.time()
     if timeout is not None:
         if timeout <= 0:
-            return
+            return False
         while True:
             if cancellation.cancellation_event.is_set():
                 raise InterruptedError
             t = time.time() - start
-            if t >= timeout or event.wait(timeout=min(step, timeout - t)):
-                break
+            if t >= timeout:
+                return False
+            if event.wait(timeout=min(step, timeout - t)):
+                return True
     else:
         while True:
             if cancellation.cancellation_event.is_set():
                 raise InterruptedError
             if event.wait(timeout=step):
-                break
+                return True

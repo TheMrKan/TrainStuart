@@ -16,7 +16,7 @@ ROBOT_DIMENSIONS = (13, 44, 13, 44)
 Габаритные размеры робота в сантиметрах в 4 стороны относительно точки, которая считается позицией робота. Порядок: Y+, X+, Y-, X-
 """
 
-GAP = 10
+GAP = 5
 """
 Минимальный зазор в сантиметрах между корпусом робота и препятствием при построении маршрута
 """
@@ -60,6 +60,10 @@ def find_start_position() -> Optional[chart.Vector2]:
 
     while True:
         head_distance = robot_interface.get_camera_distance()
+        if head_distance == 0:
+            time.sleep(0.05)
+            continue
+
         wall_distance = visual_positioning.head_distance_to_wall_distance(head_distance, robot_interface.head_vertical)
 
         y = zone.p0[1] - wall_distance
@@ -111,7 +115,12 @@ def try_find_marker(direction: bool) -> Optional[Vector2]:
             logger.error(f"Failed to go until marker on the {'right' if direction else 'left'}")
             return None
 
-        head_distance = robot_interface.get_camera_distance()
+        while True:
+            head_distance = robot_interface.get_camera_distance()
+            if head_distance:
+                break
+            time.sleep(0.05)
+
         marker_name, pos = visual_positioning.try_get_position(robot_interface.head_horizontal,
                                                                robot_interface.head_vertical,
                                                                head_distance)
@@ -123,9 +132,9 @@ def try_find_marker(direction: bool) -> Optional[Vector2]:
         return pos
 
 
-def go_until_marker(direction: bool, timeout: float = 8, delay: float = 0.5) -> bool:
+def go_until_marker(direction: bool, timeout: float = 20, delay: float = 0.5) -> bool:
     t = time.time()
-    delta = 40 * (1 if direction else -1)
+    delta = 20 * (1 if direction else -1)
 
     while time.time() - t < timeout:
         robot_interface.move_to(robot_interface.current_x + delta, robot_interface.current_y)
@@ -186,9 +195,19 @@ def __are_nearly_equal(a: float, b: float, limit: float = 3):
     return abs(a - b) <= limit
 
 
+def __sqr_distance(a: Vector2, b: Vector2):
+    return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2
+
+
+def __is_inside(point: Vector2, area: chart.Zone, gap: int = 0):
+    return (area.p1[1] + gap <= point[1] <= area.p0[1] - gap) #(area.p0[0] + gap <= point[0] <= area.p1[0] - gap) and \
+
+
+
+
 def prepare_movement(destination: Vector2, head_y_override: Optional[int] = None) -> Movement:
     movement = Movement()
-    movement.start = (current_x, current_y)
+    movement.start = (robot_interface.current_x, robot_interface.current_y)
     movement.destination = destination
     movement.head_rotation_y = head_y_override or MOVING_HEAD_Y
 
@@ -200,8 +219,8 @@ def prepare_movement(destination: Vector2, head_y_override: Optional[int] = None
         line_y = 0
 
     movement.intermediate_points = []
-    if not __are_nearly_equal(current_y, line_y):
-        movement.intermediate_points.append((current_x, line_y))
+    if not __are_nearly_equal(robot_interface.current_y, line_y):
+        movement.intermediate_points.append((robot_interface.current_x, line_y))
     if not __are_nearly_equal(line_y, destination[1]):
         movement.intermediate_points.append((destination[0], line_y))
 
@@ -209,92 +228,96 @@ def prepare_movement(destination: Vector2, head_y_override: Optional[int] = None
 
 
 def process_movement(movement: Movement):
-    global current_x, current_y, current_movement
+    global current_movement
 
-    control_panel.send_robot_path([movement.start, *movement.intermediate_points, movement.destination])
+    move_points = [movement.start, *movement.intermediate_points, movement.destination]
+    control_panel.send_robot_path(move_points)
 
     current_movement = movement
-    control_panel.update_robot_pos(*movement.start)
+    control_panel.update_robot_pos(*robot_interface.get_current_position())
 
     robot_interface.set_head_rotation(movement.head_rotation_x, movement.head_rotation_y)
     time.sleep(0.5)
 
-    for point in (*movement.intermediate_points, movement.destination):
+    marker_name = None
+    marker_ts = 0
+    point_index = 1
+    correction_point_idx = []
+    while point_index < len(move_points):
+        point = move_points[point_index]
+        should_check_passage = point_index not in correction_point_idx
+        should_check_passage = should_check_passage and not (robot_interface.current_y + ROBOT_DIMENSIONS[0] + GAP >= passage.p0[1] \
+                        or robot_interface.current_y - ROBOT_DIMENSIONS[2] - GAP <= passage.p1[1])
+        should_check_passage = should_check_passage and not (point[1] + ROBOT_DIMENSIONS[0] + GAP >= passage.p0[1] \
+                        or point[1] - ROBOT_DIMENSIONS[2] - GAP <= passage.p1[1])
+
+        logger.debug(f"Target point index: {point_index}; point: {point}; passage: {should_check_passage}")
 
         thread = Thread(target=robot_interface.move_to, args=(point[0], point[1]))
         thread.start()
+        time.sleep(0.5)
 
-        if abs(current_x - point[0]) > abs(current_y - point[1]):
-            time.sleep(0.5)
-
-            last_send_pos: Optional[chart.Vector2] = None
-            last_send_time: float = 0
-            marker_name = None
-            marker_counter = 0
-            while thread.is_alive():
-                head_distance = robot_interface.get_camera_distance()
-                time.sleep(0.01)
-
-                #print(head_distance, current_y, 86, robot_interface.head_vertical)
-                _marker_name, pos = visual_positioning.try_get_position(
-                    robot_interface.head_horizontal,
-                    robot_interface.head_vertical,
-                    head_distance
-                )
-
-                if not _marker_name:
-                    marker_name = None
-                    marker_counter = 0
-
-                    _path = (time.time() - last_send_time) * robot_interface.WHEELS_SPEED_X
-                    if current_x > point[0]:
-                        _path = -_path
-                    _last_x = last_send_pos[0] if last_send_pos is not None else current_x
-                    _x = int(round(_last_x + _path))
-                    control_panel.update_robot_pos(_x, current_y)
-                    continue
-                else:
-                    if _marker_name != marker_name:
-                        marker_counter = 0
-                        marker_name = _marker_name
-
-                    marker_counter += 1
-                    if marker_counter < 30:
-                        continue
-
-                if last_send_pos is None or abs(last_send_pos[0] - pos[0]) > 1:
-                    if last_send_pos is None or abs(last_send_pos[0] - pos[0]) < (time.time() - last_send_time) * robot_interface.WHEELS_SPEED_X * 3:
-                        logger.debug(pos)
-                        robot_interface.set_actual_pos(*pos)
-                        control_panel.update_robot_pos(*pos)
-                        last_send_pos = pos
-                        last_send_time = time.time()
-                    else:
-                        logger.debug(f"Delta is too big ({abs(last_send_pos[0] - pos[0]):.1f} / {(time.time() - last_send_time) * robot_interface.WHEELS_SPEED_X * 2.5:.1f})")
-                else:
-                    #logger.debug(f"Delta is too low ({abs(last_send_pos[0] - pos[0]):.1f})")
-                    pass
-
-            logger.debug("Loop completed")
-
-        else:
-            last_send_time = time.time()
-            while thread.is_alive():
-                speed = robot_interface.WHEELS_SPEED_Y_RIGHT \
-                        if current_y > point[1] \
-                        else robot_interface.WHEELS_SPEED_Y_LEFT
-                _path = (time.time() - last_send_time) * speed
-                if current_y > point[1]:
-                    _path = -_path
-                _y = int(round(current_y + _path))
-                control_panel.update_robot_pos(current_x, _y)
-
+        while thread.is_alive():
+            head_distance = robot_interface.get_camera_distance()
+            if head_distance == 0:
                 time.sleep(0.05)
+                continue
+            distance_to_wall = visual_positioning.head_distance_to_wall_distance(head_distance, robot_interface.head_vertical)
 
-        time.sleep(2)
+            time.sleep(0.01)
 
-        current_x, current_y = point
-        control_panel.update_robot_pos(current_x, current_y)
+            robot_interface.get_current_position()
+
+            _marker_name, pos = visual_positioning.try_get_position(
+                robot_interface.head_horizontal,
+                head_distance,
+                distance_to_wall
+            )
+
+            valid = False
+            if not pos:
+                marker_name = None
+            else:
+
+                valid = _marker_name == marker_name and time.time() - marker_ts > 0.3
+                valid = valid and __sqr_distance((robot_interface.current_x, robot_interface.current_y), pos) < 40 ** 2
+
+                if _marker_name != marker_name:
+                    marker_name = _marker_name
+                    marker_ts = time.time()
+
+            if valid:
+                robot_interface.set_actual_pos(*pos)
+            else:
+                robot_interface.set_actual_pos(robot_interface.current_x,
+                                               visual_positioning.distance_to_wall_to_y(distance_to_wall))
+
+            if should_check_passage and \
+                    __sqr_distance(point, (robot_interface.current_x, robot_interface.current_y)) > 15 ** 2 and \
+                    __sqr_distance(move_points[point_index-1],(robot_interface.current_x, robot_interface.current_y)) > 15 ** 2 and \
+                    ((robot_interface.current_y + ROBOT_DIMENSIONS[0] + GAP >= passage.p0[1]) \
+                    or robot_interface.current_y - ROBOT_DIMENSIONS[2] - GAP <= passage.p1[1]):
+                logger.debug(f"Collision detected: {robot_interface.current_y + ROBOT_DIMENSIONS[0] + GAP} "
+                             f"{robot_interface.current_y - ROBOT_DIMENSIONS[2]} "
+                             f"{move_points}")
+                correction_target = (robot_interface.current_x, point[1])
+                move_points.insert(point_index, correction_target)
+                move_points.insert(point_index, (robot_interface.current_x, robot_interface.current_y))
+                correction_point_idx.append(point_index+1)
+                logger.debug(f"{move_points}")
+                control_panel.send_robot_path(move_points)
+
+                act = robot_interface.get_current_position()
+                robot_interface.set_actual_pos(*point)
+                time.sleep(0.3)
+                robot_interface.set_actual_pos(*act)
+                time.sleep(0.3)
+
+            time.sleep(0.01)
+
+        point_index += 1
+        time.sleep(0.3)
+
     control_panel.send_robot_path([])
     current_movement = None
     time.sleep(1)

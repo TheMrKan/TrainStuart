@@ -1,5 +1,5 @@
 import time
-
+import logging
 import serial
 from multiprocessing import Process, Manager, Event
 from threading import Thread
@@ -8,6 +8,8 @@ from utils.cancelations import CancellationToken, await_event
 from robot.config import instance as config
 from robot.hardware.serial_process import SharedProtocol, begin, Command, Request
 from pymitter import EventEmitter
+
+logger = logging.getLogger(__name__)
 
 
 process: Process
@@ -118,7 +120,14 @@ def send_request(request_code: str,
     on_message_sent.clear()
 
     if response:
-        return await_response(request_code, timeout, cancellation)
+        try:
+            return await_response(request_code, timeout, cancellation)
+        except InterfaceError as e:
+            logger.error(f"Protocol error during request '{request_code}'", exc_info=e)
+            return None
+        except TimeoutError:
+            logger.error(f"Timeout reached ({timeout} seconds) during request '{request_code}'")
+            return None
     return None
 
 
@@ -132,16 +141,26 @@ def await_completion(timeout: Optional[float] = None, cancellation: Optional[Can
     on_completion_received.clear()
 
 
+class InterfaceError(Exception):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
 def await_response(code: str, timeout: Optional[float] = None, cancellation: Optional[CancellationToken] = None) -> list:
     wrong_left = 3
+    _wrong = []
     while wrong_left:
-        await_event(on_response_received, timeout, cancellation)
+        is_timeout = not await_event(on_response_received, timeout, cancellation)
+        if is_timeout:
+            raise TimeoutError
+
         if shared.response_code != code:
             wrong_left -= 1
+            _wrong.append(shared.response_code)
             continue
         on_response_received.clear()
         return shared.response_args or []
-    raise RuntimeError("Received several responses with wrong codes")
+    raise InterfaceError(f"Received several responses with wrong codes ({_wrong})")
 
 
 def __watcher():
