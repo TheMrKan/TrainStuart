@@ -4,6 +4,7 @@ import time
 
 class BaseBehaviour:
 
+    RESTART_ON_EXCEPTION = True
     logger: logging.Logger
 
     def __init__(self):
@@ -20,6 +21,8 @@ class BaseBehaviour:
                         break
                 except Exception as e:
                     self.logger.exception("Unhandled exception in __behave", exc_info=e)
+                    if not self.RESTART_ON_EXCEPTION:
+                        break
 
         finally:
             self.finalize()

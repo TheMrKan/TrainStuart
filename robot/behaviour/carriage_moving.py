@@ -11,6 +11,7 @@ from robot.gui.idle import IdleApp
 
 
 class CarriageMovingBehaviour(BaseBehaviour):
+    RESTART_ON_EXCEPTION = False
 
     def __init__(self):
         super().__init__()
