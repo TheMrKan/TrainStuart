@@ -75,6 +75,9 @@ class InteractionApp(BaseApp):
         AudioOutput.play_async("other_help.wav")
 
     def shutdown(self):
+        if not self.is_running:
+            return
+
         AudioOutput.play_async("goodbye.wav")
         super().shutdown()
 

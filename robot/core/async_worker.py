@@ -67,18 +67,20 @@ class AsyncWorker:
         self.__parameters = parameters
 
         try:
-            t = time.time()
+            print("[WORKER] Init stage 1")
             import utils.faces as face_util
             self.__face_util = face_util
             self.__face_util.load_dependencies(parameters.resources_dir)
 
-            t = time.time()
+            print("[WORKER] Init stage 2")
             img = cv2.imread(os.path.join(parameters.resources_dir, "face.jpg"))
             self.__face_util.get_face_descriptor(img)
 
+            print("[WORKER] Init stage 3")
             import utils.docs_reader as scanner
             self.__scanner = scanner
 
+            print("[WORKER] Init completed")
             self.__parameters.connection.send(InitializedResponse())
         except Exception as e:
             self.__parameters.connection.send(ExceptionResponse(e))

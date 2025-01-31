@@ -41,10 +41,10 @@ class StationIdleBehaviour(BaseBehaviour):
             time.sleep(1)
             self.__app.set_interaction(inter)
 
-            while True:
+            while self.__app.is_running:
                 state = interaction.update_face_state()
                 if state == state.LOST or state == state.WAITING:
-                    robot_interface.head_horizontal_stop()
+                    robot_interface.head_horizontal_run(robot_interface.RotationDirection.STOP)
                     self.logger.debug("Face lost. Stopping interaction...")
                     break
                 interaction.rotate_to_face()

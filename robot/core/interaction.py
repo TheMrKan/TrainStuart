@@ -158,8 +158,9 @@ def rotate_to_face():
         direction = robot_interface.RotationDirection.LEFT if delta > 0 else robot_interface.RotationDirection.RIGHT
         robot_interface.head_horizontal_run(direction)
         time.sleep(0.1)
-    else:
-        logger.debug(f"Face is too far from center. Returning...")
+    elif is_moving:
+        # logger.debug(f"Face is too far from center. Returning...")
+        is_moving = False
         robot_interface.head_horizontal_run(robot_interface.RotationDirection.STOP)
 
     stream = control_panel.get_stream("rotate_to_face", "Наведение на лицо")

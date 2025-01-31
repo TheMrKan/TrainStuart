@@ -59,9 +59,9 @@ class Runtime:
             startup_app.shutdown()
 
         # VideoBehaviour().run()
-        # StationIdleBehaviour().run()
+        StationIdleBehaviour().run()
         # DocumentsCheckBehaviour().run()
-        CarriageMovingBehaviour().run()
+        # CarriageMovingBehaviour().run()
 
         #InteractionApp().run()
 
@@ -69,7 +69,7 @@ class Runtime:
             time.sleep(1)
 
     def __initialize(self, status_log: Callable[[str, ], None]):
-        AsyncProcessor.initialize(await_init=False, timeout=30)
+        AsyncProcessor.initialize(await_init=False, timeout=120)
 
         status_log("Настройка камер...")
         CameraAccessor.initialize()
@@ -96,7 +96,7 @@ class Runtime:
 
         AudioOutput.FILES_DIR = config.resources_dir
 
-        if not AsyncProcessor.check_init() and False:
+        if not AsyncProcessor.check_init():
             status_log("Загрузка обработчика...")
             while not AsyncProcessor.check_init():
                 time.sleep(0.5)

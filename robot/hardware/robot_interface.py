@@ -67,14 +67,13 @@ def set_head_rotation(horiz: int, vert: int, completion=True):
     head_vertical = vert
 
 
-def head_horizontal_stop():
-    iserial.send_command("S")
-
-
 class RotationDirection(enum.Enum):
     LEFT = -1
     STOP = 0
     RIGHT = 1
+
+
+current_head_rotation_direction = RotationDirection.STOP
 
 
 def head_horizontal_run(direction: RotationDirection):
@@ -82,6 +81,12 @@ def head_horizontal_run(direction: RotationDirection):
     Запускает бесконечное вращение головы. Обязательно должна быть вызвана функция остановки.
     :param direction: >1 - вправо, <1 - влево, 0 - остановка
     """
+    global current_head_rotation_direction
+
+    if direction == current_head_rotation_direction:
+        return
+
+    current_head_rotation_direction = direction
     iserial.send_command("Hi", direction.value)
 
 

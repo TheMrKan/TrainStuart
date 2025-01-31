@@ -27,7 +27,7 @@ class AsyncProcessor:
     __init_timeout: float
 
     @classmethod
-    def initialize(cls, await_init: bool = False, timeout: float = 30):
+    def initialize(cls, await_init: bool = False, timeout: float = 120):
 
         cls.__response_awaiter = None
 
