@@ -8,11 +8,12 @@
 
 #include <Multiservo.h>
 #include "defs.h"
-
+#include "Adafruit_VL53L1X.h"
 
 class Head {
 public:
-  Head(Multiservo* _servo, Multiservo* _brake);
+  Head(Multiservo* _servo, Multiservo* _brake, Adafruit_VL53L1X* loxHead);
+  uint16_t getDistance();
   void begin();
   void home();
   void tick();
@@ -30,6 +31,7 @@ private:
   void tickY();
   Multiservo* servo;
   Multiservo* brake;
+  Adafruit_VL53L1X* loxHead;
   int servoHeadPin = 11;
 
   bool headLoopRunning = false, servoLoopRunning = false;

@@ -13,9 +13,29 @@ EncButton enc(CLK, DT);
 
 const int INF = 1000;
 
-Head::Head(Multiservo* _servo, Multiservo* _brake) {
+Head::Head(Multiservo* _servo, Multiservo* _brake, Adafruit_VL53L1X* _loxHead) {
   servo = _servo;
   brake = _brake;
+  loxHead = _loxHead;
+}
+
+uint16_t Head::getDistance() {
+  if (loxHead->dataReady()) {
+    int16_t distance = loxHead->distance();
+    if (distance == -1) {
+      // something went wrong!
+      Serial.print(F("Couldn't get distance: "));
+      Serial.println(loxHead->vl_status);
+      return 0;
+    }
+
+    loxHead->clearInterrupt();
+    return distance;
+  }
+  else {
+    // Serial.println("Distance data is not ready");
+    return 0;
+  }
 }
 
 static void Head::isr() {
@@ -27,7 +47,7 @@ void Head::begin() {
   pinMode(47, OUTPUT);
   pinMode(49, OUTPUT);
   pinMode(22, INPUT_PULLUP);
-  pinMode(HEAD_MARKER, INPUT_PULLUP);
+  pinMode(HEAD_MARKER, INPUT);
 
   attachInterrupt(0, isr, CHANGE);
   attachInterrupt(1, isr, CHANGE);
@@ -43,19 +63,17 @@ void Head::tick() {
   tickY();
 }
 
+bool isHeadMarker() {
+  return analogRead(HEAD_MARKER) > 1000;
+}
+
 /*
   Если при вызове команды "Hi 1" голова поворачивается в крайний угол (158), 
   то после повторного вызова этой же функции назад он не поедет (потому что текущий угол не перзаписывается)
 */
 void Head::tickX() {
   enc.tick();
-  int _currentX = currentX + round(-enc.counter / angleTicks);
-
-  if (!digitalRead(HEAD_MARKER)) {
-    enc.counter = 0;
-    _currentX = -90;
-    currentX = -90;
-  }
+  
 
   if (isEnd()) {
     if (!endFlag) {
@@ -66,8 +84,20 @@ void Head::tickX() {
 
   if (!headLoopRunning) return;
 
+  // Serial.println(-enc.counter);
+  int _currentX = currentX + round(-enc.counter / angleTicks);
+
+  if (isHeadMarker()) {
+     
+     enc.counter = 0;
+     const int angle = round((float)_currentX / (float)HEAD_MARKER_STEP) * HEAD_MARKER_STEP;
+     // Serial.println("HEAD MARKER " + String(angle) + " " + String((float)_currentX / (float)HEAD_MARKER_STEP) + " " + String(_currentX));
+     _currentX = angle;
+     currentX = angle;
+   }
+
   if ((!dir && isEnd()) || (dir && _currentX >= (headInputRight - 2))) {
-    Serial.println(currentX);
+    // Serial.println(currentX);
     stop();
     return;
   }
@@ -85,7 +115,7 @@ void Head::tickX() {
 
   if (abs(targetX) != INF && ((delta > 0) != deltaSign || delta == 0)) {
     stop();
-    Serial.println(currentX);
+    // Serial.println(currentX);
     return;
   }
   // Serial.println(deltaSign);
@@ -95,7 +125,7 @@ void Head::tickX() {
 
   stateX = false;
   analogWrite(EN_Head, localPower);
-  Serial.println(_currentX);
+  // Serial.println(_currentX);
 }
 
 void Head::tickY() {
@@ -207,6 +237,8 @@ void Head::rotateXInf(int _dir) {
   stateX = false;
   stateY = true;
 
+  Serial.println("Head rotation inf: dir - " + String(_dir) + "; currentX - " + String(currentX));
+
   dir = _dir > 0;
   enc.counter = 0;
   targetX = INF;
@@ -220,6 +252,11 @@ void Head::rotateY(int y) {
   if (y == 0) targetY = HeadCenter;
   if (y > 0) targetY = map(y, headInputCenter, headInputUp, HeadCenter, HeadUp);
   else targetY = map(y, headInputCenter, headInputDown, HeadCenter, HeadDown);
+
+  if (abs(targetY - currentY) <= 2) {
+    stateY = true;
+    return;
+  }
 
   if (targetY > currentY) dirY = true;
   else dirY = false;
@@ -246,10 +283,9 @@ void Head::stop() {
 }
 
 bool Head::isCompleted() {
-  if (stateX || stateY) {
-    // Serial.print(stateX);
-    // Serial.println(stateY);
-  }
+  // if (stateX || stateY) {
+  //   Serial.println("State head: " + String(stateX) + " " + String(stateY));
+  // }
 
   if (stateX && stateY) {
     stateX = false;

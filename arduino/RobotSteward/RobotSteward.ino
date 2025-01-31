@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Wire.h>
 
 #include <Multiservo.h>
 // Задаём количество сервоприводов
@@ -29,39 +30,30 @@ VL53L0X_RangingMeasurementData_t measureHead;
 
 // Подключаем голову
 #include "Head.h"
-Head head(&multiservo[7], &multiservo[8]);
+Head head(&multiservo[7], &multiservo[8], &loxHead);
 
 #include "Laser.h"
-// Laser laserF(&multiservo[9], &lox2, FRONT);
-// Laser laserB(&multiservo[10], &lox1, BACK);
 Laser laserF(&multiservo[10], &lox1, 10);
 Laser laserB(&multiservo[9], &lox2, 9);
 
+// Библиотека для работы с модулями IMU
+#include "CompassRemote.h"
+CompassRemote compass;
+struct CompassData compassData;
+
 #include "motor.h"
-motor wheels(&laserF, &laserB);
+motor wheels(&laserF, &laserB, &compass);
+
+#include "Align.h"
+Align align(&wheels, &head);
 
 #include "Containers.h"
 Containers up_front(&multiservo[2], UP_FRONT);
 Containers up_back(&multiservo[3], UP_BACK);
 Containers down(&multiservo[4], DOWN);
 
-// Библиотека для работы с модулями IMU
-#include <TroykaIMU.h>
-
 #include "RotationPID.h"
 RotationPID pid;
-
-// Создаём объект для работы с магнитометром/компасом
-Compass compass;
-
-const float compassCalibrationBias[3] = { 567.893, -825.35, 1061.436 };
-
-const float compassCalibrationMatrix[3][3] = { { 1.909, 0.082, 0.004 },
-                                               { 0.049, 1.942, -0.235 },
-                                               { -0.003, 0.008, 1.944} };
-
-float start_z, z;
-float filter, delta;
 
 #define DEBUG_SERIAL true
 
@@ -76,26 +68,6 @@ uint16_t dist;
 
 int lastHead;
 unsigned long tmr;
-
-//enum Box {
-//  DRAWER_BACK = 5,    // задний
-//  DRAWER_FRONT = 6,    // передний
-//  UP_BACK = 3,  // Задний
-//  UP_FRONT = 2,  //Передний
-//  DOWN = 4
-//};
-//
-//enum State {
-//  CLOSE = 0,
-//  OPEN_LEFT = 1,
-//  OPEN_RIGHT = 2
-//};
-//
-//State drawer1 = CLOSE;
-//State drawer2 = CLOSE;
-//State up_1 = CLOSE;
-//State up_2 = CLOSE;
-//State down = CLOSE;
 
 #include "Touch.h"
 Touch touchFront = Touch(FRONT_SENSOR);
@@ -128,7 +100,7 @@ void setID() {
 
   // initing LOX1
   if (!lox1.begin(LOX1_ADDRESS)) {
-    Serial.println(F("Failed to boot first VL53L0X"));
+    Serial.println(F("Failed to boot FRONT VL53L0X"));
     while (1);
   }
   delay(10);
@@ -139,10 +111,10 @@ void setID() {
   delay(10);
 
   // initing LOX2
-  if (!lox2.begin(LOX2_ADDRESS)) {
-    Serial.println(F("Failed to boot second VL53L0X"));
-    while (1);
-  }
+  // if (!lox2.begin(LOX2_ADDRESS)) {
+  //   Serial.println(F("Failed to boot BACK VL53L0X"));
+  //   while (1);
+  // }
   delay(10);
 
   // digitalWrite(SHT_LOXHead, HIGH);
@@ -207,10 +179,12 @@ void scanI2C() {
   }
 }
 
-#include <Wire.h>
 void setup() {
   Serial.begin(9600);
   IO = SerialIO();
+
+  compass.init();
+  Serial.println("[SETUP] Compass begin OK");
 
   // Перебираем значения моторов от 0 до 11 (3 ящика, 2 лидара, 2 сервы в голове)
   /*
@@ -236,9 +210,6 @@ void setup() {
   multiservo[DRAWER_FRONT].write(95);    // остановка переднего выдвижного
 
   // Маленькие ящики в закрытое положение
-  // multiservo[UP_FRONT].write(UpBack_Center);    // UpFront и UpBack перепутаны !!!
-  // multiservo[UP_BACK].write(UpFront_Center);
-  // multiservo[DOWN].write(Down_Center);
   up_front.begin();
   up_back.begin();
   down.begin();
@@ -255,10 +226,10 @@ void setup() {
   // loxHead.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
   // Serial.println("[SETUP] L0X HEAD config OK");
 
-  lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
+  // lox1.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
   Serial.println("[SETUP] L0X FORWARD config OK");
 
-  lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
+  // lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
   Serial.println("[SETUP] L0X BACKWARD config OK");
 
   // laserF.begin();
@@ -272,28 +243,22 @@ void setup() {
 
   Serial.println("[SETUP] Going home...");
   head.home();
-  // Serial.println("HOME");
+  Serial.println("HOME");
   getReady = false;
 
-  // start_z = readDeltaAngle();
-  // pid.setConfig(start_z, 150, PID::L);
-  // Serial.println("[SETUP] setConfig ok");
+  // pid.setConfig(1, 150, PID::L);
   scanI2C();
   Serial.println("[SETUP] Setup OK");
 }
 
-float readDeltaAngle() {
-  Serial.println("readAz");
-  return compass.readAzimut();
-}
-
-
 unsigned long loopTime, totalLoopTime;
 
 void loop() {
-  Serial.println("LOOP");
   loopTime = millis();
   head.tick();
+  compass.tick();
+  // compassData = compass.readData();
+  // if (compassData.isReady) pid.setDelta(compassData.delta);
   // laserF.tick();
   // laserB.tick();
   
@@ -304,13 +269,13 @@ void loop() {
   up_back.tick();
   down.tick();
 
+  align.tick();
+
   wheels.setBlocked(touchFront.isTouched() || touchBack.isTouched());
   wheels.tick();
 
-  // readDeltaAngle(&z);
-  // pid.setAngle(z);
-
   // pid.setSpeed();
+  // wheels.setSpeed4(pid.BL, pid.BR, pid.FL, pid.FR);
 
   if (head.isCompleted()) {
     if (!getReady) {
@@ -342,13 +307,6 @@ void handleMessage(struct Message message) {
   // #endif
   if (message.type == COMMAND) {
     Serial.println(message.code);
-    /*if (message.code != "M" && message.code != "Mt") {
-      laserF.scanStop();
-      laserB.scanStop();
-    } else {
-      laserF.scanStart();
-      laserB.scanStart();
-    }*/
 
     if (message.code == "H") {          // Движение головой на (x, y)
       IO.sendConfirmation();
@@ -375,9 +333,14 @@ void handleMessage(struct Message message) {
     } 
     else if (message.code == "M") {     // Движение робота на (x, y)
       IO.sendConfirmation();
-      // readDeltaAngle(&start_z);
-      // pid.setConfig(start_z, 150, PID::L);
+      compass.on();
       wheels.run(message.args[0], message.args[1]);
+    }
+    else if (message.code == "Rot") {     // Вращение. 0 - стоп; >0 - по часовой; <0 - против часовой
+      IO.sendConfirmation();
+      if (message.args[0] == 0) wheels.go(Stop);
+      else if  (message.args[0] < 0) wheels.go(RotateL);
+      else wheels.go(RotateR);
     } 
     else if (message.code == "C") {     // Управление контейнерами
       IO.sendConfirmation();
@@ -445,15 +408,26 @@ void handleMessage(struct Message message) {
     else if (message.code == "P") {     // Ввод текущих координат робота
       IO.sendConfirmation();
       wheels.setCurrentPosition(message.args[0], message.args[1]);
+    }
+    else if (message.code == "Al") {
+      IO.sendConfirmation();
+      align.run(-90);
     } 
     else {
       Serial.println("Unknown code: " + message.code);
     }
   } else {
-    IO.sendConfirmation();
-    dist = getDistanse();
-    struct Message outgoingMessage = IO.produceMessage(RESPONSE, "Hd", dist);
-    IO.sendMessage(outgoingMessage);
+    if (message.code == "Hd") {
+      IO.sendConfirmation();
+      dist = head.getDistance();
+      struct Message outgoingMessage = IO.produceMessage(RESPONSE, "Hd", dist);
+      IO.sendMessage(outgoingMessage);
+    }
+    else if (message.code == "P") {
+      IO.sendConfirmation();
+      struct Message outgoingMessage = IO.produceMessage(RESPONSE, "P", wheels.currentX, wheels.currentY);
+      IO.sendMessage(outgoingMessage);
+    }
   }
 }
 
@@ -470,30 +444,6 @@ void handleMessage(struct Message message) {
 // }
 // #endif
 
-uint16_t getDistanse() {
-  Serial.println("Get distance");
-  if (loxHead.dataReady()) {
-    Serial.println("Distance data ready");
-    int16_t distance = loxHead.distance();
-    if (distance == -1) {
-      // something went wrong!
-      Serial.print(F("Couldn't get distance: "));
-      Serial.println(loxHead.vl_status);
-      return 0;
-    }
-    Serial.print(F("Distance: "));
-    Serial.print(distance);
-    Serial.println(" mm");
-
-    loxHead.clearInterrupt();
-    return distance;
-  }
-  else {
-    Serial.println("Distance data is not ready");
-    return 0;
-  }
-}
-
 void BoxMove(int index, int side) {
     BoxState currentBox;
     switch(side) {
@@ -509,158 +459,3 @@ void BoxMove(int index, int side) {
         case 4: break;
     }
 }
-
-//void BoxMove(int index, int side) { // Переписать полностью
-//  Box box;
-//  State state;
-//  switch (index) {
-//    case 0: box = DOWN; break;
-//    case 1: box = UP_BACK; break;
-//    case 2: box = UP_FRONT; break;
-//    case 3: box = DRAWER_BACK; break;
-//    case 4: box = DRAWER_FRONT; break;
-//  }
-//  switch (side) {
-//    case 0: state = CLOSE; break;
-//    case 1: state = OPEN_RIGHT; break;
-//    case 2: state = OPEN_LEFT; break;
-//  }
-//  // Serial.println("Box mapped: " + String(box) + " " + String(state));
-//
-//
-//  switch (box) {  // Выполнение запрашиваемой функции
-//    case DRAWER_BACK:
-//    case DRAWER_FRONT:
-//      if (state == CLOSE) {
-//        int sensor;
-//        State drawer;
-//        if (box == DRAWER_BACK) {
-//          sensor = SENSOR_DRAVER_1;
-//          drawer = drawer1;
-//        } else {
-//          sensor = SENSOR_DRAVER_2;
-//          drawer = drawer2;
-//        }
-//
-//        tmr = millis();
-//        while (millis() - tmr <= 4000) {
-//          if (digitalRead(sensor)) break;
-//          if (drawer == OPEN_RIGHT) multiservo[box].write(120);
-//          else if (drawer == OPEN_LEFT) multiservo[box].write(60);
-//        }
-//        multiservo[box].write(95);
-//
-//        if (box == DRAWER_BACK) drawer1 = CLOSE;
-//        else drawer2 = CLOSE;
-//      } else if (state == OPEN_RIGHT) {
-//
-//        tmr = millis();
-//        while (millis() - tmr <= 3000) multiservo[box].write(60);
-//        multiservo[box].write(95);
-//
-//        if (box == DRAWER_BACK) drawer1 = OPEN_RIGHT;
-//        else drawer2 = OPEN_RIGHT;
-//      } else {
-//
-//        tmr = millis();
-//        while (millis() - tmr <= 3000) multiservo[box].write(120);
-//        multiservo[box].write(95);
-//
-//        if (box == DRAWER_BACK) drawer1 = OPEN_LEFT;
-//        else drawer2 = OPEN_LEFT;
-//      }
-//      IO.sendCompletion();
-//      break;
-//
-//
-//    case UP_FRONT:
-//      if (state == CLOSE) {
-//        if (up_2 == OPEN_RIGHT) {
-//          for (int i = UpFront_Right; i <= UpFront_Center; ++i) {
-//            multiservo[box].write(i);
-//            delay(30);
-//          }
-//        } else if (up_2 == OPEN_LEFT) {
-//          for (int i = UpFront_Left; i >= UpFront_Center; --i) {
-//            multiservo[box].write(i);
-//            delay(30);
-//          }
-//        } else multiservo[box].write(UpFront_Center);
-//        up_2 = CLOSE;
-//      } else if (state == OPEN_RIGHT) {
-//        for (int i = UpFront_Center; i >= UpFront_Right; --i) {
-//          multiservo[box].write(i);
-//          delay(30);
-//        }
-//        up_2 = OPEN_RIGHT;
-//      } else {
-//        for (int i = UpFront_Center; i <= UpFront_Left; ++i) {
-//          multiservo[box].write(i);
-//          delay(30);
-//        }
-//        up_2 = OPEN_LEFT;
-//      }
-//      IO.sendCompletion();
-//      break;
-//    case UP_BACK:
-//      if (state == CLOSE) {
-//        if (up_1 == OPEN_RIGHT) {
-//          for (int i = UpBack_Right; i <= UpBack_Center; ++i) {
-//            multiservo[box].write(i);
-//            delay(30);
-//          }
-//        } else if (up_1 == OPEN_LEFT) {
-//          for (int i = UpBack_Left; i >= UpBack_Center; --i) {
-//            multiservo[box].write(i);
-//            delay(30);
-//          }
-//        } else multiservo[box].write(UpBack_Center);
-//        up_1 = CLOSE;
-//      } else if (state == OPEN_RIGHT) {
-//        for (int i = UpBack_Center; i >= UpBack_Right; --i) {
-//          multiservo[box].write(i);
-//          delay(30);
-//        }
-//        up_1 = OPEN_RIGHT;
-//      } else {
-//        for (int i = UpBack_Center; i <= UpBack_Left; ++i) {
-//          multiservo[box].write(i);
-//          delay(30);
-//        }
-//        up_1 = OPEN_LEFT;
-//      }
-//      IO.sendCompletion();
-//      break;
-//
-//
-//    case DOWN:
-//      if (state == CLOSE) {
-//        if (down == OPEN_RIGHT) {  //multiservo[box].read() == Down_Right
-//          for (int i = Down_Right; i <= Down_Center; ++i) {
-//            multiservo[box].write(i);
-//            delay(30);
-//          }
-//        } else if (down == OPEN_LEFT) {
-//          for (int i = Down_Left; i >= Down_Center; --i) {
-//            multiservo[box].write(i);
-//            delay(30);
-//          }
-//        } else multiservo[box].write(Down_Center);
-//        down = CLOSE;
-//      } else if (state == OPEN_RIGHT) {
-//        for (int i = Down_Center; i >= Down_Right; --i) {
-//          multiservo[box].write(i);
-//          delay(30);
-//        }
-//        down = OPEN_RIGHT;
-//      } else {
-//        for (int i = Down_Center; i <= Down_Left; ++i) {
-//          multiservo[box].write(i);
-//          delay(40);
-//        }
-//        down = OPEN_LEFT;
-//      }
-//      IO.sendCompletion();
-//      break;
-//  }
-//}

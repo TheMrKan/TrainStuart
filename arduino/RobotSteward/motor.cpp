@@ -1,10 +1,12 @@
 #include <Arduino.h>
 #include "motor.h"
 #include "defs.h"
+#include "CompassRemote.h"
 
-motor::motor(Laser* _laserF, Laser* _laserB) {
+motor::motor(Laser* _laserF, Laser* _laserB, CompassRemote* _compass) {
   laserF = _laserF;
   laserB = _laserB;
+  compass = _compass;
 }
 // motor::motor() {
 
@@ -29,6 +31,7 @@ void motor::begin() {
 void motor::tick() {
   tickX();
   tickY();
+  tickCorrectingY();
 }
 
 void motor::tickX() {
@@ -74,6 +77,7 @@ void motor::tickY() {
     Serial.println("STOP " + String(currentY) + String(" ") + String(((float)millis() - tmr) / 1000));
     go(Stop);
     moveYLoopRunning = false;
+    isCorrectingY = true;
 
     completeX = true;
     completeY = true;
@@ -85,6 +89,23 @@ void motor::tickY() {
   completeY = false;
 
   // Serial.println("Dir: " + String(dir) + " currentY: " + String(currentY));
+}
+
+void motor::tickCorrectingY() {
+  if (!isCorrectingY) return;
+
+  compassData = compass->readData();
+  Serial.println("DELTA: " + String(compassData.delta));
+
+  if (abs(compassData.delta) <= 1) {
+    isCorrectingY = false;
+    go(Stop);
+    return;
+  }
+
+  if (compassData.delta > 0) {
+    go(RotateL);
+  } else go(RotateR);
 }
 
 void motor::run(int x, int y) {
@@ -129,6 +150,8 @@ void motor::runY(int y) {
   } else completeY = false;
 
   targetY = y;
+  isCorrectingY = false;
+  compass->on();
 
   if (targetY > currentY) dir = Left;
   else dir = Right;
@@ -189,6 +212,13 @@ void motor::setSpeed(int speed, Type type) {
   }
 }
 
+void motor::setSpeed4(int sp1, int sp2, int sp3, int sp4) {
+  setSpeed(sp1, BL);
+  setSpeed(sp2, BR);
+  setSpeed(sp3, FL);
+  setSpeed(sp4, FR);
+}
+
 void motor::go(Move _move) {
   move = _move;
   switch (move) {
@@ -197,7 +227,7 @@ void motor::go(Move _move) {
       motor_run(FR, B);
       motor_run(BL, B);
       motor_run(BR, B);
-      setSpeed(150, ALL);
+      // setSpeed(150, ALL);
       break;
 
     case Backward:
@@ -215,8 +245,8 @@ void motor::go(Move _move) {
       motor_run(BR, B);
       setSpeed(150, BL);
       setSpeed(150, BR);
-      setSpeed(162, FL);
-      setSpeed(162, FR);
+      setSpeed(165, FL);
+      setSpeed(165, FR);
       break;
 
     case Left:
@@ -226,15 +256,24 @@ void motor::go(Move _move) {
       motor_run(BR, F);
       setSpeed(150, BL);
       setSpeed(150, BR);
-      setSpeed(162, FL);
-      setSpeed(162, FR);
+      setSpeed(163, FL);
+      setSpeed(163, FR);
       break;
 
-    case Rotate:
+    case RotateL:       //  Против часовой
       motor_run(FL, F);
       motor_run(FR, B);
       motor_run(BL, F);
       motor_run(BR, B);
+      setSpeed(120, ALL);
+      break;
+    
+    case RotateR:       //  По часовой
+      motor_run(FL, B);
+      motor_run(FR, F);
+      motor_run(BL, B);
+      motor_run(BR, F);
+      setSpeed(120, ALL);
       break;
 
     case Stop:

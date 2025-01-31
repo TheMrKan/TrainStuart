@@ -87,9 +87,9 @@ namespace Down {
 #define HeadUp 179
 #define HeadDown 20
 
-#define headInputUp 30
+#define headInputUp 24    // 24
 #define headInputCenter 0
-#define headInputDown -10
+#define headInputDown -16    // -16
 
 #define headInputRight 160
 #define headInputLeft -165
@@ -100,7 +100,8 @@ const byte DT = 3;
 #define END_CAP 22        // Коневик на голову
 #define FRONT_SENSOR A14  // Передний датчик
 #define BACK_SENSOR A15   // Задний датчик
-#define HEAD_MARKER 17    // Маркер на углы для головы
+#define HEAD_MARKER A13    // Маркер на углы для головы
+#define HEAD_MARKER_STEP 30    // Угол между маркерами
 
 #define MAX_TICK 11090
 
