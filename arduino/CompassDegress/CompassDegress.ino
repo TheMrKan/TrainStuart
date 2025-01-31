@@ -1,3 +1,5 @@
+#include <SoftwareSerial.h>
+
 // Библиотека для работы с модулями IMU
 #include <TroykaIMU.h>
 
@@ -16,8 +18,15 @@ const float compassCalibrationMatrix[3][3] = { { 1.909, 0.082, 0.004 },
                                                { 0.049, 1.942, -0.235 },
                                                { -0.003, 0.008, 1.944} };
 
-float start_z, z;
+float start_angle, angle;
 float filter, delta;
+unsigned long tmr;
+
+bool state = false;
+float _err_measure = 0.8;  // примерный шум измерений
+float _q = 0.1;   // скорость изменения значений 0.001-1, варьировать самому
+
+String buffer = "";
 
 
 void setup() {
@@ -25,6 +34,8 @@ void setup() {
     Serial.begin(9600);
     // Выводим сообщение о начале инициализации
     Serial.println("Compass begin");
+    pinMode(13, OUTPUT);
+    digitalWrite(13, LOW);
     // Инициализируем компас
     compass.begin();
     // Устанавливаем калибровочные данные
@@ -33,41 +44,76 @@ void setup() {
     
     // Выводим сообщение об удачной инициализации
     Serial.println("Initialization completed");
-    readDeltaAngle(&start_z);
-    pid.setConfig(start_z, 150, F);
+    readDeltaAngle(&start_angle);
     Serial.println("setConfig ok");
 }
 
 void loop() {
-    // Выводим азимут относительно оси Z
-    // Serial.print(compass.readAzimut());
-    readDeltaAngle(&z);
-    pid.setAngle(z);
+  String message = readSerial();
+  
+  if (message != "") {
+    Serial.println("message " + message + ";");
+    CompassOn();
+  }
 
-    pid.setSpeed();
-    // Serial.print(pid.currentState.delta);
-    // Serial.print("\t");
-    // Serial.print(pid.currentState.dir);
-    // Serial.print("\t");
-    // Serial.print(pid.currentState.st);
-    // Serial.print("\t");
-    // Serial.println(pid.currentState.isRotate);
-
-    // filter = simpleKalman(delta);
-    // Serial.print(-20);
-    // Serial.print("\t");
-    // Serial.print(20);
-    // Serial.print("\t");
-    // Serial.print(filter);
-    // Serial.print("\t");
-    // Serial.println(delta);
-    // Serial.println(" Degrees");
-    // delay(100);
+  if (state) {
+    if (millis() - tmr >= 100) {
+      tmr = millis();
+      Serial.println(String(getDelta()));
+    }
+  }
 }
 
+String readSerial() {
+  while (Serial.available()) {
+    char symbol = char(Serial.read());
+    // Serial.println(String(symbol));
+    if (symbol == '\n') {
+      String _buffer = buffer;
+      buffer = "";
+      // Serial.println(_buffer);
+      return _buffer;
+    }
+
+    buffer += symbol;
+  }
+
+  return "";
+}
 
 void readDeltaAngle(float *angle) {
   *angle = compass.readAzimut();
+}
+
+void CompassOn() {
+  state = true;
+  Serial.println("CompassOn");
+  readDeltaAngle(&start_angle);
+  compass.sleep(false);
+}
+
+void CompassOff() {
+  state = false;
+  compass.sleep(true);
+}
+
+int getDelta() {
+  readDeltaAngle(&angle);
+  // return angle;
+  return round(simpleKalman(angle - start_angle));
+  // return start_angle;
+}
+
+float simpleKalman(float newVal) {
+  float _kalman_gain, _current_estimate;
+  static float _err_estimate = _err_measure;
+  static float _last_estimate;
+
+  _kalman_gain = (float)_err_estimate / (_err_estimate + _err_measure);
+  _current_estimate = _last_estimate + (float)_kalman_gain * (newVal - _last_estimate);
+  _err_estimate =  (1.0 - _kalman_gain) * _err_estimate + fabs(_last_estimate - _current_estimate) * _q;
+  _last_estimate = _current_estimate;
+  return _current_estimate;
 }
 
 
