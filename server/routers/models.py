@@ -70,7 +70,7 @@ class OrderDetails:
 
 
 @dataclass
-class RequestedDelivery():
+class RequestedDelivery:
     id: str
     item_id: str
     seat: int

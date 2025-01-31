@@ -1,7 +1,7 @@
 from threading import Thread
 import time
 import requests
-from typing import Optional
+from typing import Optional, TypedDict, List
 import logging
 from urllib.parse import urljoin
 from dataclasses import dataclass
@@ -87,3 +87,25 @@ def __notify_updated():
                    name=f"Event 'updated_{updated_name}' from 'robot.core.server.__notify_updated'").start()
         except Exception as e:
             __logger.exception(f"Failed to notify updated: {updated_name}", exc_info=e)
+
+
+class RequestedDelivery(TypedDict):
+    id: str
+    item_id: str
+    seat: int
+    priority: int
+
+
+def __get_url(rel: str):
+    return urljoin(config.server.host, rel)
+
+
+def get_deliveries() -> List[RequestedDelivery]:
+    response = requests.get(__get_url("delivery/list/"))
+    response.raise_for_status()
+    return response.json()
+
+
+def take_delivery(delivery_id: str):
+    response = requests.post(__get_url(f"delivery/{delivery_id}/status/?status=1"))
+    response.raise_for_status()

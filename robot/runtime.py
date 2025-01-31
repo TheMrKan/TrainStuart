@@ -9,6 +9,7 @@ from robot.core.tickets import TicketsRepository
 import robot.core.route as route
 import robot.core.server as server
 import robot.core.calls as calls
+import robot.core.deliveries as deliveries
 from robot.hardware import robot_interface
 from robot.gui.base import gui_server, navigation as gui_navigation
 from robot.gui.startup import StartupApp
@@ -88,6 +89,9 @@ class Runtime:
 
         status_log("Подключение кнопок вызова...")
         calls.initialize()
+
+        status_log("Инициализация доставки...")
+        deliveries.initialize()
 
         chart.load()
 

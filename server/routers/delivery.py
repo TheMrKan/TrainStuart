@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status as http_status
 from typing import List
+from utils.collections import first_or_default
 
 from server.routers.models import RequestedDelivery
 import server.core.delivery as delivery
@@ -20,11 +21,11 @@ def list_deliveries() -> List[RequestedDelivery]:
     return result
 
 
-@router.post("/take/")
-def take_delivery(deliveries: List[str]):
-    pass
-
-
 @router.post("/{request_id}/status")
 def set_delivery_status(request_id: str, status: int):
-    pass
+    deliv: delivery.RequestedDelivery = first_or_default(delivery.requested(), lambda d: d.id == request_id, None)
+    if not deliv:
+        raise http_status.HTTP_404_NOT_FOUND
+
+    delivery.update_status(deliv, delivery.DeliveryStatus(status))
+    return {}

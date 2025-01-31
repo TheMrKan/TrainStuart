@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import uuid1
-from typing import Iterable, Iterator, Optional
+from typing import Iterable, Iterator, Optional, List, Callable
 from enum import Enum
 import math
 from server.core.misc import CoreError
@@ -38,6 +38,7 @@ class UndeliverablePositionError(CoreError):
         
 
 deliveries: dict = {}
+on_new_delivery: List[Callable[[RequestedDelivery], None]] = []
 
 
 def requested() -> Iterator[RequestedDelivery]:
@@ -73,6 +74,9 @@ def request(item: Item, seat: int, initial_priority: int) -> RequestedDelivery:
     )
 
     deliveries[delivery.id] = delivery
+    for handler in on_new_delivery:
+        handler(delivery)
+
     return delivery
 
 
@@ -81,3 +85,8 @@ def get_priority(delivery: RequestedDelivery) -> int:
     time_priority = int(round((datetime.now() - delivery.requested).total_seconds() / 60))
     priority += time_priority
     return priority
+
+
+def update_status(delivery: RequestedDelivery, status: DeliveryStatus):
+    delivery.status = status
+    print(f"Set status for delivery {delivery.id}: {status}")
