@@ -8,13 +8,7 @@ BUTTONS = {
 }
 
 
-@dataclass
-class Call:
-    seat: int
-    created: datetime.datetime
-
-
-active_calls = list()
+active_calls = set()
 
 
 def call_to_button(button_id: int):
@@ -26,12 +20,8 @@ def call_to_seat(seat: int):
     if seat in active_calls:
         return
 
-    active_calls.append(seat)
+    active_calls.add(seat)
     print(f"Registered new call to seat {seat}")
 
-
-def mark_call_completed(seat: int):
-    if seat in active_calls:
-        active_calls.remove(seat)
 
 

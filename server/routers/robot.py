@@ -20,6 +20,8 @@ def polling():
         updates["calls"]["new_calls"].append(call)
         __sent_calls.add(call)
 
+    calls.active_calls.clear()
+
     global __has_new_delivery
     if __has_new_delivery:
         updates.setdefault("deliveries", {})

@@ -1,5 +1,6 @@
 import logging
 import time
+from utils.collections import first
 
 from robot.behaviour.base import BaseBehaviour
 from robot.core.navigation import passenger_zone, chart
@@ -8,6 +9,7 @@ from robot.hardware.audio import AudioOutput
 from robot.hardware.robot_interface import RobotContainer, Side
 from robot.gui.interaction import InteractionApp
 from robot.gui.idle import IdleApp
+from robot.core import calls
 
 
 class CarriageMovingBehaviour(BaseBehaviour):
@@ -23,18 +25,16 @@ class CarriageMovingBehaviour(BaseBehaviour):
         app = IdleApp()
         app.run()
 
-        passenger_zone.start()
         while True:
-            input("Press enter to go to base...")
+            seat = self.__wait_for_call()
 
-            passenger_zone.go_to_base()
 
-            input("Press enter to go to seat 4...")
 
-            passenger_zone.go_to_seat(4)
+    def __wait_for_call(self) -> int:
+        while not any(calls.active_calls):
+            time.sleep(2)
 
-        while True:
-            time.sleep(1)
+        return first(calls.active_calls)
 
     def on_touch_received(self, state: int, *args):
         if state:
