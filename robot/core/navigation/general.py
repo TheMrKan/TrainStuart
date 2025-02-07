@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 import time
 import logging
 
@@ -12,26 +12,29 @@ from robot.core.navigation.vending_zone import VendingZoneController
 
 logger = logging.getLogger(__name__)
 
-FIND_MARKER_HEAD_Y = 25
+FIND_MARKER_HEAD_Y = 15
 ZONE_CONTROLLERS = {
     "passenger_zone": PassengerZoneController,
     "vending_zone": VendingZoneController,
 }
 
 zone: Zone = None
-zone_controller: BaseZoneController = None
+zone_controller: Union[PassengerZoneController, VendingZoneController] = None
 
 HOME: Point
 GATE: Point
+PASSENGER_ZONE: Zone
 
 
 def init():
     global HOME
     global GATE
+    global PASSENGER_ZONE
     chart.load()
 
     HOME = chart.points["vending"]
     GATE = chart.points["gate"]
+    PASSENGER_ZONE = chart.zones["passenger_zone"]
 
     for zc in ZONE_CONTROLLERS.values():
         zc.class_init()
@@ -53,6 +56,14 @@ def __set_zone(_zone: Zone):
 
 def go_home():
     go_to_point((HOME.x, HOME.y))
+
+
+def go_to_seat(seat: int):
+    if zone != PASSENGER_ZONE:
+        go_to_gate()
+        __set_zone(PASSENGER_ZONE)
+
+    zone_controller.go_to_seat(seat)
 
 
 def go_to_point(pos: Vector2):

@@ -1,12 +1,16 @@
 from threading import Thread
 import time
 from typing import Optional
+import logging
 
 from .base_zone_controller import BaseZoneController, Movement
 from robot.core.navigation import chart, visual_positioning
 from robot.core.navigation.chart import Vector2, Point, Zone
 from robot.hardware import robot_interface as irobot
 from utils.misc import are_nearly_equal, sqr_distance
+
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class PassengerZoneController(BaseZoneController):
@@ -23,6 +27,11 @@ class PassengerZoneController(BaseZoneController):
 
     def __init__(self):
         super().__init__()
+
+    def go_to_seat(self, seat: int):
+        seat_pos = chart.get_position_for_seat(seat)
+        logger.info(f"Going to seat {seat} {seat_pos}")
+        self.go_to_point(seat_pos)
 
     def _move(self, point: Vector2):
         self.last_correction = 0
