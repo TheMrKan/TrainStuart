@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional
 from robot.config import instance as config
 
 
@@ -60,6 +60,17 @@ def get_points() -> List[Point]:
 def get_position_for_seat(seat: int) -> Vector2:
     seat_pos = get_point_position(f"seat_{seat}")
     return seat_pos[0] - 20, 12
+
+
+def is_inside_zone(pos: Vector2, zone: Zone) -> bool:
+    return zone.p0[0] <= pos[0] <= zone.p1[0] and zone.p0[1] >= pos[1] >= zone.p1[1]
+
+
+def get_zone(point: Vector2) -> Optional[Zone]:
+    for zone in zones.values():
+        if is_inside_zone(point, zone):
+            return zone
+    return None
 
 
 

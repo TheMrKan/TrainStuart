@@ -19,7 +19,7 @@ from robot.behaviour.documents_check import DocumentsCheckBehaviour
 from robot.behaviour.video import VideoBehaviour
 from robot.gui.interaction import InteractionApp
 from robot.dev import control_panel
-from robot.core.navigation import chart
+from robot.core.navigation import general
 from robot.config import instance as config
 
 
@@ -60,9 +60,9 @@ class Runtime:
             startup_app.shutdown()
 
         # VideoBehaviour().run()
-        StationIdleBehaviour().run()
+        # StationIdleBehaviour().run()
         # DocumentsCheckBehaviour().run()
-        # CarriageMovingBehaviour().run()
+        CarriageMovingBehaviour().run()
 
         #InteractionApp().run()
 
@@ -93,14 +93,15 @@ class Runtime:
         status_log("Инициализация доставки...")
         deliveries.initialize()
 
-        chart.load()
+        status_log("Настройка навигации...")
+        general.init()
 
         status_log("Настройка панели управления...")
         control_panel.initialize()
 
         AudioOutput.FILES_DIR = config.resources_dir
 
-        if not AsyncProcessor.check_init():
+        if not AsyncProcessor.check_init() and False:
             status_log("Загрузка обработчика...")
             while not AsyncProcessor.check_init():
                 time.sleep(0.5)

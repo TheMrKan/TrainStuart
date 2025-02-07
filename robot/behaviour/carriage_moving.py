@@ -3,7 +3,7 @@ import time
 from utils.collections import first
 
 from robot.behaviour.base import BaseBehaviour
-from robot.core.navigation import passenger_zone, chart
+from robot.core.navigation import general, passenger_zone, chart
 from robot.hardware import robot_interface
 from robot.hardware.audio import AudioOutput
 from robot.hardware.robot_interface import RobotContainer, Side
@@ -25,10 +25,11 @@ class CarriageMovingBehaviour(BaseBehaviour):
         app = IdleApp()
         app.run()
 
-        while True:
-            seat = self.__wait_for_call()
+        general.locate()
 
+        general.go_to_gate()
 
+        exit()
 
     def __wait_for_call(self) -> int:
         while not any(calls.active_calls):
