@@ -42,6 +42,7 @@ public:
 
   void clearState();
   void setCurrentPosition(int x, int y);
+  void setSpeedCorrection(int correction);
   void setBlocked(bool isBlocked);
 
   int currentX = 0, currentY = 0;
@@ -61,6 +62,7 @@ private:
 
   bool moveXLoopRunning = false, moveYLoopRunning = false, pause = false;
   bool isCorrectingY = false;
+  int speedCorrection = 0; // >0 - направо, <0 - налево
   unsigned long tmr;
   unsigned long targetTime;
 

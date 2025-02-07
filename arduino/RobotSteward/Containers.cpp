@@ -38,7 +38,7 @@ void Containers::begin() {
       pinMode(pin, INPUT);
       while (!digitalRead(pin)) {
         Serial.println("------------------------------------ Drawer open !!!!! ------------------------------------");
-        servo->write(Drawer::Right);
+        servo->write(Drawer::RightSlow);
       }
       servo->write(Drawer::Stop);
     }

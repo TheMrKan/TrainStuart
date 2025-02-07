@@ -64,9 +64,11 @@ namespace Down {
 
 
 namespace Drawer {
-  const int Stop = 97;
+  const int Stop = 95;
   const int Left = Stop - 12;
+  const int LeftSlow = Stop - 4;
   const int Right = Stop + 12;
+  const int RightSlow = Stop + 4;
 }
 
 #define drawerFrontSensor 23

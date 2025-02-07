@@ -406,6 +406,10 @@ void handleMessage(struct Message message) {
       IO.sendConfirmation();
       wheels.setCurrentPosition(message.args[0], message.args[1]);
     }
+    else if (message.code == "Sc") {     // корректировка скорости
+      IO.sendConfirmation();
+      wheels.setSpeedCorrection(message.args[0]);
+    }
     else {
       Serial.println("Unknown code: " + message.code);
     }

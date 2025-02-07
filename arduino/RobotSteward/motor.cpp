@@ -219,6 +219,10 @@ void motor::setSpeed4(int sp1, int sp2, int sp3, int sp4) {
   setSpeed(sp4, FR);
 }
 
+void motor::setSpeedCorrection(int corr) {
+  speedCorrection = corr;
+}
+
 void motor::go(Move _move) {
   move = _move;
   switch (move) {
@@ -227,7 +231,13 @@ void motor::go(Move _move) {
       motor_run(FR, B);
       motor_run(BL, B);
       motor_run(BR, B);
-      // setSpeed(150, ALL);
+      
+      setSpeed(150 - speedCorrection, BR);    // BR
+      setSpeed(150 + speedCorrection, BL);    // BL
+
+      setSpeed(150 - speedCorrection, FL);    // FR
+      setSpeed(150 + speedCorrection, FR);    // FL
+      
       break;
 
     case Backward:
@@ -235,7 +245,11 @@ void motor::go(Move _move) {
       motor_run(FR, F);
       motor_run(BL, F);
       motor_run(BR, F);
-      setSpeed(150, ALL);
+      setSpeed(150 - speedCorrection, BR);    // BR
+      setSpeed(150 + speedCorrection, BL);    // BL
+
+      setSpeed(150 - speedCorrection, FL);    // FR
+      setSpeed(150 + speedCorrection, FR);    // FL
       break;
 
     case Right:
@@ -281,6 +295,7 @@ void motor::go(Move _move) {
       motor_run(FR, S);
       motor_run(BL, S);
       motor_run(BR, S);
+      speedCorrection = 0;
       break;
   }
 }
