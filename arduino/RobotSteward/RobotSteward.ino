@@ -41,8 +41,13 @@ Laser laserB(&multiservo[9], &lox2, 9);
 CompassRemote compass;
 struct CompassData compassData;
 
+#include "Line.h"
+Line lines();
+
 #include "motor.h"
 motor wheels(&laserF, &laserB, &compass);
+
+lines.motor = wheels;
 
 #include "Containers.h"
 Containers up_front(&multiservo[2], UP_FRONT);
@@ -216,6 +221,9 @@ void setup() {
 
   Serial.println("[SETUP] Servo attach OK");
 
+  lines.init();
+  Serial.println("[SETUP] lines.init() OK");
+
   wheels.begin();
   Serial.println("[SETUP] wheels.begin() OK");
 
@@ -268,6 +276,8 @@ void loop() {
   wheels.setBlocked(touchFront.isTouched() || touchBack.isTouched());
   wheels.tick();
 
+  lines.tick();
+
   // pid.setSpeed();
   // wheels.setSpeed4(pid.BL, pid.BR, pid.FL, pid.FR);
 
@@ -287,6 +297,10 @@ void loop() {
   }
 
   if (up_front.isCompleted() || up_back.isCompleted() || down.isCompleted()) {
+    IO.sendCompletion();
+  }
+
+  if (lines.isCompleted()) {
     IO.sendCompletion();
   }
 

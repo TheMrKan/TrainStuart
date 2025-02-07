@@ -42,7 +42,7 @@ public:
     if (lox->isRangeComplete()) {
       dist = lox->readRangeResult();
 
-      isObject = dist > 0 && dist < 1500;
+      isObject = dist >= 80 && dist < 300;
       detector.tick(isObject);
       if (isObject) {
         Serial.println(String(dist) + " " + String(detector.state));

@@ -71,6 +71,22 @@ namespace Drawer {
   const int RightSlow = Stop + 4;
 }
 
+namespace LinesF {
+  const int far_left = 27;
+  const int left = 29;
+  const int center = 31;
+  const int right = 33;
+  const int far_right = 35;
+}
+
+namespace LinesB {
+  const int far_left = 28;
+  const int left = 30;
+  const int center = 32;
+  const int right = 34;
+  const int far_right = 36;
+}
+
 #define drawerFrontSensor 23
 #define drawerBackSensor  24
 

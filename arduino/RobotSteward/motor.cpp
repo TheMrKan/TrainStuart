@@ -213,10 +213,10 @@ void motor::setSpeed(int speed, Type type) {
 }
 
 void motor::setSpeed4(int sp1, int sp2, int sp3, int sp4) {
-  setSpeed(sp1, BL);
-  setSpeed(sp2, BR);
-  setSpeed(sp3, FL);
-  setSpeed(sp4, FR);
+  if (sp1 != -1) setSpeed(sp1, BL); // BL
+  if (sp2 != -1) setSpeed(sp2, BR); // BR
+  if (sp3 != -1) setSpeed(sp3, FR); // FL
+  if (sp4 != -1) setSpeed(sp4, FL); // FR
 }
 
 void motor::setSpeedCorrection(int corr) {
