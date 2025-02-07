@@ -63,8 +63,14 @@ void Head::tick() {
   tickY();
 }
 
+unsigned long markerTime = 0;
+
 bool isHeadMarker() {
-  return analogRead(HEAD_MARKER) > 1000;
+  if (millis() - markerTime >= 100) {
+    markerTime = millis();
+    return analogRead(HEAD_MARKER) > 1000;
+  }
+  return false;
 }
 
 /*
@@ -91,7 +97,7 @@ void Head::tickX() {
      
      enc.counter = 0;
      const int angle = round((float)_currentX / (float)HEAD_MARKER_STEP) * HEAD_MARKER_STEP;
-     // Serial.println("HEAD MARKER " + String(angle) + " " + String((float)_currentX / (float)HEAD_MARKER_STEP) + " " + String(_currentX));
+      Serial.println("HEAD MARKER " + String(angle) + " " + String((float)_currentX / (float)HEAD_MARKER_STEP) + " " + String(_currentX));
      _currentX = angle;
      currentX = angle;
    }

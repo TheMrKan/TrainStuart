@@ -23,20 +23,28 @@ enum Box {
 class Containers {
 public:
     Containers(Multiservo* _servo, Box _box);
-    // Containers(Multiservo* _servo, Box _box, int _pin) {}
+    Containers(Multiservo* _servo, Box _box, int _pin);
 
     void begin();
     void tick();
     void set_position(BoxState _state);
+    void togleTablet(BoxState _state);   
+    bool isCompleted();
+
     BoxState state;
 private:
     Multiservo* servo;
     void rotate(int start, int end);
+    void tickBox();
+    void tickDrawer();
     Box box;
+    BoxState lastState;
     int pin;
 
-    bool tickLoopRunning = false;
+    bool tickLoopRunning = false, tickDrawerLoop = false, stateC = false;
     int right, left, center;
+
+    int drawerCurrentAngle;
 
     int current_angle, target_angle;
     unsigned long tmr = 0;

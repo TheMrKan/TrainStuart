@@ -44,13 +44,11 @@ struct CompassData compassData;
 #include "motor.h"
 motor wheels(&laserF, &laserB, &compass);
 
-#include "Align.h"
-Align align(&wheels, &head);
-
 #include "Containers.h"
 Containers up_front(&multiservo[2], UP_FRONT);
 Containers up_back(&multiservo[3], UP_BACK);
 Containers down(&multiservo[4], DOWN);
+Containers drawerFront(&multiservo[DRAWER_FRONT], DRAWER_FRONT, drawerFrontSensor);
 
 #include "RotationPID.h"
 RotationPID pid;
@@ -99,10 +97,10 @@ void setID() {
   delay(10);
 
   // initing LOX1
-  if (!lox1.begin(LOX1_ADDRESS)) {
-    Serial.println(F("Failed to boot FRONT VL53L0X"));
-    while (1);
-  }
+//  if (!lox1.begin(LOX1_ADDRESS)) {
+//    Serial.println(F("Failed to boot FRONT VL53L0X"));
+//    while (1);
+//  }
   delay(10);
 
   // activating LOX2
@@ -207,12 +205,14 @@ void setup() {
   }
   multiservo[11].detach(); // детач Y головы
 
-  multiservo[DRAWER_FRONT].write(95);    // остановка переднего выдвижного
+  multiservo[DRAWER_FRONT].write(97);    // остановка переднего выдвижного
+  
 
   // Маленькие ящики в закрытое положение
   up_front.begin();
   up_back.begin();
   down.begin();
+  drawerFront.begin();
 
   Serial.println("[SETUP] Servo attach OK");
 
@@ -246,7 +246,6 @@ void setup() {
   Serial.println("HOME");
   getReady = false;
 
-  // pid.setConfig(1, 150, PID::L);
   scanI2C();
   Serial.println("[SETUP] Setup OK");
 }
@@ -256,9 +255,6 @@ unsigned long loopTime, totalLoopTime;
 void loop() {
   loopTime = millis();
   head.tick();
-  compass.tick();
-  // compassData = compass.readData();
-  // if (compassData.isReady) pid.setDelta(compassData.delta);
   // laserF.tick();
   // laserB.tick();
   
@@ -268,8 +264,6 @@ void loop() {
   up_front.tick();
   up_back.tick();
   down.tick();
-
-  align.tick();
 
   wheels.setBlocked(touchFront.isTouched() || touchBack.isTouched());
   wheels.tick();
@@ -290,6 +284,10 @@ void loop() {
     IO.sendCompletion();
     Serial.println("OK WHEELS");
     wheels.clearState();
+  }
+
+  if (up_front.isCompleted() || up_back.isCompleted() || down.isCompleted()) {
+    IO.sendCompletion();
   }
 
   struct Message newMessage = IO.readMessage();
@@ -333,7 +331,6 @@ void handleMessage(struct Message message) {
     } 
     else if (message.code == "M") {     // Движение робота на (x, y)
       IO.sendConfirmation();
-      compass.on();
       wheels.run(message.args[0], message.args[1]);
     }
     else if (message.code == "Rot") {     // Вращение. 0 - стоп; >0 - по часовой; <0 - против часовой
@@ -409,10 +406,6 @@ void handleMessage(struct Message message) {
       IO.sendConfirmation();
       wheels.setCurrentPosition(message.args[0], message.args[1]);
     }
-    else if (message.code == "Al") {
-      IO.sendConfirmation();
-      align.run(-90);
-    } 
     else {
       Serial.println("Unknown code: " + message.code);
     }
@@ -445,17 +438,17 @@ void handleMessage(struct Message message) {
 // #endif
 
 void BoxMove(int index, int side) {
-    BoxState currentBox;
+    BoxState targetState;
     switch(side) {
-        case 0: currentBox = CLOSE; break;
-        case 1: currentBox = OPEN_RIGHT; break;
-        case 2: currentBox = OPEN_LEFT; break;
+        case 0: targetState = CLOSE; break;
+        case 1: targetState = OPEN_LEFT; break;
+        case 2: targetState = OPEN_RIGHT; break;
     }
     switch (index) {
-        case 0: down.set_position(currentBox); break;
-        case 1: up_back.set_position(currentBox); break;
-        case 2: up_front.set_position(currentBox); break;
-        case 3: break;
+        case 0: down.set_position(targetState); break;
+        case 1: up_back.set_position(targetState); break;
+        case 2: up_front.set_position(targetState); break;
+        case 3: drawerFront.togleTablet(targetState); break;
         case 4: break;
     }
 }

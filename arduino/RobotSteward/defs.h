@@ -44,52 +44,42 @@
 
 
 // Углы для сервоприводов
-// #define UpFront_Right 165
-// #define UpFront_Center 117
-// #define UpFront_Left 65
-
-// #define UpBack_Right 0
-// #define UpBack_Center 62
-// #define UpBack_Left 110
-
-//#define UpFront_Right 35
-//#define UpFront_Center 100
-//#define UpFront_Left 165
-//
-//#define UpBack_Right 125
-//#define UpBack_Center 62
-//#define UpBack_Left 0
-//
-//#define Down_Right 150
-//#define Down_Center 98
-//#define Down_Left 40
 namespace UpFront {
-    const int Right = 35;
-    const int Center = 100;
-    const int Left = 165;
+    const int Right = 120;
+    const int Center = 65;
+    const int Left = 15;
 }
 
 namespace UpBack {
-    const int Right = 125;
-    const int Center = 62;
-    const int Left = 0;
+    const int Right = 47;
+    const int Center = 102;
+    const int Left = 152;
 }
 
 namespace Down {
-    const int Right = 150;
+    const int Right = 160;
     const int Center = 98;
     const int Left = 40;
 }
 
+
+namespace Drawer {
+  const int Stop = 97;
+  const int Left = Stop - 12;
+  const int Right = Stop + 12;
+}
+
+#define drawerFrontSensor 23
+#define drawerBackSensor  24
 
 //  Бошка
 #define HeadCenter 90
 #define HeadUp 179
 #define HeadDown 20
 
-#define headInputUp 24    // 24
+#define headInputUp 24
 #define headInputCenter 0
-#define headInputDown -16    // -16
+#define headInputDown -16
 
 #define headInputRight 160
 #define headInputLeft -165
@@ -97,6 +87,7 @@ namespace Down {
 // Подключаем энкодер
 const byte CLK = 2;
 const byte DT = 3;
+
 #define END_CAP 22        // Коневик на голову
 #define FRONT_SENSOR A14  // Передний датчик
 #define BACK_SENSOR A15   // Задний датчик

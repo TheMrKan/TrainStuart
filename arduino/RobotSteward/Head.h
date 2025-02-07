@@ -1,7 +1,3 @@
-//
-// Created by Nikit on 22.08.2024.
-//
-
 #ifndef ADUINO_HEAD_H
 #define ADUINO_HEAD_H
 #include <Arduino.h>
