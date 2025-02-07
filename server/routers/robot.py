@@ -4,7 +4,6 @@ from server.core import calls, delivery
 router = APIRouter(prefix="/robot")
 
 
-__sent_calls = set()
 __has_new_delivery = False
 
 
@@ -13,12 +12,9 @@ def polling():
     updates = {}
 
     for call in calls.active_calls:
-        if call in __sent_calls:
-            continue
 
         updates.setdefault("calls", {"new_calls": []})
         updates["calls"]["new_calls"].append(call)
-        __sent_calls.add(call)
 
     calls.active_calls.clear()
 

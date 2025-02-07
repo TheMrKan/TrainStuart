@@ -13,5 +13,6 @@ def initialize():
 
 
 def on_calls_updated(new_calls: List[int]):
-    active_calls.update(*new_calls)
+
+    active_calls.update(new_calls)
     logger.info(f"New calls received: {new_calls}")

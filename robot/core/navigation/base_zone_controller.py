@@ -1,7 +1,7 @@
 from typing import List, Optional
 from abc import abstractmethod
 
-from robot.core.navigation.chart import Vector2
+from robot.core.navigation.chart import Vector2, Point
 from robot.hardware import robot_interface as irobot
 from utils.misc import are_nearly_equal
 from robot.dev import control_panel
@@ -19,13 +19,15 @@ class BaseZoneController:
 
     MOVING_HEAD_Y = 25
     current_movement: Optional[Movement] = None
+    target_point: Optional[Vector2] = None
+    start_point: Optional[Vector2] = None
 
     @classmethod
     def class_init(cls):
         pass
 
     def __init__(self):
-        pass
+        irobot.set_head_rotation(irobot.head_horizontal, self.MOVING_HEAD_Y)
 
     def go_to_point(self, point: Vector2):
         movement = self._prepare_movement(point)
@@ -58,9 +60,13 @@ class BaseZoneController:
         self.current_movement = movement
         self._send_movement(movement)
 
+        self.start_point = movement.start
         for point in (*movement.intermediate_points, movement.destination):
+            self.target_point = point
             self._move(point)
+            self.start_point = point
 
+        self.target_point = None
         self.current_movement = None
         self._send_movement(None)
 

@@ -43,9 +43,20 @@ def head_distance_to_wall_distance(head_distance: float, head_rotation_y: float)
     return round(head_distance * math.cos(math.radians(head_rotation_y)) + 10 + 6)
 
 
+def wall_distance_to_head_distance(wall_distance: float, head_rotation_y: float) -> int:
+    # 10 - расстояние от камеры до центра робота. Работает только для поворота головы на -90
+    # 6 - относителньно постоянная ошибка из-за несоответствия угла вертикального поворота
+    return round((wall_distance - 10 - 6) / math.cos(math.radians(head_rotation_y)))
+
+
 WALL_Y = 100
+
 def distance_to_wall_to_y(distance_to_wall: int) -> int:
     return WALL_Y - distance_to_wall
+
+
+def y_to_distance_to_wall(y) -> int:
+    return WALL_Y - y
 
 
 def is_marker_visible() -> bool:

@@ -47,6 +47,15 @@ def move_to(x: int, y: int, completion: bool = True):
     logger.debug(f"Completed move to {x} {y}")
 
 
+def set_speed_correction(correction: int):
+    """
+    При движении прямо: >0 - доворот направо, <0 - налево
+    При движении назад инвертировать
+    Модуль: 100 - очень сильно доворачивает
+    """
+    iserial.send_command("Sc", int(correction))
+
+
 def rotate_to(angle: int):
     iserial.send_command("R", angle, completion=True)
 
