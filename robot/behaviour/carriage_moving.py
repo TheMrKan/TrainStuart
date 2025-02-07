@@ -27,7 +27,11 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
         general.locate()
 
-        general.go_to_gate()
+        while True:
+            general.go_home()
+
+            general.go_to_point((350, 30))
+            time.sleep(3)
 
         exit()
 

@@ -7,6 +7,7 @@ from robot.core.navigation.chart import Vector2, Point, Zone
 from robot.hardware import robot_interface
 from robot.core.navigation.base_zone_controller import BaseZoneController
 from robot.core.navigation.passenger_zone import PassengerZoneController
+from robot.core.navigation.vending_zone import VendingZoneController
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 FIND_MARKER_HEAD_Y = 25
 ZONE_CONTROLLERS = {
     "passenger_zone": PassengerZoneController,
-    "vending_zone": BaseZoneController,
+    "vending_zone": VendingZoneController,
 }
 
 zone: Zone = None
