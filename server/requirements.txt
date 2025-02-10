@@ -1,2 +1,7 @@
 fastapi==0.95.2
 uvicorn
+python-multipart
+pillow
+pytesseract
+fuzzywuzzy
+python-levenshtein

@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-from server.core import calls, delivery
+from fastapi import APIRouter, File, UploadFile
+from server.core import calls, delivery, documents
 
 router = APIRouter(prefix="/robot")
 
@@ -34,3 +34,18 @@ def on_new_delivery(*args):
 
 # подписка на событие
 delivery.on_new_delivery.append(on_new_delivery)
+
+
+@router.post("/document/")
+def document(file: UploadFile):
+    loaded = documents.load_file(file.file)
+    passport = documents.process_ocr(loaded)
+    if not passport:
+        return {"success": False, "error": "OCR failed"}
+
+    passenger = documents.try_find_passenger(passport)
+    if not passenger:
+        return {"success": False, "error": "Passenger not found"}
+
+    return {"success": True, "passenger_id": passenger.id}
+

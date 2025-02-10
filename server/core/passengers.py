@@ -10,6 +10,7 @@ class Passenger:
     name: str
     seat: int
     ticket: str
+    passport: str
 
 
 passengers: dict = {
@@ -18,21 +19,24 @@ passengers: dict = {
         uuid,
         "Ivan Ivanov",
         1,
-        "1"
+        "1",
+        "3620871542"
     ),
     (uuid := str(uuid1())):
     Passenger(
         uuid,
         "Petya Petrov",
         2,
-        "2"
+        "2",
+        "3610382561"
     ),
     "robot":
     Passenger(
         "robot",
         "Robot",
         3,
-        "3"
+        "3",
+        ""
     )
 }
 
@@ -47,3 +51,7 @@ def by_seat(seat: int) -> Optional[Passenger]:
 
 def by_ticket(ticket: str) -> Optional[Passenger]:
     return first_or_default(passengers.values(), lambda p: p.ticket == ticket)
+
+
+def by_passport(passport: str) -> Optional[Passenger]:
+    return first_or_default(passengers.values(), lambda p: p.passport == passport)
