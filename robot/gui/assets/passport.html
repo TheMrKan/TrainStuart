@@ -8,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
     <script src="/static/js/gui_channel.js"></script>
     <script src="/static/js/gui_navigation.js"></script>
+    <script src="/static/js/ws_video_stream.js"></script>
     <title>Проверка паспорта</title>
 </head>
 <body>
@@ -31,30 +32,53 @@
 <section class="section step1-reading" id="read">
     <h1 class="text step-text">Шаг 1: Вставьте паспорт в сканер</h1>
     <img src="/static/images/step1-imgReading.png" alt="read passport" class="step1-imgReading">
-    <button class="btn-continue" id="continueRead" onclick="read_passport()">Далее</button>
+    <button class="btn-continue" id="continueRead" onclick="passport_step1()">Далее</button>
 </section>
 
 <section class="section step1-processing" id="process" style="display: none;">
-    <h1 class="text step-text">Шаг 1: Вставьте паспорт в сканер</h1>
+    <h1 class="text step-text" id="step1-text">Шаг 1: Вставьте паспорт в сканер</h1>
     <svg class="svg-loading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width="200" height="200" style="shape-rendering: auto; display: block; background: transparent;" xmlns:xlink="http://www.w3.org/1999/xlink"><g><circle stroke-linecap="round" fill="none" stroke-dasharray="50.26548245743669 50.26548245743669" stroke="#fa5252" stroke-width="8" r="32" cy="50" cx="50">
   <animateTransform values="0 50 50;360 50 50" keyTimes="0;1" dur="1s" repeatCount="indefinite" type="rotate" attributeName="transform"></animateTransform>
 </circle><g></g></g></svg>
 </section>
 
+<section class="section step1-camera" id="camera" style="display: none;">
+    <h1 class="text step-text over-image">Шаг 2: Скорректируйте положение паспорта</h1>
+    <div style="position: relative;">
+        <img class="camera-image-horizontal" src="" alt="camera" id="cameraImage">
+        <img class="" src="/static/images/passport_overlay.png" style="position: absolute; left: 0; top: 12rem; width: 100vw;">
+    </div>
+
+    <button class="btn-repeat" id="passport-step2-btn" onclick="passport_step2()">Продолжить</button>
+</section>
+
 <section class="section step1-wrong" id="no_passport" style="display: none;">
     <div class="text">
-        <h1 class="step-text">Шаг 1: Вставьте паспорт в сканер</h1>
-        <h2 class="step-text2">Паспорт не найден</h2>
+        <h1 class="step-text">Шаг 3: Обработка данных</h1>
+        <h2 class="step-text2">Не удалось считать данные, либо данные считаны некорректно. <br>Повторить попытку или передать оператору?</h2>
     </div>
     <svg class="svg-cancel" fill="#FA5252" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 72 72" width="64px" height="64px">
         <path d="M 19 15 C 17.977 15 16.951875 15.390875 16.171875 16.171875 C 14.609875 17.733875 14.609875 20.266125 16.171875 21.828125 L 30.34375 36 L 16.171875 50.171875 C 14.609875 51.733875 14.609875 54.266125 16.171875 55.828125 C 16.951875 56.608125 17.977 57 19 57 C 20.023 57 21.048125 56.609125 21.828125 55.828125 L 36 41.65625 L 50.171875 55.828125 C 51.731875 57.390125 54.267125 57.390125 55.828125 55.828125 C 57.391125 54.265125 57.391125 51.734875 55.828125 50.171875 L 41.65625 36 L 55.828125 21.828125 C 57.390125 20.266125 57.390125 17.733875 55.828125 16.171875 C 54.268125 14.610875 51.731875 14.609875 50.171875 16.171875 L 36 30.34375 L 21.828125 16.171875 C 21.048125 15.391875 20.023 15 19 15 z"/>
     </svg>
-    <button class="btn-repeat" id="repeat">Повторить</button>
+    <button class="btn-repeat" id="repeat" onclick="channel.send('repeat');" style="left: 20px;">Повторить</button>
+    <button class="btn-repeat" id="sendToOperator" onclick="sendToOperator();" style="right: 20px;">Передать оператору</button>
+</section>
+
+<section class="section step1-wrong" id="invalid_passport" style="display: none;">
+    <div class="text">
+        <h1 class="step-text">Шаг 3: Обработка данных</h1>
+        <h2 class="step-text2">Не удалось распознать документ</h2>
+    </div>
+    <svg class="svg-cancel" fill="#FA5252" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="64px"
+         height="64px">
+        <path
+            d="M 19 15 C 17.977 15 16.951875 15.390875 16.171875 16.171875 C 14.609875 17.733875 14.609875 20.266125 16.171875 21.828125 L 30.34375 36 L 16.171875 50.171875 C 14.609875 51.733875 14.609875 54.266125 16.171875 55.828125 C 16.951875 56.608125 17.977 57 19 57 C 20.023 57 21.048125 56.609125 21.828125 55.828125 L 36 41.65625 L 50.171875 55.828125 C 51.731875 57.390125 54.267125 57.390125 55.828125 55.828125 C 57.391125 54.265125 57.391125 51.734875 55.828125 50.171875 L 41.65625 36 L 55.828125 21.828125 C 57.390125 20.266125 57.390125 17.733875 55.828125 16.171875 C 54.268125 14.610875 51.731875 14.609875 50.171875 16.171875 L 36 30.34375 L 21.828125 16.171875 C 21.048125 15.391875 20.023 15 19 15 z"/>
+    </svg>
 </section>
 
 <section class="section step1-wrong" id="no_ticket" style="display: none;">
     <div class="text">
-        <h1 class="step-text">Шаг 1: Вставьте паспорт в сканер</h1>
+        <h1 class="step-text">Шаг 3: Обработка данных</h1>
         <h2 class="step-text2">Билет не найден</h2>
     </div>
     <svg class="svg-cancel" fill="#FA5252" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 72 72" width="64px" height="64px">
@@ -70,37 +94,77 @@
 
 <script>
 
-    function read_passport() {
-        console.log("Read passport")
-        channel.send("read_passport");
+    window.addEventListener('load', function () {
+        videoStream = new WSVideoStream("ws://robot:8001/app/image", document.getElementById("cameraImage"));
+        videoStream.begin();
+    });
 
-        var element = document.getElementById("process");
+    function passport_step1() {
+        console.log("Read passport")
+        channel.send("passport_step1");
+
+        let element = document.getElementById("camera");
         element.style = "display: flex;";
 
-        var element = document.getElementById("read");
+        element = document.getElementById("read");
         element.style = "display: none;";
+    }
+
+    function passport_step2() {
+        console.log("Step 2")
+        channel.send("passport_step2");
+
+        let element = document.getElementById("process");
+        element.style = "display: flex;";
+
+        element = document.getElementById("camera");
+        element.style = "display: none;";
+    }
+
+    function sendToOperator() {
+        channel.send('send_to_operator');
+
+        let element = document.getElementById("process");
+        element.style = "display: flex;";
+
+        element = document.getElementById("no_passport");
+        element.style = "display: none;";
+        document.getElementById("step1-text").style = "display: none;";
     }
 
     window.addEventListener("channel_ready", function (event) {
         event.detail.channel.addEventListener("code_passport_not_found", function(event) {
-            var element = document.getElementById("process");
+            console.log("Passport not found");
+            let element = document.getElementById("process");
             element.style = "display: none;";
 
-            var element = document.getElementById("read");
+            element = document.getElementById("read");
             element.style = "display: none;";
 
-            var element = document.getElementById("no_passport");
+            element = document.getElementById("no_passport");
+            element.style = "display: flex;";
+        });
+
+        event.detail.channel.addEventListener("code_invalid_passport", function (event) {
+            console.log("Passport not found");
+            let element = document.getElementById("process");
+            element.style = "display: none;";
+
+            element = document.getElementById("read");
+            element.style = "display: none;";
+
+            element = document.getElementById("invalid_passport");
             element.style = "display: flex;";
         });
 
         event.detail.channel.addEventListener("code_ticket_not_found", function(event) {
-            var element = document.getElementById("process");
+            let element = document.getElementById("process");
             element.style = "display: none;";
 
-            var element = document.getElementById("read");
+            element = document.getElementById("read");
             element.style = "display: none;";
 
-            var element = document.getElementById("no_ticket");
+            element = document.getElementById("no_ticket");
             element.style = "display: flex;";
         });
     });

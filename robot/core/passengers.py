@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 from utils.faces import FaceDescriptor, get_nearest_descriptor_index
+from utils.collections import first_or_default
 from robot.core import server
 
 
@@ -51,6 +52,10 @@ def with_faces():
 
 def get_by_id(id: str) -> Optional[Person]:
     return __persons.get(id)
+
+
+def get_by_passport(passport_number: str) -> Optional[Person]:
+    return first_or_default(__persons.values(), lambda p: p.passport == passport_number)
 
 
 def find_by_face_descriptor(descriptor: FaceDescriptor, threshold: float = 0.5) -> Optional[Person]:

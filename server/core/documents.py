@@ -52,7 +52,7 @@ def try_find_passenger(passport_number_str: str) -> Optional[passengers.Passenge
     result = process.extractOne(passport_number_str,
                                 tuple(passengers.with_passport()),
                                 processor=lambda p: p.passport if isinstance(p, passengers.Passenger) else p,
-                                score_cutoff=1)
+                                score_cutoff=65)
     print("Comprasion result:", result)
     if not result:
         return None

@@ -5,6 +5,7 @@ from threading import Event
 
 import robot.gui.base.gui_server as gui_server
 import robot.gui.base.navigation as gui_navigation
+from utils.cancelations import await_event
 
 
 class BaseApp:
@@ -91,10 +92,12 @@ class BaseApp:
 
         gui_server.send(path, message)
 
-    def wait_message(self, code: str = "") -> dict:
+    def wait_message(self, code: str = "", timeout: Optional[float] = None) -> dict:
         self.wait_message_no_block(code)
 
-        self._wait_event.wait()
+        is_timeout = not await_event(self._wait_event, timeout)
+        if timeout and is_timeout:
+            raise TimeoutError
         self._wait_event = None
         self._wait_code = None
         return self.last_message

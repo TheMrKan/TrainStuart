@@ -20,6 +20,8 @@ import robot.core.route as route
 from robot.gui import external
 from utils.cancelations import CancellationToken
 from robot.core import server, passengers
+from utils.cv import Image
+from robot.dev import control_panel
 
 
 class PassportNotFoundError(Exception):
@@ -47,8 +49,11 @@ class DocumentsCheckApp(BaseApp):
         super().run()
         self.logger.debug("Running DocumentsCheck app")
 
-        cancellation = CancellationToken(self.wait_message_no_block("read_passport"))
+        cancellation = CancellationToken(self.wait_message_no_block("passport_step1"))
         self.play_audio_for_faces(cancellation)
+
+        cancellation = CancellationToken(self.wait_message_no_block("passport_step2"))
+        self.stream_documents_camera(cancellation)
 
         passenger = self.read_passport()
 
@@ -86,18 +91,31 @@ class DocumentsCheckApp(BaseApp):
             else:
                 time.sleep(0.1)
 
+    def stream_documents_camera(self, cancellation: CancellationToken):
+        start = time.time()
+        while not cancellation:
+            if time.time() - start > 15:
+                raise InterruptedError
+
+            img_copy: Image = CameraAccessor.documents_camera.image_bgr.copy()
+            # 1501x1080
+            img_copy = img_copy[:, 960-750:960+750]
+            gui_server.send_image("/app/image", img_copy)
+            time.sleep(0.01)
+
     def read_passport(self) -> passengers.Person:
         self.logger.debug("Reading passport...")
         passport_image = CameraAccessor.documents_camera.image_bgr.copy()
         passport_read_event = threading.Event()
-        passport_data: Optional[str] = None
+        passenger_id: Optional[str] = None
+        passenger = None
         error: Optional[Exception] = None
 
         def send_request():
-            nonlocal passport_data
+            nonlocal passenger_id
             nonlocal error
             try:
-                passport_data = server.process_document(passport_image)
+                passenger_id = server.process_document(passport_image)
             except Exception as e:
                 error = e
             finally:
@@ -107,28 +125,47 @@ class DocumentsCheckApp(BaseApp):
         passport_read_event.wait()
 
         if error:
-            raise error
+            if isinstance(error, server.DocumentProcessingError):
+                self.logger.debug("Document processing error: %s", error)
+                self.send("passport_not_found")
 
-        if not passport_data:
+                try:
+                    self.wait_message("", timeout=20)
+                    if self.last_message["code"] == "send_to_operator":
+                        passport_number = control_panel.request_read_passport()
+                        if not passport_number:
+                            self.send("invalid_passport")
+                            time.sleep(5)
+                            raise PassportNotFoundError()
+
+                        passenger = passengers.get_by_passport(passport_number)
+                        if not passenger:
+                            self.send("ticket_not_found")
+                            time.sleep(5)
+                            raise TicketNotFoundError()
+                    else:
+                        raise error
+                except TimeoutError:
+                    raise error
+            else:
+                raise error
+
+        if not passenger and not passenger_id:
             self.logger.debug("Passport not found.")
             self.send("passport_not_found")
             time.sleep(5)
-            raise PassportNotFoundError()
+            raise TicketNotFoundError()
 
-        passenger = passengers.get_by_id(passport_data)
         if not passenger:
-            raise PassportNotFoundError(f"Got remote passenger id {passport_data} but unable to find it localy")
+            passenger = passengers.get_by_id(passenger_id)
+        if not passenger:
+            raise TicketNotFoundError(f"Got remote passenger id {passenger_id} but unable to find it localy")
         
         return passenger
 
-    '''def check_ticket(self, passport_data: PassportData) -> TicketInfo:
-        ticket = TicketsRepository.get_by_passport(passport_data.passport_number)
-        if not ticket:
-            self.logger.debug("Ticket not found.")
-            self.send("ticket_not_found")
-            time.sleep(5)
-            raise TicketNotFoundError()
-        return ticket'''
+    def send_passport_to_operator(self, image: Image) -> Optional[str]:
+        return
+
 
     def read_face(self) -> face_util.FaceDescriptor:
         is_rect_displayed = False

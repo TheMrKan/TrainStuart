@@ -2,6 +2,7 @@ import time
 from typing import Union, Optional, List, Dict
 import logging
 from utils.cv import Image
+from threading import Event
 
 from robot.gui.base import gui_server
 from robot.hardware.cameras import CameraAccessor, CameraHandler
@@ -126,6 +127,22 @@ def send_robot_path(points: List[chart.Vector2]):
     gui_server.send(PATH, {"code": "robot_path", "points": points})
 
 
+passport_response_event = Event()
+passport_response_data: Optional[str] = None
+
+
+def request_read_passport() -> Optional[str]:
+    global passport_response_data
+
+    passport_response_data = None
+    passport_response_event.clear()
+    gui_server.send(PATH, {"code": "passport_request"})
+
+    passport_response_event.wait(30)
+    passport_response_event.clear()
+    return passport_response_data
+
+
 def _set_active_stream(stream: Optional[Stream]):
     global __active_stream
     if __active_stream:
@@ -144,7 +161,11 @@ def __on_connected():
 
 
 def __on_message_received(message: Union[dict, bytes]):
-    pass
+    global passport_response_data
+
+    if message["code"] == "passport_response":
+        passport_response_event.set()
+        passport_response_data = message.get("passport_number", None)
 
 
 def __create_stream(stream_id: str, name: Optional[str] = None, camera_handler: Optional[CameraHandler] = None) -> Stream:
