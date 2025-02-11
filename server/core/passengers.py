@@ -1,7 +1,9 @@
 from uuid import uuid1
 from dataclasses import dataclass
 from utils.collections import first_or_default
-from typing import Optional
+from utils.faces import FaceDescriptor
+from typing import Optional, Generator
+import numpy
 
 
 @dataclass
@@ -10,7 +12,8 @@ class Passenger:
     name: str
     seat: int
     ticket: str
-    passport: str
+    passport: Optional[str]
+    face_descriptor: Optional[FaceDescriptor]
 
 
 passengers: dict = {
@@ -20,7 +23,8 @@ passengers: dict = {
         "Ivan Ivanov",
         1,
         "1",
-        "3620871542"
+        "3620896892",
+        numpy.zeros((128, ))
     ),
     (uuid := str(uuid1())):
     Passenger(
@@ -28,7 +32,8 @@ passengers: dict = {
         "Petya Petrov",
         2,
         "2",
-        "3610382561"
+        "3610382561",
+        numpy.zeros((128,))
     ),
     "robot":
     Passenger(
@@ -36,9 +41,14 @@ passengers: dict = {
         "Robot",
         3,
         "3",
-        ""
+        None,
+        None
     )
 }
+
+
+def with_passport() -> Generator[Passenger, None, None]:
+    return (p for p in passengers.values() if p.passport)
 
 
 def by_id(passenger_id: str) -> Optional[Passenger]:

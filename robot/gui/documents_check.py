@@ -15,11 +15,11 @@ from robot.gui.base.app import BaseApp
 from robot.gui.base import gui_server, navigation as gui_navigation
 import utils.faces as face_util
 from robot.core.async_processor import AsyncProcessor
-from robot.core.tickets import TicketsRepository, TicketInfo
 from utils.docs_reader import PassportData
 import robot.core.route as route
 from robot.gui import external
 from utils.cancelations import CancellationToken
+from robot.core import server, passengers
 
 
 class PassportNotFoundError(Exception):
@@ -50,13 +50,9 @@ class DocumentsCheckApp(BaseApp):
         cancellation = CancellationToken(self.wait_message_no_block("read_passport"))
         self.play_audio_for_faces(cancellation)
 
-        passport_data = self.read_passport()
+        passenger = self.read_passport()
 
-        self.logger.debug(f"Passport found: {passport_data}. Looking for a ticket...")
-
-        ticket = self.check_ticket(passport_data)
-
-        self.logger.debug(f"Ticket found: {ticket}. Going to step 2...")
+        self.logger.debug(f"Passenger found: {passenger}. Going to step 2...")
         self.send_page("face")
 
         AudioOutput.play_async("face_check.wav")
@@ -64,8 +60,11 @@ class DocumentsCheckApp(BaseApp):
 
         self.send_page("done")
 
-        similarity = face_util.compare_faces(passport_data.face_descriptor, face)
-        self.logger.debug(f"Similarity: {similarity}")
+        if passenger.face_descriptor is not None:
+            similarity = face_util.compare_faces(passenger.face_descriptor, face)
+            self.logger.debug(f"Similarity: {similarity}")
+        else:
+            self.logger.debug("Failed to check faces similarity: passenger doesn't have a saved face")
 
         time.sleep(2)
 
@@ -87,47 +86,49 @@ class DocumentsCheckApp(BaseApp):
             else:
                 time.sleep(0.1)
 
-    def read_passport(self) -> PassportData:
+    def read_passport(self) -> passengers.Person:
         self.logger.debug("Reading passport...")
         passport_image = CameraAccessor.documents_camera.image_bgr.copy()
         passport_read_event = threading.Event()
-        passport_data: Optional[PassportData] = None
+        passport_data: Optional[str] = None
         error: Optional[Exception] = None
 
-        def callback_success(data: PassportData):
+        def send_request():
             nonlocal passport_data
-            passport_data = data
-            passport_read_event.set()
-
-        def callback_error(exception: Exception):
             nonlocal error
-            error = exception
-            passport_read_event.set()
+            try:
+                passport_data = server.process_document(passport_image)
+            except Exception as e:
+                error = e
+            finally:
+                passport_read_event.set()
 
-        AsyncProcessor.read_passport_async(passport_image, callback_success, callback_error)
+        threading.Thread(target=send_request, daemon=True).start()
         passport_read_event.wait()
 
         if error:
             raise error
 
-        passport_found = passport_data is not None
-
-        if not passport_found:
+        if not passport_data:
             self.logger.debug("Passport not found.")
             self.send("passport_not_found")
             time.sleep(5)
             raise PassportNotFoundError()
-        
-        return passport_data
 
-    def check_ticket(self, passport_data: PassportData) -> TicketInfo:
+        passenger = passengers.get_by_id(passport_data)
+        if not passenger:
+            raise PassportNotFoundError(f"Got remote passenger id {passport_data} but unable to find it localy")
+        
+        return passenger
+
+    '''def check_ticket(self, passport_data: PassportData) -> TicketInfo:
         ticket = TicketsRepository.get_by_passport(passport_data.passport_number)
         if not ticket:
             self.logger.debug("Ticket not found.")
             self.send("ticket_not_found")
             time.sleep(5)
             raise TicketNotFoundError()
-        return ticket
+        return ticket'''
 
     def read_face(self) -> face_util.FaceDescriptor:
         is_rect_displayed = False

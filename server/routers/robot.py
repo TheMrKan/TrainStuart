@@ -1,5 +1,6 @@
 from fastapi import APIRouter, File, UploadFile
-from server.core import calls, delivery, documents
+from server.core import calls, delivery, documents, passengers
+from server.routers.models import Passenger
 
 router = APIRouter(prefix="/robot")
 
@@ -49,3 +50,8 @@ def document(file: UploadFile):
 
     return {"success": True, "passenger_id": passenger.id}
 
+
+@router.get("/passengers/")
+def get_passengers():
+    return [Passenger(p.id, p.seat, p.name, p.passport, list(p.face_descriptor) if p.face_descriptor is not None else [])
+            for p in passengers.passengers.values()]

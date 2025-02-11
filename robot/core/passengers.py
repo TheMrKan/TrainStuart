@@ -1,35 +1,56 @@
 from typing import Dict, Optional
 
 from utils.faces import FaceDescriptor, get_nearest_descriptor_index
+from robot.core import server
 
 
 class Person:
-    id: int
+    id: str
     name: Optional[str]
+    seat: int
+    passport: Optional[str]
     face_descriptor: Optional[FaceDescriptor]
 
-    def __init__(self, id: int = 0):
+    def __init__(self,
+                 id: str,
+                 seat: int,
+                 name: Optional[str] = None,
+                 passport: Optional[str] = None,
+                 face_descriptor: Optional[FaceDescriptor] = None):
         self.id = id
-        self.name = None
-        self.face_descriptor = None
+        self.seat = seat
+        self.name = name
+        self.passport = passport
+        self.face_descriptor = face_descriptor
 
     def __repr__(self):
         return self.__str__()
 
     def __str__(self):
-        return f"{self.name or 'NONAME'}({self.id})"
+        return f"{self.name or 'NONAME'}(seat: {self.seat})"
 
 
-__persons: Dict[int, Person] = {
+__persons: Dict[str, Person] = {
 
 }
 __available_id = len(__persons)
+
+
+def load():
+    server_data = server.get_passengers()
+    for passenger in server_data:
+        __persons[passenger["id"]] = Person(passenger["id"], passenger["seat"], passenger["name"],
+                                            passenger["passport"], passenger["face_descriptor"])
 
 
 def with_faces():
     for person in __persons.values():
         if person.face_descriptor is not None:
             yield person
+
+
+def get_by_id(id: str) -> Optional[Person]:
+    return __persons.get(id)
 
 
 def find_by_face_descriptor(descriptor: FaceDescriptor, threshold: float = 0.5) -> Optional[Person]:

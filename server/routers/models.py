@@ -75,3 +75,12 @@ class RequestedDelivery:
     item_id: str
     seat: int
     priority: int
+
+
+@dataclass
+class Passenger:
+    id: str
+    seat: int
+    name: Optional[str]
+    passport: Optional[str]
+    face_descriptor: List[int]

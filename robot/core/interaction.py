@@ -6,7 +6,7 @@ from threading import Event
 import cv2
 
 from robot.hardware.cameras import CameraAccessor
-from robot.core.person import Person, find_by_face_descriptor, add_by_face
+from robot.core.passengers import Person, find_by_face_descriptor, add_by_face
 from robot.core.async_processor import AsyncProcessor
 from utils.faces import ContinuousFaceDetector, FaceLocation, FaceDescriptor
 from utils.cv import Image

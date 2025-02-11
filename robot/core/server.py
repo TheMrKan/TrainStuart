@@ -7,6 +7,9 @@ from urllib.parse import urljoin
 from dataclasses import dataclass
 from datetime import datetime
 from pymitter import EventEmitter
+from utils.faces import FaceDescriptor
+from utils.cv import Image, to_png
+import numpy
 
 from robot.config import instance as config
 
@@ -109,3 +112,39 @@ def get_deliveries() -> List[RequestedDelivery]:
 def take_delivery(delivery_id: str):
     response = requests.post(__get_url(f"delivery/{delivery_id}/status/?status=1"))
     response.raise_for_status()
+
+
+class ServerPassenger(TypedDict):
+    id: str
+    name: str
+    seat: int
+    ticket: str
+    passport: str
+    face_descriptor: FaceDescriptor
+
+
+def get_passengers() -> List[ServerPassenger]:
+    response = requests.get(__get_url("robot/passengers/"))
+    response.raise_for_status()
+    json = response.json()
+    for item in json:
+        if item["face_descriptor"] is not None:
+            item["face_descriptor"] = numpy.asarray(item["face_descriptor"], dtype=numpy.float32)
+
+    __logger.debug("Received passengers: %s", json)
+    return json
+
+
+class DocumentProcessingError(Exception):
+    pass
+
+
+def process_document(image: Image) -> str:
+    files = {"file": to_png(image)}
+    response = requests.post(__get_url(f"robot/document/"), files=files)
+    response.raise_for_status()
+    json: dict = response.json()
+    if not json.get("success", False):
+        raise DocumentProcessingError(json.get("error", ""))
+
+    return json["passenger_id"]

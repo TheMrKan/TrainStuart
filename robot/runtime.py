@@ -5,11 +5,7 @@ import logging
 from robot.hardware.cameras import CameraAccessor
 from robot.hardware.audio import AudioOutput
 from robot.core.async_processor import AsyncProcessor
-from robot.core.tickets import TicketsRepository
-import robot.core.route as route
-import robot.core.server as server
-import robot.core.calls as calls
-import robot.core.deliveries as deliveries
+from robot.core import route, server, calls, deliveries, passengers
 from robot.hardware import robot_interface
 from robot.gui.base import gui_server, navigation as gui_navigation
 from robot.gui.startup import StartupApp
@@ -61,8 +57,8 @@ class Runtime:
 
         # VideoBehaviour().run()
         # StationIdleBehaviour().run()
-        # DocumentsCheckBehaviour().run()
-        CarriageMovingBehaviour().run()
+        DocumentsCheckBehaviour().run()
+        # CarriageMovingBehaviour().run()
 
         #InteractionApp().run()
 
@@ -75,8 +71,8 @@ class Runtime:
         status_log("Настройка камер...")
         CameraAccessor.initialize()
 
-        status_log("Получение билетов...")
-        TicketsRepository.load()
+        status_log("Получение списка пассажиров...")
+        passengers.load()
 
         status_log("Получение информации о маршруте...")
         route.initialize()

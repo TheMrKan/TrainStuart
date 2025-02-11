@@ -33,7 +33,10 @@ def load_file(file: IO) -> LoadedDocument:
 
 
 def process_ocr(document: LoadedDocument):
-    raw_result = pytesseract.image_to_string(document.passport_number_img, "rus", "--oem 1 --psm 6")
+    document.passport_number_img.show()
+    img = document.passport_number_img.convert('L').resize([3 * _ for _ in document.passport_number_img.size], Image.Resampling.BICUBIC)
+    img.show()
+    raw_result = pytesseract.image_to_string(img, "rus", "--oem 1 --psm 6")
     print("OCR Raw Result:", raw_result)
 
     _result = []
@@ -41,14 +44,15 @@ def process_ocr(document: LoadedDocument):
         if c in SYMBOLS:
             _result.append(c)
     result = "".join(_result)
+    result = result.ljust(10, "0")
     return result
 
 
 def try_find_passenger(passport_number_str: str) -> Optional[passengers.Passenger]:
     result = process.extractOne(passport_number_str,
-                                passengers.passengers.values(),
+                                tuple(passengers.with_passport()),
                                 processor=lambda p: p.passport if isinstance(p, passengers.Passenger) else p,
-                                score_cutoff=70)
+                                score_cutoff=1)
     print("Comprasion result:", result)
     if not result:
         return None
