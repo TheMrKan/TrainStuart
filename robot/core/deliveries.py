@@ -30,18 +30,32 @@ def on_deliveries_updated(has_new: bool):
 
 @dataclass
 class Delivery:
+    id: str
     container: RobotContainer
     seat: int
 
 
-def take_delivery() -> Optional[Delivery]:
+def take_delivery(force_update: bool = True) -> Optional[Delivery]:
+    global has_new_delivery
+    if not force_update and not has_new_delivery:
+        return None
+
     deliveries = server.get_deliveries()
-    if not deliveries:
+    has_new_delivery = len(deliveries) >= 2
+    if not any(deliveries):
         return None
 
     selected: server.RequestedDelivery = max(deliveries, key=lambda d: d["priority"])
     server.take_delivery(selected["id"])
     logger.info("Take delivery: %s", selected)
 
-    return Delivery(RobotContainer.SMALL_FRONT, selected["seat"])
+    return Delivery(selected["id"], RobotContainer.SMALL_FRONT, selected["seat"])
+
+
+def complete_delivery(delivery: Delivery):
+    global has_new_delivery
+    server.complete_delivery(delivery.id)
+
+    deliveries = server.get_deliveries()
+    has_new_delivery = any(deliveries)
 

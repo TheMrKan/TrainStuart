@@ -26,9 +26,6 @@ class BaseZoneController:
     def class_init(cls):
         pass
 
-    def __init__(self):
-        irobot.set_head_rotation(irobot.head_horizontal, self.MOVING_HEAD_Y)
-
     def go_to_point(self, point: Vector2):
         movement = self._prepare_movement(point)
         self._process_movement(movement)
@@ -59,6 +56,8 @@ class BaseZoneController:
     def _process_movement(self, movement: Movement):
         self.current_movement = movement
         self._send_movement(movement)
+
+        irobot.set_head_rotation(-90, self.MOVING_HEAD_Y)
 
         self.start_point = movement.start
         for point in (*movement.intermediate_points, movement.destination):

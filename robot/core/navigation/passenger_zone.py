@@ -8,6 +8,7 @@ from robot.core.navigation import chart, visual_positioning
 from robot.core.navigation.chart import Vector2, Point, Zone
 from robot.hardware import robot_interface as irobot
 from utils.misc import are_nearly_equal, sqr_distance
+from robot.hardware.cameras import CameraAccessor
 
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -32,6 +33,13 @@ class PassengerZoneController(BaseZoneController):
         seat_pos = chart.get_position_for_seat(seat)
         logger.info(f"Going to seat {seat} {seat_pos}")
         self.go_to_point(seat_pos)
+
+    def _process_movement(self, *args):
+        try:
+            CameraAccessor.main_camera.attach("passenger_zone")
+            super()._process_movement(*args)
+        finally:
+            CameraAccessor.main_camera.detach("passenger_zone")
 
     def _move(self, point: Vector2):
         self.last_correction = 0

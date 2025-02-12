@@ -12,7 +12,7 @@ from robot.core.navigation.vending_zone import VendingZoneController
 
 logger = logging.getLogger(__name__)
 
-FIND_MARKER_HEAD_Y = 15
+FIND_MARKER_HEAD_Y = 20
 ZONE_CONTROLLERS = {
     "passenger_zone": PassengerZoneController,
     "vending_zone": VendingZoneController,

@@ -23,7 +23,7 @@ def list_deliveries() -> List[RequestedDelivery]:
 
 @router.post("/{request_id}/status")
 def set_delivery_status(request_id: str, status: int):
-    deliv: delivery.RequestedDelivery = first_or_default(delivery.requested(), lambda d: d.id == request_id, None)
+    deliv: delivery.RequestedDelivery = delivery.deliveries.get(request_id)
     if not deliv:
         raise http_status.HTTP_404_NOT_FOUND
 

@@ -37,7 +37,7 @@ class DeliveryTarget(Target):
         self.delivery = delivery
 
     def set_completed(self):
-        pass
+        deliveries.complete_delivery(self.delivery)
 
 
 class CarriageMovingBehaviour(BaseBehaviour):
@@ -65,7 +65,7 @@ class CarriageMovingBehaviour(BaseBehaviour):
         self.__set_touch(True)
 
         general.locate()
-        target = self.__select_target()
+        target = self.__select_target(True)
         if not target:
             general.go_home()
 
@@ -73,7 +73,7 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
             while not target:
                 time.sleep(1)
-                target = self.__select_target()
+                target = self.__select_target(False)
                 if target:
                     break
 
@@ -86,7 +86,7 @@ class CarriageMovingBehaviour(BaseBehaviour):
             self.__interact(target)
             target.set_completed()
 
-            target = self.__select_target()
+            target = self.__select_target(True)
             if not target:
                 general.go_home()
 
@@ -98,12 +98,12 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
         return first(calls.active_calls)
 
-    def __select_target(self) -> Union[CallTarget, DeliveryTarget, None]:
+    def __select_target(self, force_update: bool) -> Union[CallTarget, DeliveryTarget, None]:
         if any(calls.active_calls):
-            return CallTarget(calls.active_calls)
+            return CallTarget(first(calls.active_calls))
 
-        if deliveries.has_new_delivery:
-            delivery = deliveries.take_delivery()
+        delivery = deliveries.take_delivery(force_update)
+        if delivery:
             return DeliveryTarget(delivery)
 
         return None
@@ -128,13 +128,13 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
     def __take_product(self, target: DeliveryTarget):
         irobot.open_container(target.delivery.container, irobot.Side.LEFT)
-        time.sleep(3)
+        time.sleep(4)
         irobot.close_container(target.delivery.container)
 
     def __give_product(self, target: DeliveryTarget):
         AudioOutput.play_async("order_completed_eat.wav")
         irobot.open_container(target.delivery.container, irobot.Side.LEFT)
-        time.sleep(3)
+        time.sleep(6)
         irobot.close_container(target.delivery.container)
 
     def on_touch_received(self, state: int, *args):

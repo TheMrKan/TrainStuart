@@ -114,6 +114,11 @@ def take_delivery(delivery_id: str):
     response.raise_for_status()
 
 
+def complete_delivery(delivery_id: str):
+    response = requests.post(__get_url(f"delivery/{delivery_id}/status/?status=2"))
+    response.raise_for_status()
+
+
 class ServerPassenger(TypedDict):
     id: str
     name: str
