@@ -192,6 +192,7 @@ class DocumentsCheckApp(BaseApp):
                 current_time = time.time()
 
                 image = self.crop_image(CameraAccessor.main_camera.image_bgr.copy())
+                image_ext = self.crop_image(CameraAccessor.main_camera.image_bgr.copy(), 1.2)
 
                 face_location = face_util.find_face(image)
                 if face_location is None:
@@ -253,13 +254,13 @@ class DocumentsCheckApp(BaseApp):
             CameraAccessor.main_camera.detach("documents_check")
 
     @staticmethod
-    def crop_image(image: cv2.UMat) -> cv2.UMat:
+    def crop_image(image: cv2.UMat, multiplier: float = 1) -> cv2.UMat:
         # временные преобразования для корректного отображения на мониторе ПК
         # позже будут перенесены в другое место
         # обрезает входное изображение под 9:16 и отражает его по горизонатали (чтобы выглядело как зеркало)
         # TODO: вынести преобразование изображения с камеры в другое место и привязать к конфигу
         h, w, _ = image.shape
-        target_ratio = 0.5625  # 9:16
+        target_ratio = 0.5625 * multiplier  # 9:16
         target_width = h * target_ratio
         image = image[:, int(w / 2 - target_width / 2):int(w / 2 + target_width / 2)]
         image = cv2.flip(image, 1)
