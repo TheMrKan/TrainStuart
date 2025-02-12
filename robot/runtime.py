@@ -97,7 +97,7 @@ class Runtime:
 
         AudioOutput.FILES_DIR = config.resources_dir
 
-        if not AsyncProcessor.check_init() and False:
+        if not AsyncProcessor.check_init():
             status_log("Загрузка обработчика...")
             while not AsyncProcessor.check_init():
                 time.sleep(0.5)

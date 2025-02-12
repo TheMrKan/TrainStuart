@@ -20,7 +20,7 @@ passengers: dict = {
     (uuid := str(uuid1())):
     Passenger(
         uuid,
-        "Ivan Ivanov",
+        "Егор К.",
         1,
         "1",
         "3620896892",
@@ -29,10 +29,10 @@ passengers: dict = {
     (uuid := str(uuid1())):
     Passenger(
         uuid,
-        "Petya Petrov",
+        "Валерий Н.",
         2,
         "2",
-        "3610382561",
+        "3610383861",
         numpy.zeros((128,))
     ),
     "robot":

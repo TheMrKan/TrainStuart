@@ -1,21 +1,50 @@
 import logging
 import time
 from utils.collections import first
+from typing import Union
 
 from robot.behaviour.base import BaseBehaviour
 from robot.core.navigation import general, passenger_zone, chart
-from robot.hardware import robot_interface
+from robot.hardware import robot_interface as irobot
 from robot.hardware.audio import AudioOutput
-from robot.hardware.robot_interface import RobotContainer, Side
 from robot.gui.interaction import InteractionApp
 from robot.gui.base.app import BaseApp
 from robot.gui.idle import IdleApp
-from robot.core import calls
+from robot.core import calls, deliveries
+
+
+class Target:
+    seat: int
+
+    def __init__(self, seat: int):
+        self.seat = seat
+
+    def set_completed(self):
+        pass
+
+
+class CallTarget(Target):
+
+    def set_completed(self):
+        calls.active_calls.remove(self.seat)
+
+
+class DeliveryTarget(Target):
+    delivery: deliveries.Delivery
+
+    def __init__(self, delivery):
+        super().__init__(delivery.seat)
+        self.delivery = delivery
+
+    def set_completed(self):
+        pass
 
 
 class CarriageMovingBehaviour(BaseBehaviour):
     RESTART_ON_EXCEPTION = False
     app: BaseApp = None
+
+    INTERACTION_HEAD_ROT = -70, -20
 
     def __init__(self):
         super().__init__()
@@ -23,24 +52,42 @@ class CarriageMovingBehaviour(BaseBehaviour):
     def initialize(self):
         pass
 
+    def __set_touch(self, enabled: bool):
+        if enabled:
+            irobot.on_command.on("Tch", self.on_touch_received)
+        else:
+            irobot.on_command.off("Tch", self.on_touch_received)
+
     def behave(self):
         self.app = IdleApp()
         self.app.run()
 
-        robot_interface.on_command.on("Tch", self.on_touch_received)
+        self.__set_touch(True)
 
         general.locate()
-        if not any(calls.active_calls):
+        target = self.__select_target()
+        if not target:
             general.go_home()
 
         while True:
-            seat = self.__wait_for_call()
-            general.go_to_seat(seat)
 
-            self.__interact()
-            calls.active_calls.remove(seat)
+            while not target:
+                time.sleep(1)
+                target = self.__select_target()
+                if target:
+                    break
 
-            if not any(calls.active_calls):
+            if isinstance(target, DeliveryTarget):
+                general.go_home()
+                self.__take_product(target)
+
+            general.go_to_seat(target.seat)
+
+            self.__interact(target)
+            target.set_completed()
+
+            target = self.__select_target()
+            if not target:
                 general.go_home()
 
         exit()
@@ -51,7 +98,23 @@ class CarriageMovingBehaviour(BaseBehaviour):
 
         return first(calls.active_calls)
 
-    def __interact(self):
+    def __select_target(self) -> Union[CallTarget, DeliveryTarget, None]:
+        if any(calls.active_calls):
+            return CallTarget(calls.active_calls)
+
+        if deliveries.has_new_delivery:
+            delivery = deliveries.take_delivery()
+            return DeliveryTarget(delivery)
+
+        return None
+
+    def __interact(self, target: Union[CallTarget, DeliveryTarget]):
+        self.__set_touch(False)
+        irobot.set_head_rotation(*self.INTERACTION_HEAD_ROT, completion=False)
+
+        if isinstance(target, DeliveryTarget):
+            self.__give_product(target)
+
         self.app.shutdown()
         self.app = InteractionApp()
 
@@ -60,6 +123,19 @@ class CarriageMovingBehaviour(BaseBehaviour):
             time.sleep(1)
         self.app = IdleApp()
         self.app.run()
+
+        self.__set_touch(True)
+
+    def __take_product(self, target: DeliveryTarget):
+        irobot.open_container(target.delivery.container, irobot.Side.LEFT)
+        time.sleep(3)
+        irobot.close_container(target.delivery.container)
+
+    def __give_product(self, target: DeliveryTarget):
+        AudioOutput.play_async("order_completed_eat.wav")
+        irobot.open_container(target.delivery.container, irobot.Side.LEFT)
+        time.sleep(3)
+        irobot.close_container(target.delivery.container)
 
     def on_touch_received(self, state: int, *args):
         if isinstance(self.app, InteractionApp):

@@ -8,7 +8,6 @@
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
     <script src="/static/js/gui_channel.js"></script>
     <script src="/static/js/gui_navigation.js"></script>
-    <script src="/static/js/ws_video_stream.js"></script>
     <title>Проверка паспорта</title>
 </head>
 <body>
@@ -36,25 +35,15 @@
 </section>
 
 <section class="section step1-processing" id="process" style="display: none;">
-    <h1 class="text step-text" id="step1-text">Шаг 1: Вставьте паспорт в сканер</h1>
+    <h1 class="text step-text" id="step1-text">Обработка...<br>Пожалуйста, подождите.</h1>
     <svg class="svg-loading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width="200" height="200" style="shape-rendering: auto; display: block; background: transparent;" xmlns:xlink="http://www.w3.org/1999/xlink"><g><circle stroke-linecap="round" fill="none" stroke-dasharray="50.26548245743669 50.26548245743669" stroke="#fa5252" stroke-width="8" r="32" cy="50" cx="50">
   <animateTransform values="0 50 50;360 50 50" keyTimes="0;1" dur="1s" repeatCount="indefinite" type="rotate" attributeName="transform"></animateTransform>
 </circle><g></g></g></svg>
 </section>
 
-<section class="section step1-camera" id="camera" style="display: none;">
-    <h1 class="text step-text over-image">Шаг 2: Скорректируйте положение паспорта</h1>
-    <div style="position: relative;">
-        <img class="camera-image-horizontal" src="" alt="camera" id="cameraImage">
-        <img class="" src="/static/images/passport_overlay.png" style="position: absolute; left: 0; top: 12rem; width: 100vw;">
-    </div>
-
-    <button class="btn-repeat" id="passport-step2-btn" onclick="passport_step2()">Продолжить</button>
-</section>
-
 <section class="section step1-wrong" id="no_passport" style="display: none;">
     <div class="text">
-        <h1 class="step-text">Шаг 3: Обработка данных</h1>
+        <h1 class="step-text">Обработка данных</h1>
         <h2 class="step-text2">Не удалось считать данные, либо данные считаны некорректно. <br>Повторить попытку или передать оператору?</h2>
     </div>
     <svg class="svg-cancel" fill="#FA5252" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 72 72" width="64px" height="64px">
@@ -94,30 +83,14 @@
 
 <script>
 
-    window.addEventListener('load', function () {
-        videoStream = new WSVideoStream("ws://robot:8001/app/image", document.getElementById("cameraImage"));
-        videoStream.begin();
-    });
-
     function passport_step1() {
         console.log("Read passport")
-        channel.send("passport_step1");
-
-        let element = document.getElementById("camera");
-        element.style = "display: flex;";
-
-        element = document.getElementById("read");
-        element.style = "display: none;";
-    }
-
-    function passport_step2() {
-        console.log("Step 2")
         channel.send("passport_step2");
 
         let element = document.getElementById("process");
         element.style = "display: flex;";
 
-        element = document.getElementById("camera");
+        element = document.getElementById("read");
         element.style = "display: none;";
     }
 

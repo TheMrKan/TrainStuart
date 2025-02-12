@@ -49,11 +49,8 @@ class DocumentsCheckApp(BaseApp):
         super().run()
         self.logger.debug("Running DocumentsCheck app")
 
-        cancellation = CancellationToken(self.wait_message_no_block("passport_step1"))
-        self.play_audio_for_faces(cancellation)
-
         cancellation = CancellationToken(self.wait_message_no_block("passport_step2"))
-        self.stream_documents_camera(cancellation)
+        self.play_audio_for_faces(cancellation)
 
         passenger = self.read_passport()
 
@@ -82,29 +79,24 @@ class DocumentsCheckApp(BaseApp):
 
     def play_audio_for_faces(self, cancellation: CancellationToken):
         self.__face_detector.reset()
-        while not cancellation:
-            state = self.__face_detector.tick()
-            if state == self.__face_detector.State.FOUND:
-                AudioOutput.play_async("document.wav")
-            elif state == self.__face_detector.State.WAITING:
-                time.sleep(0.25)
-            else:
-                time.sleep(0.1)
-
-    def stream_documents_camera(self, cancellation: CancellationToken):
-        start = time.time()
-        while not cancellation:
-            if time.time() - start > 15:
-                raise InterruptedError
-
-            img_copy: Image = CameraAccessor.documents_camera.image_bgr.copy()
-            # 1501x1080
-            img_copy = img_copy[:, 960-750:960+750]
-            gui_server.send_image("/app/image", img_copy)
-            time.sleep(0.01)
+        try:
+            CameraAccessor.main_camera.attach("documents_check")
+            while not cancellation:
+                state = self.__face_detector.tick()
+                if state == self.__face_detector.State.FOUND:
+                    AudioOutput.play_async("document.wav")
+                elif state == self.__face_detector.State.WAITING:
+                    time.sleep(0.25)
+                else:
+                    time.sleep(0.1)
+        finally:
+            CameraAccessor.main_camera.detach("documents_check")
 
     def read_passport(self) -> passengers.Person:
         self.logger.debug("Reading passport...")
+        while not CameraAccessor.documents_camera.grab_image():
+            time.sleep(0.01)
+
         passport_image = CameraAccessor.documents_camera.image_bgr.copy()
         passport_read_event = threading.Event()
         passenger_id: Optional[str] = None
@@ -163,10 +155,6 @@ class DocumentsCheckApp(BaseApp):
         
         return passenger
 
-    def send_passport_to_operator(self, image: Image) -> Optional[str]:
-        return
-
-
     def read_face(self) -> face_util.FaceDescriptor:
         is_rect_displayed = False
         face_center_history_x = []
@@ -198,67 +186,71 @@ class DocumentsCheckApp(BaseApp):
             face_processing_error = None
             time_start = time.time()
 
-        while True:
-            current_time = time.time()
+        try:
+            CameraAccessor.main_camera.attach("documents_check")
+            while True:
+                current_time = time.time()
 
-            image = self.crop_image(CameraAccessor.main_camera.image_bgr.copy())
+                image = self.crop_image(CameraAccessor.main_camera.image_bgr.copy())
 
-            face_location = face_util.find_face(image)
-            if face_location is None:
-                if face_not_found_confirmations > 0:
-                    face_not_found_confirmations -= 1
-                elif is_rect_displayed:
-                    reset()
-            else:
-                if current_time - time_start >= 2:    # задержка после включения камеры, чтобы лицо не находило мгновенно
-                    face_not_found_confirmations = 25    # сброс кол-ва кадров для скрытия квадрата
+                face_location = face_util.find_face(image)
+                if face_location is None:
+                    if face_not_found_confirmations > 0:
+                        face_not_found_confirmations -= 1
+                    elif is_rect_displayed:
+                        reset()
+                else:
+                    if current_time - time_start >= 2:    # задержка после включения камеры, чтобы лицо не находило мгновенно
+                        face_not_found_confirmations = 25    # сброс кол-ва кадров для скрытия квадрата
 
-                    if time_start_tracking == 0:
-                        time_start_tracking = current_time
-                    elif current_time - time_start_tracking > 0.5:
-                        if not face_processing_started:
+                        if time_start_tracking == 0:
+                            time_start_tracking = current_time
+                        elif current_time - time_start_tracking > 0.5:
+                            if not face_processing_started:
 
-                            def callback_success(descriptor: face_util.FaceDescriptor):
-                                nonlocal face_processing_result
-                                face_processing_result = descriptor
+                                def callback_success(descriptor: face_util.FaceDescriptor):
+                                    nonlocal face_processing_result
+                                    face_processing_result = descriptor
 
-                            def callback_error(exception: Exception):
-                                nonlocal face_processing_error
-                                face_processing_error = exception
+                                def callback_error(exception: Exception):
+                                    nonlocal face_processing_error
+                                    face_processing_error = exception
 
-                            self.logger.debug("Face decriptor processing started")
-                            AsyncProcessor.get_face_descriptor_async(image, callback_success, callback_error, face_location=face_location)
-                            face_processing_started = True
+                                self.logger.debug("Face decriptor processing started")
+                                AsyncProcessor.get_face_descriptor_async(image, callback_success, callback_error, face_location=face_location)
+                                face_processing_started = True
 
-                        elif face_processing_error:
-                            self.logger.exception("Failed to get face descriptor from camera image", exc_info=face_processing_error)
-                            reset()
+                            elif face_processing_error:
+                                self.logger.exception("Failed to get face descriptor from camera image", exc_info=face_processing_error)
+                                reset()
 
-                        elif face_processing_result is not None and current_time - time_start_tracking > 1.5:
-                            self.logger.debug(f"Recognition completed")
-                            self.send("hide_face_rect")
-                            return face_processing_result
+                            elif face_processing_result is not None and current_time - time_start_tracking > 1.5:
+                                self.logger.debug(f"Recognition completed")
+                                self.send("hide_face_rect")
+                                return face_processing_result
 
-                    center = int(face_location[0] + (face_location[2] / 2)), int(face_location[1] + (face_location[3] / 2))
-                    if not is_rect_displayed:
-                        self.send("show_face_rect")
-                        is_rect_displayed = True
+                        center = int(face_location[0] + (face_location[2] / 2)), int(face_location[1] + (face_location[3] / 2))
+                        if not is_rect_displayed:
+                            self.send("show_face_rect")
+                            is_rect_displayed = True
 
-                    # фильтр, чтобы квадрат не дергался
-                    face_center_history_x.append(center[0])
-                    face_center_history_y.append(center[1])
+                        # фильтр, чтобы квадрат не дергался
+                        face_center_history_x.append(center[0])
+                        face_center_history_y.append(center[1])
 
-                    if len(face_center_history_x) > 10:
-                        del face_center_history_x[0]
-                        del face_center_history_y[0]
+                        if len(face_center_history_x) > 10:
+                            del face_center_history_x[0]
+                            del face_center_history_y[0]
 
-                    average_center_x = sum(face_center_history_x) / len(face_center_history_x)
-                    average_center_y = sum(face_center_history_y) / len(face_center_history_y)
+                        average_center_x = sum(face_center_history_x) / len(face_center_history_x)
+                        average_center_y = sum(face_center_history_y) / len(face_center_history_y)
 
-                    x_rel, y_rel = average_center_x / image.shape[1], average_center_y / image.shape[0]
-                    self.send("face_rect_position", x=x_rel, y=y_rel)
+                        x_rel, y_rel = average_center_x / image.shape[1], average_center_y / image.shape[0]
+                        self.send("face_rect_position", x=x_rel, y=y_rel)
 
-            gui_server.send_image("/app/image", image)
+                gui_server.send_image("/app/image", image)
+        finally:
+            CameraAccessor.main_camera.detach("documents_check")
 
     @staticmethod
     def crop_image(image: cv2.UMat) -> cv2.UMat:

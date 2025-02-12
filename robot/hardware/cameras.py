@@ -42,6 +42,8 @@ class CameraHandler:
     __logger: logging.Logger
     __image_grabbed: threading.Event
     __is_running: bool    # используется для остановки reader_thread
+    __is_paused: bool
+    __attached: set
 
     on_image_grabbed: List[Callable[[], None]] = []
 
@@ -49,6 +51,8 @@ class CameraHandler:
         self.index = index
         self.__logger = logging.getLogger(__name__ + ".CameraHandler")
         self.__is_running = False
+        self.__is_paused = False
+        self.__attached = set()
 
         self.width = width
         self.height = height
@@ -72,6 +76,14 @@ class CameraHandler:
         self.__reader_thread.start()
         self.await_first_frame()
 
+    def attach(self, key: str):
+        self.__attached.add(key)
+        self.__is_paused = not any(self.__attached)
+
+    def detach(self, key: str):
+        self.__attached.remove(key)
+        self.__is_paused = not any(self.__attached)
+
     def await_first_frame(self, timeout: Optional[float] = None):
         self.__image_grabbed.wait(timeout)
 
@@ -94,7 +106,7 @@ class CameraHandler:
         thread.daemon = True
         return thread
 
-    def __grab_image(self) -> bool:
+    def grab_image(self) -> bool:
         """
         Считывает изображение с камеры и записывает его в двух форматах в self.image_bgr и self.image_hsv
         :return: True, если удалось считать изображение; иначе False
@@ -118,9 +130,13 @@ class CameraHandler:
     def __reader_thread_worker(self):
         self.__logger.debug(f"Camera {self.index} has started capturing")
         while self.__is_running:
+            if self.__is_paused:
+                time.sleep(0.1)
+                continue
+
             try:
                 # к сведению: на слабом ноуте timeit показал, что на выполнение read() уходит в среднем 33 мс
-                success = self.__grab_image()
+                success = self.grab_image()
                 if not success:
                     self.__logger.warning(f"Failed to get image from camera {self.index}")
                     time.sleep(0.3)

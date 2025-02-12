@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pymitter import EventEmitter
 from utils.faces import FaceDescriptor
-from utils.cv import Image, to_png
+from utils.cv import Image, to_jpeg
 import numpy
 
 from robot.config import instance as config
@@ -140,7 +140,7 @@ class DocumentProcessingError(Exception):
 
 
 def process_document(image: Image) -> str:
-    files = {"file": to_png(image)}
+    files = {"file": to_jpeg(image)}
     response = requests.post(__get_url(f"robot/document/"), files=files)
     response.raise_for_status()
     json: dict = response.json()

@@ -44,7 +44,7 @@ def document(file: UploadFile):
     if not passport:
         return {"success": False, "error": "OCR failed"}
 
-    passenger = documents.try_find_passenger(passport)
+    passenger = passengers.by_passport(passport)
     if not passenger:
         return {"success": False, "error": "Passenger not found"}
 

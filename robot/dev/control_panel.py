@@ -74,10 +74,14 @@ class CameraStream(Stream):
     @Stream.is_active.setter
     def is_active(self, value):
         self.logger.debug(f"Set camera stream active: {value}")
-        if value and self.__on_camera_image not in self.camera_handler.on_image_grabbed:
-            self.camera_handler.on_image_grabbed.append(self.__on_camera_image)
-        elif not value and self.__on_camera_image in self.camera_handler.on_image_grabbed:
-            self.camera_handler.on_image_grabbed.remove(self.__on_camera_image)
+        if value:
+            self.camera_handler.attach("control_panel")
+            if self.__on_camera_image not in self.camera_handler.on_image_grabbed:
+                self.camera_handler.on_image_grabbed.append(self.__on_camera_image)
+        else:
+            self.camera_handler.detach("control_panel")
+            if self.__on_camera_image in self.camera_handler.on_image_grabbed:
+                self.camera_handler.on_image_grabbed.remove(self.__on_camera_image)
         Stream.is_active.fset(self, value)
 
     def __on_camera_image(self):
