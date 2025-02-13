@@ -13,6 +13,7 @@ def load_file(file: IO) -> str:
 
 def process_ocr(b64img: str):
     print("Running OCR...")
+    #return "3620896892"
     data = {
         "mimeType": "image",
         "languageCodes": ["ru", "en"],

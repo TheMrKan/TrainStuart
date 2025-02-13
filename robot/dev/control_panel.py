@@ -2,12 +2,14 @@ import time
 from typing import Union, Optional, List, Dict
 import logging
 from utils.cv import Image
+from utils.faces import FaceDescriptor
 from threading import Event
 
 from robot.gui.base import gui_server
 from robot.hardware.cameras import CameraAccessor, CameraHandler
 from robot.core.navigation import chart
 from robot.hardware import robot_interface
+from robot.core.passengers import Person
 
 __logger = logging.getLogger(__name__)
 
@@ -147,6 +149,26 @@ def request_read_passport() -> Optional[str]:
     return passport_response_data
 
 
+face_response_event = Event()
+face_response_data: bool = False
+
+
+def request_compare_faces(image: Image):
+    global face_response_data
+
+    face_response_data = False
+    face_response_event.clear()
+
+    stream = get_stream("passport_history", "Предыдущий паспорт")
+    stream.send_image(image)
+
+    gui_server.send(PATH, {"code": "face_request"})
+
+    face_response_event.wait(30)
+    face_response_event.clear()
+    return face_response_data
+
+
 def _set_active_stream(stream: Optional[Stream]):
     global __active_stream
     if __active_stream:
@@ -166,10 +188,15 @@ def __on_connected():
 
 def __on_message_received(message: Union[dict, bytes]):
     global passport_response_data
+    global face_response_data
 
     if message["code"] == "passport_response":
         passport_response_event.set()
         passport_response_data = message.get("passport_number", None)
+
+    if message["code"] == "face_response":
+        face_response_event.set()
+        face_response_data = message.get("result", None)
 
 
 def __create_stream(stream_id: str, name: Optional[str] = None, camera_handler: Optional[CameraHandler] = None) -> Stream:

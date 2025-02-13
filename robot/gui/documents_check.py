@@ -5,7 +5,7 @@ import time
 import base64
 import cv2
 import random
-from typing import Callable, Optional, Dict, Any
+from typing import Callable, Optional, Dict, Any, Tuple
 from datetime import datetime
 
 from robot.hardware.cameras import CameraAccessor
@@ -32,6 +32,10 @@ class TicketNotFoundError(Exception):
     pass
 
 
+class FaceMismatchError(Exception):
+    pass
+
+
 class DocumentsCheckApp(BaseApp):
 
     NAME = "DocumentsCheck"
@@ -52,7 +56,7 @@ class DocumentsCheckApp(BaseApp):
         cancellation = CancellationToken(self.wait_message_no_block("passport_step2"))
         self.play_audio_for_faces(cancellation)
 
-        passenger = self.read_passport()
+        passenger, passport_image = self.read_passport()
 
         self.logger.debug(f"Passenger found: {passenger}. Going to step 2...")
         self.send_page("face")
@@ -60,20 +64,15 @@ class DocumentsCheckApp(BaseApp):
         AudioOutput.play_async("face_check.wav")
         face = self.read_face()
 
-        self.send_page("done")
+        self.send_page("loading")
 
-        if passenger.face_descriptor is not None:
-            similarity = face_util.compare_faces(passenger.face_descriptor, face)
-            self.logger.debug(f"Similarity: {similarity}")
-        else:
-            passengers.update_face_descriptor(passenger.id, face)
-            self.logger.debug("Failed to check faces similarity: passenger doesn't have a saved face")
-
-        time.sleep(2)
+        self.compare_faces(passenger, passport_image, face)
 
         AudioOutput.play_async("preferences.wav")
         self.show_preferences()
         AudioOutput.play_async("goodbye.wav")
+
+        self.send_page("done")
 
         self.success = True
         self.logger.debug("DocumentsCheckApp run finished")
@@ -93,7 +92,7 @@ class DocumentsCheckApp(BaseApp):
         finally:
             CameraAccessor.main_camera.detach("documents_check")
 
-    def read_passport(self) -> passengers.Person:
+    def read_passport(self) -> Tuple[Image, passengers.Person]:
         self.logger.debug("Reading passport...")
         while not CameraAccessor.documents_camera.grab_image():
             time.sleep(0.01)
@@ -154,7 +153,7 @@ class DocumentsCheckApp(BaseApp):
         if not passenger:
             raise TicketNotFoundError(f"Got remote passenger id {passenger_id} but unable to find it localy")
         
-        return passenger
+        return passenger, passport_image
 
     def read_face(self) -> face_util.FaceDescriptor:
         is_rect_displayed = False
@@ -266,6 +265,21 @@ class DocumentsCheckApp(BaseApp):
         image = image[:, int(w / 2 - target_width / 2):int(w / 2 + target_width / 2)]
         image = cv2.flip(image, 1)
         return image
+
+    def compare_faces(self, passenger: passengers.Person, passport_image: Image, face: face_util.FaceDescriptor):
+        similarity = face_util.compare_faces(passenger.face_descriptor, face)
+        self.logger.debug(f"Faces similarity: {similarity}")
+        if similarity > 0.65:
+            self.logger.debug("Faces are similar enough. Continue...")
+            return
+
+        result = control_panel.request_compare_faces(passport_image)
+        if not result:
+            raise FaceMismatchError
+
+        print("Face similarity was confirmed from control panel. Updating...")
+        passengers.update_face_descriptor(passenger.id, face)
+
 
     def show_preferences(self):
         self.send_page("preferences")
