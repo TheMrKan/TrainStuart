@@ -83,4 +83,4 @@ class Passenger:
     seat: int
     name: Optional[str]
     passport: Optional[str]
-    face_descriptor: List[int]
+    face_descriptor: Optional[List[float]]

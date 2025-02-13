@@ -79,3 +79,8 @@ def add_by_face(descriptor: FaceDescriptor) -> Person:
 
 def __find_new_available_id() -> int:
     return __available_id + 1
+
+
+def update_face_descriptor(passenger_id: str, descriptor: Optional[FaceDescriptor]):
+    __persons[passenger_id].face_descriptor = descriptor
+    server.update_passenger_face_descriptor(passenger_id, descriptor)

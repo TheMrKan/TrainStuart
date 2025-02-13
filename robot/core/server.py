@@ -1,3 +1,4 @@
+import json
 from threading import Thread
 import time
 import requests
@@ -138,6 +139,16 @@ def get_passengers() -> List[ServerPassenger]:
 
     __logger.debug("Received passengers: %s", json)
     return json
+
+
+def update_passenger_face_descriptor(passenger_id: str, descriptor: Optional[FaceDescriptor]):
+    __logger.debug("Sending face descriptor for passenger %s", passenger_id)
+    data = json.dumps(list(descriptor))
+    print(data)
+    response = requests.post(__get_url(f"robot/passengers/{passenger_id}/face_descriptor"),
+                             json=data)
+    response.raise_for_status()
+    __logger.debug(f"Successfully updated face descriptor for passenger {passenger_id}")
 
 
 class DocumentProcessingError(Exception):

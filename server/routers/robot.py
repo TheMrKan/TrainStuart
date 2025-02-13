@@ -1,6 +1,10 @@
-from fastapi import APIRouter, File, UploadFile
+import json
+
+from fastapi import APIRouter, File, UploadFile, status, Request
 from server.core import calls, delivery, documents, passengers
 from server.routers.models import Passenger
+from typing import List, Optional
+import numpy
 
 router = APIRouter(prefix="/robot")
 
@@ -43,15 +47,34 @@ def document(file: UploadFile):
     passport = documents.process_ocr(loaded)
     if not passport:
         return {"success": False, "error": "OCR failed"}
+    print(f"Got passport number: {passport}")
 
     passenger = passengers.by_passport(passport)
     if not passenger:
         return {"success": False, "error": "Passenger not found"}
+    print(f"Got passenger: {passenger.name}")
 
     return {"success": True, "passenger_id": passenger.id}
 
 
 @router.get("/passengers/")
 def get_passengers():
-    return [Passenger(p.id, p.seat, p.name, p.passport, list(p.face_descriptor) if p.face_descriptor is not None else [])
+    return [Passenger(p.id, p.seat, p.name, p.passport,
+                      list(p.face_descriptor) if p.face_descriptor is not None else None)
             for p in passengers.passengers.values()]
+
+
+@router.post("/passengers/{passenger_id}/face_descriptor")
+async def update_face_descriptor(request: Request, passenger_id: str):
+    descriptor = json.loads(await request.json())
+    if len(descriptor) != 128:
+        raise AssertionError("Descriptor length must be 128")
+
+    converted_descriptor = numpy.asarray(descriptor, dtype=numpy.float32)
+
+    try:
+        passengers.update_face_descriptor(passenger_id, converted_descriptor)
+    except KeyError:
+        return status.HTTP_404_NOT_FOUND
+
+    return status.HTTP_200_OK

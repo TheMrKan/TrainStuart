@@ -66,6 +66,7 @@ class DocumentsCheckApp(BaseApp):
             similarity = face_util.compare_faces(passenger.face_descriptor, face)
             self.logger.debug(f"Similarity: {similarity}")
         else:
+            passengers.update_face_descriptor(passenger.id, face)
             self.logger.debug("Failed to check faces similarity: passenger doesn't have a saved face")
 
         time.sleep(2)
