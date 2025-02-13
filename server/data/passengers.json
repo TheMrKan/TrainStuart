@@ -1,0 +1,26 @@
+[
+  {
+    "id": "robot",
+    "name": "Robot",
+    "seat": -1,
+    "ticket": "",
+    "passport": null,
+    "face_descriptor": null
+  },
+  {
+    "id": "pas0",
+    "name": "Ivan Ivanov",
+    "seat": 1,
+    "ticket": "1",
+    "passport": "3620896892",
+    "face_descriptor": null
+  },
+  {
+    "id": "pas1",
+    "name": "Petya Petrov",
+    "seat": 2,
+    "ticket": "2",
+    "passport": "3610751682",
+    "face_descriptor": null
+  }
+]

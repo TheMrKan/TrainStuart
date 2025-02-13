@@ -23,4 +23,6 @@ app.include_router(delivery.router)
 app.include_router(carriage.router)
 app.include_router(robot.router)
 
+passengers.load()
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
