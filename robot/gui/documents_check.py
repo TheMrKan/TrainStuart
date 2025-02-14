@@ -64,15 +64,16 @@ class DocumentsCheckApp(BaseApp):
         AudioOutput.play_async("face_check.wav")
         face = self.read_face()
 
-        self.send_page("loading")
+        self.send("loading")
 
         self.compare_faces(passenger, passport_image, face)
 
-        AudioOutput.play_async("preferences.wav")
+        name_audio = passengers.get_name_audio(passenger.name)
+        AudioOutput.play_async("hello", name_audio, "preferences")
         self.show_preferences()
         AudioOutput.play_async("goodbye.wav")
 
-        self.send_page("done")
+        self.send("done")
 
         self.success = True
         self.logger.debug("DocumentsCheckApp run finished")
@@ -92,7 +93,7 @@ class DocumentsCheckApp(BaseApp):
         finally:
             CameraAccessor.main_camera.detach("documents_check")
 
-    def read_passport(self) -> Tuple[Image, passengers.Person]:
+    def read_passport(self) -> Tuple[passengers.Person, Image]:
         self.logger.debug("Reading passport...")
         while not CameraAccessor.documents_camera.grab_image():
             time.sleep(0.01)

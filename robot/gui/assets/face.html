@@ -39,6 +39,13 @@
     </div>
 </section>
 
+<section class="section step1-processing" id="loading" style="display: none;">
+    <h1 class="text step-text" id="step1-text">Обработка...<br>Пожалуйста, подождите.</h1>
+    <svg class="svg-loading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width="200" height="200" style="shape-rendering: auto; display: block; background: transparent;" xmlns:xlink="http://www.w3.org/1999/xlink"><g><circle stroke-linecap="round" fill="none" stroke-dasharray="50.26548245743669 50.26548245743669" stroke="#fa5252" stroke-width="8" r="32" cy="50" cx="50">
+  <animateTransform values="0 50 50;360 50 50" keyTimes="0;1" dur="1s" repeatCount="indefinite" type="rotate" attributeName="transform"></animateTransform>
+</circle><g></g></g></svg>
+</section>
+
 <dialog id="dialog">
     <h2>Связь с человеком</h2>
 
@@ -138,19 +145,17 @@
 
     function enableRect() {
         $("#rectDiv").html(SVG);
-    };
+    }
 
     function disableRect() {
         $("#rectDiv").html("");
-    };
+    }
 
     function setRectPos(x_rel, y_rel) {
         $("#rect").css("top", 1024 * y_rel - 200);
         $("#rect").css("left", 600 * x_rel - 300);
-    };
+    }
 
-
-    
 
     window.addEventListener("channel_ready", function (event) {
         event.detail.channel.addEventListener("code_show_face_rect", function(event) {
@@ -163,6 +168,11 @@
 
         event.detail.channel.addEventListener("code_face_rect_position", function(event) {
             setRectPos(event.detail.x, event.detail.y);
+        });
+
+        event.detail.channel.addEventListener("code_loading", function(event) {
+            $(".section.camera-image").hide();
+            $("#loading").show();
         });
     });
 

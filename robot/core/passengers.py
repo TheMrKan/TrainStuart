@@ -5,6 +5,14 @@ from utils.collections import first_or_default
 from robot.core import server
 
 
+NAME_TO_AUDIO = {
+    "егор": "egor",
+    "валерий": "valery",
+    "никита": "nikita",
+    "михаил": "mikhail"
+}
+
+
 class Person:
     id: str
     name: Optional[str]
@@ -84,3 +92,8 @@ def __find_new_available_id() -> int:
 def update_face_descriptor(passenger_id: str, descriptor: Optional[FaceDescriptor]):
     __persons[passenger_id].face_descriptor = descriptor
     server.update_passenger_face_descriptor(passenger_id, descriptor)
+
+
+def get_name_audio(name: str) -> Optional[str]:
+    name = name.split()[0]
+    return "names/" + NAME_TO_AUDIO.get(name.lower(), None)

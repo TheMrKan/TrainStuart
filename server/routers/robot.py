@@ -60,7 +60,7 @@ def document(file: UploadFile):
 @router.get("/passengers/")
 def get_passengers():
     return [Passenger(p.id, p.seat, p.name, p.passport,
-                      list(p.face_descriptor) if p.face_descriptor is not None else None)
+                      list(map(float, p.face_descriptor)) if p.face_descriptor is not None else None)
             for p in passengers.passengers.values()]
 
 
