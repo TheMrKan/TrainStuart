@@ -33,7 +33,6 @@ def load():
             passengers[passenger.id] = passenger
 
     print(f"Loaded {len(passengers)} passengers")
-    print(passengers)
 
 
 def save():

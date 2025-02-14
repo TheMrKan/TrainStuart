@@ -63,6 +63,8 @@ def checkout_basket(passenger_id=Depends(get_passenger)) -> OrderDetails:
     if not basket or not any(basket.positions):
         raise HTTPException(409, "The basket is empty")
 
+    print(f"Requesting basket checkout for passenger: {passenger.name}")
+
     try:
         order = orders.create(passenger, basket.positions)
     except OutOfStockError as e:

@@ -6,7 +6,9 @@ from robot.gui import external
 from robot.hardware.audio import AudioOutput
 from robot.hardware import robot_interface
 from robot.hardware.robot_interface import RobotContainer, Side
+from robot.core import passengers
 import time
+from typing import Optional
 
 
 class InteractionApp(BaseApp):
@@ -15,17 +17,24 @@ class InteractionApp(BaseApp):
 
     interaction: Interaction
     contin: bool
+    passenger: Optional[passengers.Person]
 
-    def __init__(self, contin=False):
+    def __init__(self, contin=False, passenger: Optional[passengers.Person] = None):
         super().__init__()
         self.contin = contin
+        self.passenger = passenger
 
     def run(self):
         super().run()
-        if self.contin:
-            AudioOutput.play_async("other_help.wav")
-        else:
-            AudioOutput.play_async("hello.wav")
+        audios = ["other_help"] if self.contin else ["help"]
+        if self.passenger:
+            name_audio = passengers.get_name_audio(self.passenger.name)
+            if name_audio:
+                audios.insert(0, name_audio)
+
+            self.send("greetings", name=self.passenger.name)
+
+        AudioOutput.play_async(*audios)
 
     def set_interaction(self, interaction: Interaction):
         self.interaction = interaction

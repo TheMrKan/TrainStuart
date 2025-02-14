@@ -10,7 +10,7 @@ from robot.hardware.audio import AudioOutput
 from robot.gui.interaction import InteractionApp
 from robot.gui.base.app import BaseApp
 from robot.gui.idle import IdleApp
-from robot.core import calls, deliveries
+from robot.core import calls, deliveries, passengers
 
 
 class Target:
@@ -115,8 +115,10 @@ class CarriageMovingBehaviour(BaseBehaviour):
         if isinstance(target, DeliveryTarget):
             self.__give_product(target)
 
+        passenger = passengers.get_by_seat(target.seat)
+
         self.app.shutdown()
-        self.app = InteractionApp()
+        self.app = InteractionApp(passenger=passenger)
 
         self.app.run()
         while self.app.is_running:
@@ -132,7 +134,12 @@ class CarriageMovingBehaviour(BaseBehaviour):
         irobot.close_container(target.delivery.container)
 
     def __give_product(self, target: DeliveryTarget):
-        AudioOutput.play_async("order_completed_eat.wav")
+        passenger = passengers.get_by_seat(target.seat)
+        audio = passengers.get_name_audio(passenger.name) if passenger else None
+        if audio:
+            AudioOutput.play_async("hello", audio, "order_completed_eat.wav")
+        else:
+            AudioOutput.play_async("order_completed_eat.wav")
         irobot.open_container(target.delivery.container, irobot.Side.LEFT)
         time.sleep(6)
         irobot.close_container(target.delivery.container)

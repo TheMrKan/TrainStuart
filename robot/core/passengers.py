@@ -66,6 +66,10 @@ def get_by_passport(passport_number: str) -> Optional[Person]:
     return first_or_default(__persons.values(), lambda p: p.passport == passport_number)
 
 
+def get_by_seat(seat: int) -> Optional[Person]:
+    return first_or_default(__persons.values(), lambda p: p.seat == seat)
+
+
 def find_by_face_descriptor(descriptor: FaceDescriptor, threshold: float = 0.5) -> Optional[Person]:
     persons_with_faces = tuple(with_faces())
     descriptors = [p.face_descriptor for p in persons_with_faces]

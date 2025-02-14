@@ -3,6 +3,7 @@ from server.core import passengers
 
 
 def get_passenger(request: Request):
+    print(request.cookies)
     ticket = request.cookies.get("Ticket")
     if ticket:
         return passengers.by_ticket(ticket).id
