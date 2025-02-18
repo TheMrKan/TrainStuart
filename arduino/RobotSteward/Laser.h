@@ -42,19 +42,20 @@ public:
     if (lox->isRangeComplete()) {
       dist = lox->readRangeResult();
 
-      isObject = dist >= 80 && dist < 300;
+      isObject = dist >= 130 && dist < 300;
       detector.tick(isObject);
       if (isObject) {
         Serial.println(String(dist) + " " + String(detector.state));
-      }
+        stateL = true;
+      } else stateL = false;
     }
 
     if (detector.state == WAITING) {
       if (dir == 1) {
-        currentAngle = min(right, currentAngle + 0);
+        currentAngle = min(right, currentAngle + 5);
         if (currentAngle >= right) dir = -1;
       } else {
-        currentAngle = max(left, currentAngle - 0);
+        currentAngle = max(left, currentAngle - 5);
         if (currentAngle <= left) dir = 1;
       }
       servo->write(currentAngle);
@@ -62,7 +63,7 @@ public:
     
   }
 
-  bool status = true;
+  bool stateL = true;
 private:
   Multiservo* servo;
   Adafruit_VL53L0X* lox;

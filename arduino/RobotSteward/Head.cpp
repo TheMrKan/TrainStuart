@@ -66,7 +66,7 @@ void Head::tick() {
 unsigned long markerTime = 0;
 
 bool isHeadMarker() {
-  if (analogRead(HEAD_MARKER) > 1000) {
+  if (analogRead(HEAD_MARKER) < 100) {
       if (millis() - markerTime >= 100) {
       markerTime = millis();
       return true;

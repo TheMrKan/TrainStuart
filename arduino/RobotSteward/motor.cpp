@@ -223,52 +223,36 @@ void motor::setSpeedCorrection(int corr) {
   speedCorrection = corr;
 }
 
-void motor::specialGo(Move _front, Move _back) {
-    Move front = _front, back = _back;
+void motor::specialGo(Move _spMove, Direction _d) {
+    Move spMove = _spMove;
+    Direction d = _d;
 
-    if (front == Right && back == Left) {
+    if (d == F) {
+      if (spMove == Right) {
         motor_run(FL, B);
         motor_run(FR, F);
-        motor_run(BL, B);
-        motor_run(BR, F);
-        setSpeed(150, BL);
-        setSpeed(150, BR);
         setSpeed(150, FL);
         setSpeed(150, FR);
-    } else if (front == Stop) {
-        if (back == Right) {
-            motor_run(BL, F);
-            motor_run(BR, B);
-            setSpeed(150, BL);
-            setSpeed(150, BR);
-        } else {
-            motor_run(BL, B);
-            motor_run(BR, F);
-            setSpeed(150, BL);
-            setSpeed(150, BR);
-        }
-    } else if (back == Stop) {
-        if (front == Right) {
-            motor_run(FL, B);
-            motor_run(FR, F);
-            setSpeed(150, FL);
-            setSpeed(150, FR);
-        } else {
-            motor_run(FL, F);
-            motor_run(FR, B);
-            setSpeed(150, FL);
-            setSpeed(150, FR);
-        }
-    } else if (front == Left && back == Right) {
+      } else {
         motor_run(FL, F);
         motor_run(FR, B);
+        setSpeed(150, FL);
+        setSpeed(150, FR);
+      }
+    } else {
+      if (spMove == Right) {
         motor_run(BL, F);
         motor_run(BR, B);
         setSpeed(150, BL);
         setSpeed(150, BR);
-        setSpeed(150, FL);
-        setSpeed(150, FR);
+      } else {
+        motor_run(BL, B);
+        motor_run(BR, F);
+        setSpeed(150, BL);
+        setSpeed(150, BR);
+      }
     }
+
 }
 
 void motor::go(Move _move) {

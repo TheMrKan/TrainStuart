@@ -1,6 +1,7 @@
 #ifndef ADUINO_LINE_H
 #define ADUINO_LINE_H
 #include <Arduino.h>
+#include "motor.h"
 
 enum FindState {
     state0, // Пустое состояние - ничего не делать
@@ -11,6 +12,18 @@ enum FindState {
     state5, // Когда один датчик стоит ровно (по центру), а второй не на линии
     state6, // Когда один датчик стоит ровно (по центру), а второй просто на линии
     state7  // Когда оба датчика стоят ровно (по центру)
+};
+
+enum StatusLine {
+  Default,
+  OK,
+  LEFT, // Робот слева от линии
+  RIGHT // Робот справа от линии
+};
+
+struct LineStatus {
+  StatusLine forward;
+  StatusLine backward;
 };
 
 class Line {
@@ -25,7 +38,8 @@ public:
   void correcting();
   bool isCompleted();
 
-  void goLine(short dirF, short dirB = 0, bool only = false);
+//  void goLine(short dirF, short dirB = 0, bool only = false);
+  void goLine(short dir);
   void LinearMove(bool active);
   void LiteralMove(short dir, bool active);
 
@@ -36,6 +50,10 @@ public:
 private:
   int linesF[5];
   int linesB[5];
+
+  StatusLine statusF = Default, statusB = Default;
+  StatusLine statusFGuess = Default, statusBGuess = Default;
+  unsigned long statusFGuessTime = 0, statusBGuessTime = 0;
   
   bool linesValF[5] = {false, false, false, false, false};
   bool linesValB[5] = {false, false, false, false, false};
@@ -49,10 +67,14 @@ private:
   unsigned long findTime = 0;   // Таймер для поиска линии
   int findDelay = 2000;         // Время для поиска линии
 
+  unsigned long newStateTime = 0;
+
   void tickLine();
   void tickLiteral();
   void tickLinear();
   void tickFind();
+  struct LineStatus calcStatus();
+  void calcStatusFilter();
 };
 
 #endif

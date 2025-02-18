@@ -42,12 +42,10 @@ CompassRemote compass;
 struct CompassData compassData;
 
 #include "Line.h"
-Line lines();
+Line lines;
 
 #include "motor.h"
 motor wheels(&laserF, &laserB, &compass);
-
-lines.motor = wheels;
 
 #include "Containers.h"
 Containers up_front(&multiservo[2], UP_FRONT);
@@ -129,8 +127,9 @@ void setID() {
   //   while (1)
   //     ;
   // }
-
+  Serial.println("DEbug 0");
   Wire.begin();
+  Serial.println("DEbug 1");
   if (!loxHead.begin(LOXHead_ADDRESS, &Wire)) {
     Serial.print("Couldn't start ranging: ");
     Serial.println(loxHead.vl_status);
@@ -221,6 +220,7 @@ void setup() {
 
   Serial.println("[SETUP] Servo attach OK");
 
+  lines.motors = &wheels;
   lines.init();
   Serial.println("[SETUP] lines.init() OK");
 
@@ -240,7 +240,7 @@ void setup() {
   // lox2.configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_LONG_RANGE);
   Serial.println("[SETUP] L0X BACKWARD config OK");
 
-  // laserF.begin();
+  laserF.begin();
   // laserB.begin();
   Serial.println("[SETUP] Laser.begin() OK");
 
@@ -263,7 +263,7 @@ unsigned long loopTime, totalLoopTime;
 void loop() {
   loopTime = millis();
   head.tick();
-  // laserF.tick();
+  laserF.tick();
   // laserB.tick();
   
   touchFront.tick();
@@ -272,8 +272,10 @@ void loop() {
   up_front.tick();
   up_back.tick();
   down.tick();
+  drawerFront.tick();
 
   wheels.setBlocked(touchFront.isTouched() || touchBack.isTouched());
+//  wheels.setBlocked(laserF.stateL);
   wheels.tick();
 
   lines.tick();
@@ -293,6 +295,7 @@ void loop() {
   if (wheels.isCompleted()) {
     IO.sendCompletion();
     Serial.println("OK WHEELS");
+//    laserF.scanStop();
     wheels.clearState();
   }
 
@@ -335,16 +338,21 @@ void handleMessage(struct Message message) {
     else if (message.code == "L") {     // Лидары вкл./выкл.
       IO.sendConfirmation();
       if (message.args[0] == 0) {
-        // laserF.scanStop();
+         laserF.scanStop();
         // laserB.scanStop();
       }
       else {
-        // laserF.scanStart();
+         laserF.scanStart();
         // laserB.scanStart();
       }
     } 
+    else if (message.code == "Ln") {     // Датчики линии управление
+      IO.sendConfirmation();
+      lines.goLine(message.args[0]);
+    }
     else if (message.code == "M") {     // Движение робота на (x, y)
       IO.sendConfirmation();
+//      laserF.scanStart();
       wheels.run(message.args[0], message.args[1]);
     }
     else if (message.code == "Rot") {     // Вращение. 0 - стоп; >0 - по часовой; <0 - против часовой

@@ -38,7 +38,7 @@ public:
   void setSpeed4(int sp1, int sp2, int sp3, int sp4);
   void run(int x, int y);
   void go(Move _move);
-  void specialGo(Move _front, Move _back);
+  void specialGo(Move _spMove, Direction _d);
   bool isCompleted();
 
   void clearState();

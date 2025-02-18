@@ -64,14 +64,14 @@ namespace Down {
 
 
 namespace Drawer {
-  const int Stop = 95;
+  const int Stop = 97;
   const int Left = Stop - 12;
   const int LeftSlow = Stop - 4;
   const int Right = Stop + 12;
   const int RightSlow = Stop + 4;
 }
 
-namespace LinesF {
+namespace LineF {
   const int far_left = 27;
   const int left = 29;
   const int center = 31;
@@ -79,7 +79,7 @@ namespace LinesF {
   const int far_right = 35;
 }
 
-namespace LinesB {
+namespace LineB {
   const int far_left = 28;
   const int left = 30;
   const int center = 32;
@@ -91,7 +91,7 @@ namespace LinesB {
 #define drawerBackSensor  24
 
 //  Бошка
-#define HeadCenter 90
+#define HeadCenter 91
 #define HeadUp 179
 #define HeadDown 20
 

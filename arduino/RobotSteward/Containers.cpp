@@ -68,6 +68,11 @@ void Containers::togleTablet(BoxState _state) {
   stateC = false;
   tickDrawerLoop = true;
 
+  if (new_state == state) {
+    stateC = true;
+    return;
+  }
+
   switch(new_state) {
     case CLOSE:
       if (state == OPEN_RIGHT) drawerCurrentAngle = Drawer::Left;
@@ -82,6 +87,9 @@ void Containers::togleTablet(BoxState _state) {
   }
   lastState = state;
   state = new_state;
+
+   Serial.println("Toggle state: " + String(lastState) + " -> " + String(state) +
+                 " drawerCurrentAngle: " + String(drawerCurrentAngle));
 }
 
 void Containers::rotate(int start, int end) {
@@ -137,8 +145,8 @@ void Containers::tickDrawer() {
     }
   } else {
     Serial.println("Drawer OPENED");
-    if (millis() - tmr < 3000) servo->write(drawerCurrentAngle);
-    else {
+    servo->write(drawerCurrentAngle);
+    if (millis() - tmr >= 3000) {
       servo->write(Drawer::Stop);
       stateC = true;
       tickDrawerLoop = false;
