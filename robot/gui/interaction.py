@@ -20,7 +20,7 @@ class InteractionApp(BaseApp):
     passenger: Optional[passengers.Person]
 
     def __init__(self, contin=False, passenger: Optional[passengers.Person] = None):
-        super().__init__()
+        super().__init__(auth=(passenger.ticket if passenger else None))
         self.contin = contin
         self.passenger = passenger
 

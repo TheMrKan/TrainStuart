@@ -3,6 +3,7 @@ import time
 from bottle import Bottle, run as run_bottle, static_file, ServerAdapter
 from multiprocessing import Event
 from threading import Thread
+import urllib.parse as urlparse
 
 
 class StoppableServer(ServerAdapter):
@@ -36,8 +37,15 @@ def http_static(filename):
     return static_file(filename, root=STATIC_DIR)
 
 
-def http_page(page):
-    return static_file(page + ".html", root=TEMPLATES_DIR)
+def http_page(page: str):
+    first = page.find("?")
+    query = ""
+    path = page
+    if first != -1:
+        path = page[:first]
+        query = page[first:]
+
+    return static_file(path + ".html" + query, root=TEMPLATES_DIR)
 
 
 def run(_stop_event: Event):

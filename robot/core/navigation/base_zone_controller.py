@@ -46,9 +46,9 @@ class BaseZoneController:
             line_y = 0
 
         movement.intermediate_points = []
-        if not are_nearly_equal(irobot.current_y, line_y):
+        if not are_nearly_equal(irobot.current_y, line_y, 10):
             movement.intermediate_points.append((irobot.current_x, line_y))
-        if not are_nearly_equal(line_y, destination[1]):
+        if not are_nearly_equal(line_y, destination[1], 10):
             movement.intermediate_points.append((destination[0], line_y))
 
         return movement
