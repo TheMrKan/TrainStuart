@@ -6,6 +6,10 @@ from robot.config import instance as config
 
 Vector2 = Tuple[int, int]
 
+WALL_Y = 100
+LINE_Y = 0
+VENDING_LINE_Y = 70
+
 
 @dataclass
 class Point:
@@ -59,7 +63,7 @@ def get_points() -> List[Point]:
 
 def get_position_for_seat(seat: int) -> Vector2:
     seat_pos = get_point_position(f"seat_{seat}")
-    return seat_pos[0] - 20, 12
+    return seat_pos[0] - 20, 0
 
 
 def is_inside_zone(pos: Vector2, zone: Zone) -> bool:

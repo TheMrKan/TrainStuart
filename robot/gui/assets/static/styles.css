@@ -103,7 +103,7 @@ html {
     column-gap: 12px;
 
     align-items: center;
-    margin-left: 10px;
+    margin-left: 20px;
 }
 .name {
     font-size: 20px;
@@ -135,7 +135,7 @@ html {
 }
 .information-section {
     display: flex;
-    gap: 20px;
+    gap: 15px;
     flex-direction: column;
 }
 .camera-image {
@@ -302,18 +302,30 @@ dialog::backdrop {
     }
 }
 
+.infoButton {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 90vw;
+}
+
+.infoButton button {
+    width: 100%;
+    height: 13svw;
+}
 .primary-place {
     margin-top: 20px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-auto-rows: 15svw;
+    grid-auto-rows: 13svw;
     width: 90vw;
     gap: 15px;
 }
 .second-place {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-auto-rows: 40svw;
+    grid-auto-rows: 34svw;
     width: 90vw;
     gap: 10px;
 }
@@ -344,6 +356,25 @@ dialog::backdrop {
 
 .btn-primary {
     background-color: var(--color-red);
+}
+
+.infoButton {
+    background-image: url("../static/images/info.jpg");
+    height: 13svw;
+
+}
+.infoButton_elem {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.infoButton_text {
+    background-color: white;
+    color: black;
+    height: 80%;
+    width: 60%;
 }
 .btn-second {
     display: grid;

@@ -31,7 +31,7 @@ hardware:
   main_camera_resolution: 640x480
   documents_camera: 1
   documents_camera_resolution: 1920x1080
-  dummy_robot: False
+  dummy_robot: True
   serial: /dev/ttyTHS1
 
 

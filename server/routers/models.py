@@ -81,6 +81,7 @@ class RequestedDelivery:
 class Passenger:
     id: str
     seat: int
+    ticket: str
     name: Optional[str]
     passport: Optional[str]
     face_descriptor: Optional[List[float]]

@@ -42,9 +42,20 @@ def initialize():
 
 
 def move_to(x: int, y: int, completion: bool = True):
+    global current_x, current_y
     logger.debug(f"Send move to {x} {y}")
     iserial.send_command("M", x, y, completion=True, completion_timeout=30)
+    current_x = x
+    current_y = y
+    on_event.emit("pos_updated", current_x, current_y)
     logger.debug(f"Completed move to {x} {y}")
+
+
+def move_to_line(side: Side):
+    side_converted = 1 if side == Side.RIGHT else -1
+    logger.debug(f"Send move to line {side} ({side_converted})")
+    iserial.send_command("Ln", side_converted, completion=True, completion_timeout=30)
+    logger.debug(f"Completed move to line {side} ({side_converted})")
 
 
 def set_speed_correction(correction: int):
@@ -70,6 +81,7 @@ def set_actual_pos(x: int, y: int):
 def set_head_rotation(horiz: int, vert: int, completion=True):
     global head_horizontal
     global head_vertical
+    logger.debug(f"Head rotation: {horiz} {vert}")
 
     iserial.send_command("H", horiz, vert, completion=completion, completion_timeout=15)
     head_horizontal = horiz

@@ -12,7 +12,8 @@ from robot.core.navigation.vending_zone import VendingZoneController
 
 logger = logging.getLogger(__name__)
 
-FIND_MARKER_HEAD_Y = 20
+FIND_MARKER_HEAD_Y = 25
+
 ZONE_CONTROLLERS = {
     "passenger_zone": PassengerZoneController,
     "vending_zone": VendingZoneController,
@@ -24,17 +25,20 @@ zone_controller: Union[PassengerZoneController, VendingZoneController] = None
 HOME: Point
 GATE: Point
 PASSENGER_ZONE: Zone
+VENDING_ZONE: Zone
 
 
 def init():
     global HOME
     global GATE
     global PASSENGER_ZONE
+    global VENDING_ZONE
     chart.load()
 
     HOME = chart.points["vending"]
     GATE = chart.points["gate"]
     PASSENGER_ZONE = chart.zones["passenger_zone"]
+    VENDING_ZONE = chart.zones["vending_zone"]
 
     for zc in ZONE_CONTROLLERS.values():
         zc.class_init()
@@ -55,7 +59,11 @@ def __set_zone(_zone: Zone):
 
 
 def go_home():
-    go_to_point((HOME.x, HOME.y))
+    if zone != VENDING_ZONE:
+        go_to_gate()
+        __set_zone(VENDING_ZONE)
+
+    zone_controller.go_to_point((HOME.x, HOME.y))
 
 
 def go_to_seat(seat: int):
@@ -107,46 +115,54 @@ def __try_locate() -> Optional[chart.Vector2]:
         if head_distance == 0:
             time.sleep(0.05)
             continue
+        break
 
-        wall_distance = visual_positioning.head_distance_to_wall_distance(head_distance, robot_interface.head_vertical)
+    wall_distance = visual_positioning.head_distance_to_wall_distance(head_distance, robot_interface.head_vertical)
 
-        y = zone.p0[1] - wall_distance
+    y = chart.WALL_Y - wall_distance
 
-        robot_interface.set_actual_pos(robot_interface.current_x, y)
+    logger.debug(f"Start Y: {y}")
+    robot_interface.set_actual_pos(robot_interface.current_x, y)
 
-        logger.debug(f"Distance to wall: {wall_distance}; "
-                     f"Current position: {robot_interface.current_x, robot_interface.current_y}")
+    if abs(y - chart.LINE_Y) > 20:
+        robot_interface.move_to(robot_interface.current_x, chart.LINE_Y)
 
-        if wall_distance < visual_positioning.MIN_WALL_DISTANCE:
-            logger.debug("Distance is too small")
-            # -5 см для запаса
-            robot_interface.move_to(robot_interface.current_x, zone.p0[1] - visual_positioning.MIN_WALL_DISTANCE - 5)
-        elif wall_distance > visual_positioning.MAX_WALL_DISTANCE:
-            logger.debug("Distance is too big")
-            # +5 см для запаса
-            robot_interface.move_to(robot_interface.current_x, zone.p0[1] - visual_positioning.MAX_WALL_DISTANCE + 5)
-        else:
-            break
+    if y > chart.LINE_Y:
+        robot_interface.move_to_line(robot_interface.Side.RIGHT)
+    else:
+        robot_interface.move_to_line(robot_interface.Side.LEFT)
+
+    robot_interface.set_actual_pos(robot_interface.current_x, chart.LINE_Y)
+
+    logger.debug(f"Distance to wall: {wall_distance}; "
+                 f"Current position: {robot_interface.current_x, robot_interface.current_y}")
+
+
     logger.debug("Wall distance calibration completed")
 
     time.sleep(0.5)
     marker_name, pos = visual_positioning.try_get_position(robot_interface.head_horizontal,
                                               robot_interface.head_vertical,
                                               head_distance)
-
     if pos is not None:
         logger.debug(f"Got pos {pos} from marker {marker_name}")
-        return pos
+
+        return pos[0], robot_interface.current_y
 
     logger.info("Failed to find a marker in front of the camera. Going right...")
     pos = __try_find_marker(True)
+
     if pos:
-        return pos
+        return pos[0], robot_interface.current_y
 
     time.sleep(0.5)
     robot_interface.set_head_rotation(-90, FIND_MARKER_HEAD_Y)   # возвращаем голову прямо после поворота направо
     logger.info("Failed to find a marker on the right. Going left...")
-    return __try_find_marker(False)
+    pos = __try_find_marker(False)
+    if pos:
+        return pos[0], robot_interface.current_y
+
+    return None
 
 
 def __try_find_marker(direction: bool) -> Optional[chart.Vector2]:

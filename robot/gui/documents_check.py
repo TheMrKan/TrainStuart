@@ -70,7 +70,7 @@ class DocumentsCheckApp(BaseApp):
 
         name_audio = passengers.get_name_audio(passenger.name)
         AudioOutput.play_async("hello", name_audio, "preferences")
-        self.show_preferences()
+        self.show_preferences(passenger)
         AudioOutput.play_async("goodbye.wav")
 
         self.send("done")
@@ -268,6 +268,11 @@ class DocumentsCheckApp(BaseApp):
         return image
 
     def compare_faces(self, passenger: passengers.Person, passport_image: Image, face: face_util.FaceDescriptor):
+        if passenger.face_descriptor is None:
+            passengers.update_face_descriptor(passenger.id, face)
+            print("Passenger has no face descriptor. Saved")
+            return
+
         similarity = face_util.compare_faces(passenger.face_descriptor, face)
         self.logger.debug(f"Faces similarity: {similarity}")
         if similarity > 0.65:
@@ -281,9 +286,8 @@ class DocumentsCheckApp(BaseApp):
         print("Face similarity was confirmed from control panel. Updating...")
         passengers.update_face_descriptor(passenger.id, face)
 
-
-    def show_preferences(self):
-        self.send_page("preferences")
+    def show_preferences(self, passenger: passengers.Person):
+        self.send_page("preferences", passenger.ticket)
 
         self.wait_connection()
         time.sleep(1)

@@ -3,8 +3,8 @@ import datetime
 
 # ID кнопки : номер места
 BUTTONS = {
-    1: 2,
-    2: 4
+    1: 1,
+    2: 3
 }
 
 

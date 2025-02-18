@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 
 from server.core import passengers
-from routers import products, baskets, orders, delivery, carriage, robot
+from routers import products, baskets, orders, delivery, carriage, robot, auth
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,6 +22,7 @@ app.include_router(orders.router)
 app.include_router(delivery.router)
 app.include_router(carriage.router)
 app.include_router(robot.router)
+app.include_router(auth.router)
 
 passengers.load()
 

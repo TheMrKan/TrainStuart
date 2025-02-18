@@ -42,35 +42,65 @@ class PassengerZoneController(BaseZoneController):
             CameraAccessor.main_camera.detach("passenger_zone")
 
     def _move(self, point: Vector2):
-        self.last_correction = 0
+        if sqr_distance(point, (irobot.current_x, irobot.current_y)) < 16:
+            logger.debug(f"Points are too close: {point} {(irobot.current_x, irobot.current_y)}")
+            return
 
-        thread = Thread(target=irobot.move_to, args=(point[0], point[1]))
+        is_y = abs(irobot.current_x - point[0]) < abs(irobot.current_y - point[1])
+        line = self.__select_line(point)
+        logger.debug(f"Line select #1: {line}")
+
+        target_pos = point
+        if line is not None:
+            direction = 1 if irobot.current_y < line else -1
+            target_pos = point[0], point[1] - (min(10, abs(irobot.current_y - line))) * direction
+            logger.debug(f"Corrected target point: {target_pos}")
+
+        thread = Thread(target=irobot.move_to, args=target_pos)
         thread.start()
         time.sleep(0.2)
 
         while thread.is_alive():
-            self.__update_position()
+            self.__update_position(is_y)
 
-    def __update_position(self):
+        line = self.__select_line((irobot.current_x, irobot.current_y))
+        logger.debug(f"Line select #1: {line}")
+        if line is not None:
+            self.__try_align_to_line(line)
+
+    def __select_line(self, point: Vector2) -> Optional[int]:
+        line = None
+        if abs(point[1] - chart.LINE_Y) < 15:
+            line = chart.LINE_Y
+        elif abs(point[1] - chart.VENDING_LINE_Y) < 15:
+            line = chart.VENDING_LINE_Y
+
+        return line
+
+    def __try_align_to_line(self, line):
+        irobot.move_to_line(irobot.Side.LEFT if irobot.current_y < line else irobot.Side.RIGHT)
+        irobot.set_actual_pos(irobot.current_x, line)
+
+    def __update_position(self, is_y: bool):
         head_distance = irobot.get_camera_distance()
         if head_distance == 0:
             time.sleep(0.05)
             return
         self.distance_to_wall = visual_positioning.head_distance_to_wall_distance(head_distance,
-                                                                             irobot.head_vertical)
+                                                                                  irobot.head_vertical)
         marker_name, marker_pos = visual_positioning.try_get_position(
             irobot.head_horizontal,
             head_distance,
             self.distance_to_wall
         )
+        
+        if marker_pos and not is_y:
+            marker_pos = (marker_pos[0], irobot.current_y)
 
         irobot.get_current_position()
 
         if self.__is_marker_valid(marker_name, marker_pos):
             irobot.set_actual_pos(*marker_pos)
-        else:
-            actual_y = visual_positioning.distance_to_wall_to_y(self.distance_to_wall)    # TODO: убрать хардкод позиции стены в методе
-            irobot.set_actual_pos(irobot.current_x, actual_y)
 
         # self.__calculate_rot()
 
@@ -88,32 +118,4 @@ class PassengerZoneController(BaseZoneController):
             self.prev_marker_ts = time.time()
 
         return valid
-
-    last_correction: int = 0
-
-    def __calculate_rot(self):
-        movement_dir = self.target_point[0] - self.start_point[0] < 0
-
-        target_distance_to_wall = visual_positioning.y_to_distance_to_wall(self.target_point[1])
-
-        delta = target_distance_to_wall - self.distance_to_wall
-
-        if abs(delta) > 4:
-            correction = 100
-        elif abs(delta) > 3:
-            correction = 75
-        elif abs(delta) > 2:
-            correction = 75
-        else:
-            correction = 0
-
-        if delta < 0:
-            correction = -correction
-
-        print(delta, correction)
-        if correction == self.last_correction:
-            return
-
-        irobot.set_speed_correction(correction)
-        self.last_correction = correction
 

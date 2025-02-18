@@ -16,6 +16,7 @@ NAME_TO_AUDIO = {
 class Person:
     id: str
     name: Optional[str]
+    ticket: str
     seat: int
     passport: Optional[str]
     face_descriptor: Optional[FaceDescriptor]
@@ -23,11 +24,13 @@ class Person:
     def __init__(self,
                  id: str,
                  seat: int,
+                 ticket: str,
                  name: Optional[str] = None,
                  passport: Optional[str] = None,
                  face_descriptor: Optional[FaceDescriptor] = None):
         self.id = id
         self.seat = seat
+        self.ticket = ticket
         self.name = name
         self.passport = passport
         self.face_descriptor = face_descriptor
@@ -48,7 +51,7 @@ __available_id = len(__persons)
 def load():
     server_data = server.get_passengers()
     for passenger in server_data:
-        __persons[passenger["id"]] = Person(passenger["id"], passenger["seat"], passenger["name"],
+        __persons[passenger["id"]] = Person(passenger["id"], passenger["seat"], passenger["ticket"], passenger["name"],
                                             passenger["passport"], passenger["face_descriptor"])
 
 

@@ -19,14 +19,16 @@ class BaseApp:
     _wait_code: Optional[str]
     _wait_event: Optional[Event]
     _wait_connected: Optional[Event]
+    auth: Optional[str]
     last_message: Optional[dict]
     server_path: str
     logger: logging.Logger
 
-    def __init__(self):
+    def __init__(self, auth: Optional[str] = "SAME"):
         self.logger = logging.getLogger(self.NAME)
 
         self.server_path = f"/app"
+        self.auth = auth
         self._is_running = False
 
         self._wait_code = None
@@ -36,7 +38,7 @@ class BaseApp:
     def run(self):
         self.subscribe()
         if self.INITIAL_PAGE:
-            self.send_page(self.INITIAL_PAGE)
+            self.send_page(self.INITIAL_PAGE, self.auth)
         self.is_running = True
 
     @property
@@ -47,7 +49,11 @@ class BaseApp:
     def is_running(self, val: bool):
         self._is_running = val
 
-    def send_page(self, name: Union[str, None]):
+    def send_page(self, name: Union[str, None], auth: Optional[str] = "SAME"):
+        if auth != "SAME":
+            if auth is None:
+                auth = ""
+            name += f"?auth={auth}"
         gui_navigation.set_current_url(name, self.server_path)
 
     def subscribe(self):
@@ -117,6 +123,9 @@ class BaseApp:
         gui_server.on_connected.off(self.server_path, self.on_connected)
         for subpath, listener in self.LISTENERS.items():
             gui_server.on_message_received.off(self.server_path + "/" + subpath, listener)
+
+    def auth_as(self, *args):
+        pass
 
     def shutdown(self):
         self.unsubscribe()
